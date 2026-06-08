@@ -24,7 +24,8 @@ that can operate any app in the suite.
 
 - Import shared code via its package name (`@nafios/<name>`), never deep/relative
   paths into another package, and never from another package's `internal/`.
-- All public APIs must have a spec in `specs/` before implementation.
+- All public APIs must have a spec (co-located `spec.md` for packages, or under
+  `specs/` for cross-cutting concerns) before implementation.
 - Run `bun run check` before declaring any work complete.
 - If a package opts into a build step, never edit its `dist/` (generated output).
   See [ADR-0006](adr/0006-no-build-internal-packages.md) for the no-build convention.

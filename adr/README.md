@@ -40,4 +40,5 @@ already covers it. If it does, respect it — or write a new ADR that supersedes
 | [0008](0008-workspace-resolution-over-path-aliases.md) | Workspace resolution over `tsconfig` path aliases | Accepted |
 | [0009](0009-claude-md-canonical-agent-context.md) | `CLAUDE.md` is canonical agent context | Accepted |
 | [0010](0010-per-package-typecheck.md) | Per-package typecheck (`tsc --noEmit` via `--filter`) | Accepted |
+| [0011](0011-co-locate-package-specs.md) | Co-locate package specs with their packages | Accepted |
 | — | Database engine | *(deferred — F1 authors when chosen)* |
