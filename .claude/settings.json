@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run *)",
+      "Bash(bun test *)",
+      "Bash(bun install)",
+      "Bash(git log *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(tsc *)"
+    ],
+    "deny": ["Bash(rm -rf *)", "Bash(sudo *)", "Bash(git push *)"]
+  }
+}
