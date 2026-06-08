@@ -10,7 +10,7 @@ that can operate any app in the suite.
 - `services/` — headless backend services (REST, workers, AI agents)
 - `packages/` — shared libraries, published as `@nafios/*`
 - `specs/` — authoritative specifications; read before changing any public API
-- `adr/` — architectural decisions; check before deviating from a pattern
+- `adr/` — architectural decisions; **grep here before deviating from a pattern**
 - `tooling/` — generators and dev scripts
 
 ## Before You Code
@@ -27,6 +27,7 @@ that can operate any app in the suite.
 - All public APIs must have a spec in `specs/` before implementation.
 - Run `bun run check` before declaring any work complete.
 - If a package opts into a build step, never edit its `dist/` (generated output).
+  See [ADR-0006](adr/0006-no-build-internal-packages.md) for the no-build convention.
 
 ## Pointers
 
