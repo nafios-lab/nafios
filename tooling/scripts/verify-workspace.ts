@@ -7,11 +7,13 @@
  * Guards:
  *   1. Every package must have a CLAUDE.md
  *   2. Every package must have `typecheck` and `test` scripts
+ *   3. Every package/service must have a co-located spec.md (B1)
  */
 import { Glob } from "bun";
 
 const REQUIRED_SCRIPTS = ["typecheck", "test"] as const;
 const WORKSPACE_DIRS = ["apps", "packages", "services", "tooling"];
+const SPEC_REQUIRED_DIRS = ["packages", "services"];
 
 const failures: string[] = [];
 
@@ -34,6 +36,16 @@ for (const dir of WORKSPACE_DIRS) {
       if (!pkg.scripts?.[script]) {
         failures.push(
           `${pkgDir}: missing "${script}" script in package.json — required so \`bun run check\` can exercise every package`,
+        );
+      }
+    }
+
+    // Guard: spec.md must exist for packages/ and services/ (apps are exempt — they consume APIs, not publish them)
+    if (SPEC_REQUIRED_DIRS.includes(dir)) {
+      const hasSpec = await Bun.file(`${pkgDir}/spec.md`).exists();
+      if (!hasSpec) {
+        failures.push(
+          `${pkgDir}: missing spec.md — every ${dir}/* must have a co-located spec (see B1)`,
         );
       }
     }
