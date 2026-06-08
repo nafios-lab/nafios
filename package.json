@@ -1,0 +1,14 @@
+{
+  "name": "nafios",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*", "services/*", "tooling/*"],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "scripts": {
+    "check": "echo 'check is implemented in ticket A3' && exit 0",
+    "typecheck": "echo 'typecheck wired in A3' && exit 0",
+    "lint": "echo 'lint wired in C1' && exit 0",
+    "test": "echo 'test wired in A3' && exit 0"
+  }
+}

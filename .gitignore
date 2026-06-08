@@ -1,0 +1,23 @@
+# deps
+node_modules/
+
+# build output
+dist/
+build/
+*.tsbuildinfo
+
+# claude code (personal overrides)
+.claude/settings.local.json
+
+# agent scratch (everything else under .agent/ is tracked)
+.agent/scratch/
+
+# env
+.env
+.env.*
+!.env.example
+
+# os / editor / misc
+.DS_Store
+*.log
+coverage/
