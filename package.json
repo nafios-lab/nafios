@@ -11,7 +11,8 @@
     "bun": ">=1.1.0"
   },
   "scripts": {
-    "check": "bun run typecheck && bun run test && bun run lint && bun run format:check",
+    "check": "bun run typecheck && bun run test && bun run lint && bun run format:check && bun run verify",
+    "verify": "bun tooling/scripts/verify-workspace.ts",
     "typecheck": "bun --filter '*' typecheck",
     "test": "bun --filter '*' test",
     "lint": "biome lint .",

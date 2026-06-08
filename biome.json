@@ -13,7 +13,28 @@
   },
   "linter": {
     "enabled": true,
-    "rules": { "recommended": true }
+    "rules": {
+      "recommended": true,
+      "style": {
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": ["kebab-case"]
+          }
+        },
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": ["@nafios/*/internal/*"],
+                "message": "Do not import from another package's internal/ directory. Use the public barrel (@nafios/<name>) instead."
+              }
+            ]
+          }
+        }
+      }
+    }
   },
   "assist": {
     "enabled": true,
