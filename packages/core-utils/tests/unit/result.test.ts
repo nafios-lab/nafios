@@ -1,5 +1,5 @@
-import { test, expect } from "bun:test";
-import { ok, err, isOk, isErr } from "../../src";
+import { expect, test } from "bun:test";
+import { err, isErr, isOk, ok } from "../../src";
 
 test("ok wraps a value and is frozen", () => {
   const r = ok(42);
