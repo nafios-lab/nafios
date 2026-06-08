@@ -1,4 +1,7 @@
-<!-- STUB: mirrors/points to CLAUDE.md — real content authored in ticket D1 -->
-# NafiOS — Agent Context
+# NafiOS — Agent Context (Non-Claude Tools)
 
-See [CLAUDE.md](./CLAUDE.md) for agent context. This file is a placeholder for non-Claude agents.
+NafiOS agent context lives in [`CLAUDE.md`](./CLAUDE.md). Read that first.
+
+This project is Claude-Code-first. All conventions, hard rules, and pointers are
+maintained in `CLAUDE.md` to avoid drift between two sources of truth. Non-Claude
+agents should follow the same rules documented there.
