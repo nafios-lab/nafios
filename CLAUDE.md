@@ -17,7 +17,7 @@ that can operate any app in the suite.
 
 1. Read `.claude/context/conventions.md` — naming, structure, file layout.
 2. Read `.claude/context/tech-stack.md` — chosen libraries and why.
-3. Check `specs/` for any spec governing the area you're touching.
+3. Check the co-located `spec.md` (packages/services) or `specs/` (cross-cutting) for any spec governing the area you're touching.
 4. To create a package, use the generator (`/new-package`) — never hand-scaffold.
 
 ## Hard Rules
