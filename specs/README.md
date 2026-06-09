@@ -22,6 +22,7 @@ reproducible across sessions and contributors.
 | **API contracts** | `specs/api/` | REST endpoint specs, RPC contracts |
 | **Event schemas** | `specs/events/` | Pub/sub event definitions |
 | **Domain models** | `specs/domain/` | Cross-cutting domain concepts |
+| **Data conventions** | `specs/data/` | Database, migration, and table conventions |
 
 Package specs live with their package for maximum discoverability — an agent
 entering a package finds `CLAUDE.md` + `spec.md` + code together. See
@@ -78,5 +79,5 @@ A valid spec is a Markdown file that:
 2. Includes the eight standard sections from the template (Purpose through Open questions).
 3. Lives at one of the recognized locations:
    - `packages/<name>/spec.md` for package specs.
-   - `specs/api/*.md`, `specs/events/*.md`, or `specs/domain/*.md` for cross-cutting specs.
+   - `specs/api/*.md`, `specs/events/*.md`, `specs/domain/*.md`, or `specs/data/*.md` for cross-cutting specs.
 4. Has `status` set to `draft` or `active` (not `deprecated`).

@@ -41,4 +41,8 @@ already covers it. If it does, respect it — or write a new ADR that supersedes
 | [0009](0009-claude-md-canonical-agent-context.md) | `CLAUDE.md` is canonical agent context | Accepted |
 | [0010](0010-per-package-typecheck.md) | Per-package typecheck (`tsc --noEmit` via `--filter`) | Accepted |
 | [0011](0011-co-locate-package-specs.md) | Co-locate package specs with their packages | Accepted |
-| — | Database engine | *(deferred — F1 authors when chosen)* |
+| [0012](0012-supabase-postgresql-database-engine.md) | Supabase / PostgreSQL as the database engine | Accepted |
+| [0013](0013-sql-first-migrations-supabase-cli.md) | SQL-first migrations owned by the Supabase CLI | Accepted |
+| [0014](0014-no-orm-supabase-js-data-access.md) | No ORM — `supabase-js` is the data-access layer | Accepted |
+| [0015](0015-conventions-as-templates-not-applied-tables.md) | Conventions delivered as templates, not applied tables | Accepted |
+| [0016](0016-auth-schema-referenced-not-owned.md) | `auth` schema referenced, not owned | Accepted |

@@ -1,0 +1,11 @@
+-- seed.sql
+--
+-- This file is executed automatically after `supabase db reset` replays all
+-- migrations. Use it to insert development/test data that every local
+-- contributor needs (fixture users, sample rows, etc.).
+--
+-- Keep seeds idempotent — they run on every reset, so use
+-- INSERT ... ON CONFLICT DO NOTHING or similar patterns.
+--
+-- Currently empty: the first product epic will add seed data alongside its
+-- first table-creating migration.

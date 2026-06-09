@@ -15,7 +15,9 @@ Each choice links to its ADR for the reasoning — do not restate rationale here
 | Internal packages | No-build; consume TS `src/` (no `dist/`) | [ADR-0006](../../adr/0006-no-build-internal-packages.md) |
 | Typecheck | Per-package `tsc --noEmit` via `--filter` | [ADR-0010](../../adr/0010-per-package-typecheck.md) |
 | Agent context | `CLAUDE.md` canonical; `AGENTS.md` points to it | [ADR-0009](../../adr/0009-claude-md-canonical-agent-context.md) |
-| Database engine | **Undecided** → chosen and recorded in F1 | (deferred) |
+| Database engine | Supabase / PostgreSQL | [ADR-0012](../../adr/0012-supabase-postgresql-database-engine.md) |
+| Migrations | SQL-first, owned by Supabase CLI | [ADR-0013](../../adr/0013-sql-first-migrations-supabase-cli.md) |
+| Data access | `supabase-js` (no ORM) + generated types | [ADR-0014](../../adr/0014-no-orm-supabase-js-data-access.md) |
 | UI tokens / kit | **Pending** | → Workstream E |
 
 → Conventions for using this stack: [conventions.md](conventions.md) · Terms: [glossary.md](glossary.md) · System shape: [architecture.md](architecture.md)

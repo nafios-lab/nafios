@@ -1,0 +1,200 @@
+/**
+ * NafiOS VitePress theme overrides.
+ *
+ * Maps VitePress CSS custom properties to NafiOS brand tokens
+ * from packages/ui/src/styles/globals.css.
+ *
+ * Brand palette:
+ *   Primary   — green  hsl(120 20% 41%) / hsl(120 22% 61%)
+ *   Accent    — blue   hsl(214 50% 49%) / hsl(198 68% 70%)
+ *   Bg (dark) — hsl(240 8% 7%)
+ */
+
+/* ── Light theme ─────────────────────────────────────────── */
+
+:root {
+  /* Brand green mapped to VitePress "brand" */
+  --vp-c-brand-1: hsl(120 20% 41%);
+  --vp-c-brand-2: hsl(120 20% 48%);
+  --vp-c-brand-3: hsl(120 20% 41%);
+  --vp-c-brand-soft: hsla(120, 20%, 41%, 0.14);
+
+  /* Tip = brand green */
+  --vp-c-tip-1: var(--vp-c-brand-1);
+  --vp-c-tip-2: var(--vp-c-brand-2);
+  --vp-c-tip-3: var(--vp-c-brand-3);
+  --vp-c-tip-soft: var(--vp-c-brand-soft);
+
+  /* Surface tones */
+  --vp-c-bg: hsl(0 0% 100%);
+  --vp-c-bg-alt: hsl(0 0% 98%);
+  --vp-c-bg-elv: hsl(0 0% 100%);
+  --vp-c-bg-soft: hsl(240 2% 94%);
+
+  /* Text */
+  --vp-c-text-1: hsl(240 8% 7%);
+  --vp-c-text-2: hsl(240 1% 40%);
+  --vp-c-text-3: hsl(240 1% 55%);
+
+  /* Borders */
+  --vp-c-border: hsl(240 2% 85%);
+  --vp-c-divider: hsl(240 2% 90%);
+  --vp-c-gutter: hsl(240 2% 94%);
+
+  /* Sidebar */
+  --vp-sidebar-bg-color: hsl(0 0% 98%);
+
+  /* Nav */
+  --vp-nav-bg-color: hsl(0 0% 100%);
+
+  /* Code blocks */
+  --vp-code-bg: hsl(240 2% 96%);
+
+  /* Home hero name gradient */
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(
+    135deg,
+    hsl(120 20% 41%) 0%,
+    hsl(120 22% 55%) 50%,
+    hsl(198 50% 50%) 100%
+  );
+
+  /* Home hero image glow */
+  --vp-home-hero-image-background-image: linear-gradient(
+    135deg,
+    hsla(120, 20%, 41%, 0.3) 0%,
+    hsla(198, 50%, 50%, 0.15) 100%
+  );
+  --vp-home-hero-image-filter: blur(56px);
+
+  /* Button overrides */
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: hsl(0 0% 100%);
+  --vp-button-brand-bg: hsl(120 20% 41%);
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-hover-text: hsl(0 0% 100%);
+  --vp-button-brand-hover-bg: hsl(120 20% 36%);
+  --vp-button-brand-active-border: transparent;
+  --vp-button-brand-active-text: hsl(0 0% 100%);
+  --vp-button-brand-active-bg: hsl(120 20% 33%);
+
+  --vp-button-alt-border: transparent;
+  --vp-button-alt-text: hsl(240 8% 12%);
+  --vp-button-alt-bg: hsl(240 2% 94%);
+  --vp-button-alt-hover-border: transparent;
+  --vp-button-alt-hover-text: hsl(240 8% 7%);
+  --vp-button-alt-hover-bg: hsl(240 2% 88%);
+}
+
+/* ── Dark theme ──────────────────────────────────────────── */
+
+.dark {
+  /* Brand green (lighter for dark bg) */
+  --vp-c-brand-1: hsl(120 22% 61%);
+  --vp-c-brand-2: hsl(120 22% 55%);
+  --vp-c-brand-3: hsl(120 22% 61%);
+  --vp-c-brand-soft: hsla(120, 22%, 61%, 0.14);
+
+  /* Tip */
+  --vp-c-tip-1: var(--vp-c-brand-1);
+  --vp-c-tip-2: var(--vp-c-brand-2);
+  --vp-c-tip-3: var(--vp-c-brand-3);
+  --vp-c-tip-soft: var(--vp-c-brand-soft);
+
+  /* Dark surfaces — NafiOS dark palette */
+  --vp-c-bg: hsl(240 8% 7%);
+  --vp-c-bg-alt: hsl(240 6% 10%);
+  --vp-c-bg-elv: hsl(240 6% 13%);
+  --vp-c-bg-soft: hsl(240 3% 17%);
+
+  /* Text */
+  --vp-c-text-1: hsl(0 0% 100%);
+  --vp-c-text-2: hsl(240 1% 63%);
+  --vp-c-text-3: hsl(240 1% 45%);
+
+  /* Borders */
+  --vp-c-border: hsl(240 2% 21%);
+  --vp-c-divider: hsl(240 2% 17%);
+  --vp-c-gutter: hsl(240 6% 10%);
+
+  /* Sidebar */
+  --vp-sidebar-bg-color: hsl(240 6% 10%);
+
+  /* Nav */
+  --vp-nav-bg-color: hsl(240 8% 7%);
+
+  /* Code blocks */
+  --vp-c-code-bg: hsl(240 6% 13%);
+  --vp-code-bg: hsl(240 6% 13%);
+
+  /* Hero gradient (dark) */
+  --vp-home-hero-name-background: linear-gradient(
+    135deg,
+    hsl(120 22% 61%) 0%,
+    hsl(120 22% 70%) 50%,
+    hsl(198 68% 70%) 100%
+  );
+
+  --vp-home-hero-image-background-image: linear-gradient(
+    135deg,
+    hsla(120, 22%, 61%, 0.25) 0%,
+    hsla(198, 68%, 70%, 0.12) 100%
+  );
+
+  /* Buttons */
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: hsl(240 8% 7%);
+  --vp-button-brand-bg: hsl(120 22% 61%);
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-hover-text: hsl(240 8% 7%);
+  --vp-button-brand-hover-bg: hsl(120 22% 66%);
+  --vp-button-brand-active-border: transparent;
+  --vp-button-brand-active-text: hsl(240 8% 7%);
+  --vp-button-brand-active-bg: hsl(120 22% 70%);
+
+  --vp-button-alt-border: transparent;
+  --vp-button-alt-text: hsl(0 0% 91%);
+  --vp-button-alt-bg: hsl(240 3% 17%);
+  --vp-button-alt-hover-border: transparent;
+  --vp-button-alt-hover-text: hsl(0 0% 100%);
+  --vp-button-alt-hover-bg: hsl(240 3% 22%);
+}
+
+/* ── Component refinements ───────────────────────────────── */
+
+/* Rounded corners matching NafiOS radius (0.625rem) */
+.VPButton {
+  border-radius: 0.625rem !important;
+}
+
+.VPFeature {
+  border-radius: 0.625rem !important;
+}
+
+/* Sidebar active link */
+.VPSidebarItem.is-active > .item .link > .text {
+  color: var(--vp-c-brand-1) !important;
+}
+
+/* Nav link active */
+.VPNavBarMenuLink.active {
+  color: var(--vp-c-brand-1) !important;
+}
+
+/* Custom scrollbar for dark mode (subtle) */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: hsl(240 6% 10%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(240 2% 21%);
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(240 2% 30%);
+}
