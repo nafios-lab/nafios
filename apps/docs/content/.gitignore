@@ -1,0 +1,12 @@
+# Symlinked docs created by sync-docs.ts — don't commit these
+guide/
+decisions/
+specs/
+packages/
+
+# Keep the static spec template (not a symlink — original has HTML-like placeholders)
+!specs/template.md
+
+# VitePress build output
+.vitepress/cache
+.vitepress/dist
