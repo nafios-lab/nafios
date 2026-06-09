@@ -49,7 +49,8 @@ const REWRITE_RULES: Array<{
   // Sibling spec data links: table-conventions.md → /specs/data/table-conventions
   // (used from within specs/data/)
   {
-    pattern: /^(table-conventions|migration-conventions|supabase-local-stack|deferred-work-register)\.md$/,
+    pattern:
+      /^(table-conventions|migration-conventions|supabase-local-stack|deferred-work-register)\.md$/,
     replace: (m) => `/specs/data/${m[1]}`,
   },
 

@@ -1,5 +1,5 @@
-import { defineConfig } from "vitepress";
 import { resolve } from "node:path";
+import { defineConfig } from "vitepress";
 import { rewriteLinksPlugin } from "./rewrite-links";
 
 export default defineConfig({
@@ -24,10 +24,7 @@ export default defineConfig({
       // Force Vue resolution to the docs app's node_modules.
       alias: {
         vue: resolve(__dirname, "../../node_modules/vue"),
-        "vue/server-renderer": resolve(
-          __dirname,
-          "../../node_modules/vue/server-renderer",
-        ),
+        "vue/server-renderer": resolve(__dirname, "../../node_modules/vue/server-renderer"),
       },
       // Follow symlinks to real path for correct resolution
       preserveSymlinks: false,
@@ -69,17 +66,41 @@ export default defineConfig({
             { text: "0003 — REST over GraphQL", link: "/decisions/0003-rest-over-graphql" },
             { text: "0004 — Vercel AI SDK", link: "/decisions/0004-vercel-ai-sdk-behind-ai-core" },
             { text: "0005 — Biome", link: "/decisions/0005-biome-over-eslint-prettier" },
-            { text: "0006 — No-Build Packages", link: "/decisions/0006-no-build-internal-packages" },
-            { text: "0007 — Bun Filter Tasks", link: "/decisions/0007-bun-native-filter-task-running" },
-            { text: "0008 — Workspace Resolution", link: "/decisions/0008-workspace-resolution-over-path-aliases" },
-            { text: "0009 — CLAUDE.md Context", link: "/decisions/0009-claude-md-canonical-agent-context" },
+            {
+              text: "0006 — No-Build Packages",
+              link: "/decisions/0006-no-build-internal-packages",
+            },
+            {
+              text: "0007 — Bun Filter Tasks",
+              link: "/decisions/0007-bun-native-filter-task-running",
+            },
+            {
+              text: "0008 — Workspace Resolution",
+              link: "/decisions/0008-workspace-resolution-over-path-aliases",
+            },
+            {
+              text: "0009 — CLAUDE.md Context",
+              link: "/decisions/0009-claude-md-canonical-agent-context",
+            },
             { text: "0010 — Per-Package Typecheck", link: "/decisions/0010-per-package-typecheck" },
             { text: "0011 — Co-locate Specs", link: "/decisions/0011-co-locate-package-specs" },
-            { text: "0012 — Supabase / PostgreSQL", link: "/decisions/0012-supabase-postgresql-database-engine" },
-            { text: "0013 — SQL-First Migrations", link: "/decisions/0013-sql-first-migrations-supabase-cli" },
+            {
+              text: "0012 — Supabase / PostgreSQL",
+              link: "/decisions/0012-supabase-postgresql-database-engine",
+            },
+            {
+              text: "0013 — SQL-First Migrations",
+              link: "/decisions/0013-sql-first-migrations-supabase-cli",
+            },
             { text: "0014 — No ORM", link: "/decisions/0014-no-orm-supabase-js-data-access" },
-            { text: "0015 — Convention Templates", link: "/decisions/0015-conventions-as-templates-not-applied-tables" },
-            { text: "0016 — Auth Schema", link: "/decisions/0016-auth-schema-referenced-not-owned" },
+            {
+              text: "0015 — Convention Templates",
+              link: "/decisions/0015-conventions-as-templates-not-applied-tables",
+            },
+            {
+              text: "0016 — Auth Schema",
+              link: "/decisions/0016-auth-schema-referenced-not-owned",
+            },
           ],
         },
       ],
@@ -129,9 +150,7 @@ export default defineConfig({
       ],
     },
 
-    socialLinks: [
-      { icon: "github", link: "https://github.com/nafios-lab/nafios" },
-    ],
+    socialLinks: [{ icon: "github", link: "https://github.com/nafios-lab/nafios" }],
 
     editLink: {
       pattern: "https://github.com/nafios-lab/nafios/edit/main/:path",

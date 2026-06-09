@@ -7,8 +7,8 @@
  * Run: bun ./scripts/sync-docs.ts
  */
 
-import { existsSync, mkdirSync, copyFileSync, unlinkSync, readdirSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
 const CONTENT = resolve(import.meta.dirname, "../content");
@@ -48,9 +48,7 @@ function discoverAdrs(): DocMapping[] {
   const adrDir = resolve(ROOT, "adr");
   if (!existsSync(adrDir)) return [];
 
-  const mappings: DocMapping[] = [
-    { src: "adr/README.md", dest: "decisions/index.md" },
-  ];
+  const mappings: DocMapping[] = [{ src: "adr/README.md", dest: "decisions/index.md" }];
 
   for (const file of readdirSync(adrDir)) {
     if (file.startsWith("0") && file.endsWith(".md")) {
@@ -82,11 +80,7 @@ function discoverSpecs(): DocMapping[] {
 // ── Sync logic ─────────────────────────────────────────────────────────
 
 function syncAll() {
-  const allMappings = [
-    ...STATIC_MAPPINGS,
-    ...discoverAdrs(),
-    ...discoverSpecs(),
-  ];
+  const allMappings = [...STATIC_MAPPINGS, ...discoverAdrs(), ...discoverSpecs()];
 
   let created = 0;
   let skipped = 0;
