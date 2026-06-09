@@ -17,7 +17,8 @@
     "test": "bun --filter '*' test",
     "lint": "biome lint .",
     "format": "biome check --write .",
-    "format:check": "biome format ."
+    "format:check": "biome format .",
+    "preview": "bun --filter '@nafios/storybook' preview"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",

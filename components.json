@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "tailwind": {
+    "css": "packages/ui/src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@nafios/ui/components",
+    "utils": "@nafios/ui/lib/utils",
+    "ui": "@nafios/ui/components/ui",
+    "lib": "@nafios/ui/lib",
+    "hooks": "@nafios/ui/hooks"
+  }
+}

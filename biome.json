@@ -36,6 +36,24 @@
       }
     }
   },
+  "css": {
+    "parser": {
+      "cssModules": false
+    },
+    "linter": {
+      "enabled": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/ui/src/styles/**/*.css"],
+      "css": {
+        "parser": {
+          "tailwindDirectives": true
+        }
+      }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": { "source": { "organizeImports": "on" } }

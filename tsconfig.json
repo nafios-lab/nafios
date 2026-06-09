@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "paths": {
+      "@nafios/ui/*": ["./packages/ui/src/*"],
+      "@nafios/ui": ["./packages/ui/src/index.ts"]
+    }
+  },
+  "include": ["packages/*/src", "apps/*/src", "tooling/*/src"]
+}
