@@ -18,11 +18,16 @@
     "lint": "biome lint .",
     "format": "biome check --write .",
     "format:check": "biome format .",
-    "preview": "bun --filter '@nafios/storybook' preview"
+    "preview": "bun --filter '@nafios/storybook' preview",
+    "test:integration": "bun test tests/integration/",
+    "db:reset": "supabase db reset",
+    "db:seed": "supabase db reset",
+    "db:types": "supabase gen types typescript --local"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
     "@types/bun": "^1.3.14",
+    "supabase": "2.105.0",
     "typescript": "^6.0.3"
   }
 }
