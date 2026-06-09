@@ -18,6 +18,8 @@
     "lint": "biome lint .",
     "format": "biome check --write .",
     "format:check": "biome format .",
+    "web:dev": "bun --filter '@nafios/web' dev",
+    "build": "bun --filter '@nafios/web' build",
     "preview": "bun --filter '@nafios/storybook' preview",
     "docs": "bun --filter '@nafios/docs' dev",
     "docs:build": "bun --filter '@nafios/docs' build",

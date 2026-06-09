@@ -4,6 +4,9 @@ node_modules/
 # build output
 dist/
 build/
+.output/
+.netlify/
+.tanstack/
 *.tsbuildinfo
 
 # claude code (personal overrides)
