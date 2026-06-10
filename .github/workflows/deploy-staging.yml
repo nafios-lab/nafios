@@ -53,15 +53,24 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
         id: tag
 
+      - name: Verify build output
+        run: |
+          if [ ! -d apps/web/.output/public ]; then
+            echo "::error::Build output not found at apps/web/.output/public"
+            ls -la apps/web/.output/ 2>/dev/null || echo "apps/web/.output/ does not exist"
+            exit 1
+          fi
+          echo "Build output verified:"
+          ls -la apps/web/.output/public/
+
       - name: Deploy to Netlify
         id: deploy
-        working-directory: apps/web
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
           netlify deploy \
-            --dir=.output/public \
+            --dir=${{ github.workspace }}/apps/web/.output/public \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
             --prod \
