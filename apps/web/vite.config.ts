@@ -1,0 +1,21 @@
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { defineConfig } from "vite";
+import viteReact from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import netlify from "@netlify/vite-plugin-tanstack-start";
+import { nitro } from "nitro/vite";
+
+export default defineConfig({
+  server: {
+    port: 3000,
+  },
+  plugins: [
+    tailwindcss(),
+    tanstackStart({
+      srcDirectory: "src",
+    }),
+    viteReact(),
+    netlify(),
+    nitro(),
+  ],
+});
