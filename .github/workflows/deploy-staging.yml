@@ -38,7 +38,8 @@ jobs:
         run: bun run check
 
       - name: Build web app
-        run: bun --filter @nafios/web build
+        working-directory: apps/web
+        run: bun run build
 
       - name: Install Netlify CLI
         run: npm i -g netlify-cli@19
