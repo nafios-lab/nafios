@@ -54,6 +54,10 @@ export default defineConfig({
             { text: "Glossary", link: "/guide/glossary" },
           ],
         },
+        {
+          text: "Operations",
+          items: [{ text: "Versioning & Release", link: "/guide/versioning-release-guide" }],
+        },
       ],
 
       "/decisions/": [
@@ -100,6 +104,10 @@ export default defineConfig({
             {
               text: "0016 — Auth Schema",
               link: "/decisions/0016-auth-schema-referenced-not-owned",
+            },
+            {
+              text: "0017 — Manual Deploy",
+              link: "/decisions/0017-manual-deploy-via-github-actions-netlify-cli",
             },
           ],
         },

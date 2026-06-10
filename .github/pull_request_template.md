@@ -8,6 +8,10 @@
 - [ ] New public API? A `spec.md` exists for the package/service.
 - [ ] Structural decision made? An ADR was added under `adr/`.
 
+## Changes
+
+<!-- Elaborate what has changed / scoping -->
+
 ## Checks
 
 - [ ] `bun run check` passes locally (same command CI runs).

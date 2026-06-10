@@ -28,6 +28,7 @@ const STATIC_MAPPINGS: DocMapping[] = [
   { src: ".claude/context/conventions.md", dest: "guide/conventions.md" },
   { src: ".claude/context/tech-stack.md", dest: "guide/tech-stack.md" },
   { src: ".claude/context/glossary.md", dest: "guide/glossary.md" },
+  { src: ".claude/context/versioning-release-guide.md", dest: "guide/versioning-release-guide.md" },
 
   // Specs
   { src: "specs/README.md", dest: "specs/index.md" },
