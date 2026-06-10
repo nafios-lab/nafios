@@ -51,6 +51,17 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
+  /* NafiOS brand palette */
+  --color-brand: hsl(var(--brand));
+  --color-brand-darker: hsl(var(--brand-darker));
+  --color-accent-darker: hsl(var(--accent-darker));
+  --color-fg-100: hsl(var(--fg-100));
+  --color-fg-90: hsl(var(--fg-90));
+  --color-fg-80: hsl(var(--fg-80));
+  --color-fg-70: hsl(var(--fg-70));
+  --color-fg-60: hsl(var(--fg-60));
+  --color-fg-50: hsl(var(--fg-50));
+
   /* NafiOS domain-specific status colors */
   --color-status-pending: hsl(var(--status-pending));
   --color-status-paid: hsl(var(--status-paid));
@@ -101,6 +112,17 @@
   --status-paid: 108 26% 55%;
   --status-on-hold: 230 10% 59%;
   --status-carry-over: 19 58% 60%;
+
+  /** Nafios palettes */
+  --brand: 120 22% 61%;
+  --brand-darker: 120 20% 41%;
+  --accent-darker: 214 50% 49%;
+  --fg-100: 0 0% 100%;
+  --fg-90: 0 0% 91%;
+  --fg-80: 240 1% 81%;
+  --fg-70: 0 0% 72%;
+  --fg-60: 240 1% 63%;
+  --fg-50: 240 1% 53%;
 }
 
 /* ──────────────────────────────────────────────
