@@ -1,8 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/health')({
+export const Route = createFileRoute("/health")({
   component: Health,
-})
+});
 
 function Health() {
   return (
@@ -10,5 +10,5 @@ function Health() {
       <h1 className="text-2xl font-bold">Health Check</h1>
       <p className="text-green-600 text-lg font-semibold">OK</p>
     </main>
-  )
+  );
 }

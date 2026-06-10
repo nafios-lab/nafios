@@ -1,21 +1,16 @@
-import {
-  HeadContent,
-  Outlet,
-  Scripts,
-  createRootRoute,
-} from '@tanstack/react-router'
-import '../styles.css'
+import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import "../styles.css";
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'NafiOS Staging' },
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "NafiOS Staging" },
     ],
   }),
   component: RootDocument,
-})
+});
 
 function RootDocument() {
   return (
@@ -28,5 +23,5 @@ function RootDocument() {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }

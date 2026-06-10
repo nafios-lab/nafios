@@ -1,10 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-const GIT_SHA = import.meta.env.VITE_GIT_SHA ?? 'dev'
+const GIT_SHA = import.meta.env.VITE_GIT_SHA ?? "dev";
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute("/")({
   component: Home,
-})
+});
 
 function Home() {
   return (
@@ -14,5 +14,5 @@ function Home() {
         Build: <code className="rounded bg-muted px-2 py-1 font-mono text-sm">{GIT_SHA}</code>
       </p>
     </main>
-  )
+  );
 }
