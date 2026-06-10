@@ -1,0 +1,82 @@
+name: Deploy to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (branch, tag, or SHA)"
+        default: "main"
+        required: true
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Build & Deploy to Netlify
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Preflight checks
+        run: bun run check
+
+      - name: Build web app
+        run: bun --filter @nafios/web build
+
+      - name: Install Netlify CLI
+        run: npm i -g netlify-cli@19
+
+      - name: Tag release
+        if: inputs.ref == 'main'
+        run: |
+          VERSION="v0.1.${GITHUB_RUN_NUMBER}"
+          git tag "$VERSION" "$GITHUB_SHA"
+          git push origin "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        id: tag
+
+      - name: Deploy to Netlify
+        id: deploy
+        working-directory: apps/web
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          netlify deploy \
+            --dir=.output/public \
+            --site="$NETLIFY_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --prod \
+            --message="staging deploy ${{ inputs.ref }} ${GITHUB_SHA::8}" \
+            --json > deploy.json
+
+          DEPLOY_URL=$(jq -r '.deploy_url // .url' deploy.json)
+          echo "url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Write deploy summary
+        run: |
+          echo "## Staging Deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Detail | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Ref** | \`${{ inputs.ref }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **SHA** | \`${GITHUB_SHA::8}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Version** | \`${{ steps.tag.outputs.version || 'n/a (branch deploy)' }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **URL** | ${{ steps.deploy.outputs.url }} |" >> "$GITHUB_STEP_SUMMARY"
