@@ -3,7 +3,7 @@ import { useState } from "react";
 import { YearSelect, type YearSelectProps } from "./year-select.tsx";
 
 const meta: Meta<YearSelectProps> = {
-  title: "Primitives/YearSelect",
+  title: "Composites/YearSelect",
   component: YearSelect,
   tags: ["autodocs"],
   argTypes: {

@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
-import { cn } from "../../lib/utils.ts";
+import { cn } from "../lib/utils.ts";
 
 const YEARS_PER_PAGE = 12;
 

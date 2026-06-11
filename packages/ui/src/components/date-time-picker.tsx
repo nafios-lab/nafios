@@ -2,13 +2,13 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { useId, useState } from "react";
 import type * as React from "react";
-import { cn } from "../../lib/utils.ts";
-import { Button } from "./button.tsx";
-import { Calendar, type CalendarProps } from "./calendar.tsx";
-import { Label } from "./label.tsx";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover.tsx";
-import { Separator } from "./separator.tsx";
-import { TimePicker, type TimeValue } from "./time-picker.tsx";
+import { cn } from "../lib/utils.ts";
+import { Button } from "./ui/button.tsx";
+import { Calendar, type CalendarProps } from "./ui/calendar.tsx";
+import { Label } from "./ui/label.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
+import { Separator } from "./ui/separator.tsx";
+import { TimePicker, type TimeValue } from "./ui/time-picker.tsx";
 
 export interface DateTimePickerProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {

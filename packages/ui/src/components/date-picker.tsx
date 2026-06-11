@@ -2,12 +2,12 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { useId, useState } from "react";
 import type * as React from "react";
-import { cn } from "../../lib/utils.ts";
-import { Button } from "./button.tsx";
-import { Calendar, type CalendarProps } from "./calendar.tsx";
-import { Label } from "./label.tsx";
+import { cn } from "../lib/utils.ts";
+import { Button } from "./ui/button.tsx";
+import { Calendar, type CalendarProps } from "./ui/calendar.tsx";
+import { Label } from "./ui/label.tsx";
 import { MonthSelect } from "./month-select.tsx";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import { YearSelect } from "./year-select.tsx";
 
 type NavigationView = "calendar" | "month" | "year";

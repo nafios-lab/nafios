@@ -11,7 +11,7 @@ const defaultSteps = [
 ];
 
 const meta = {
-  title: "Composites/Stepper",
+  title: "Primitives/Stepper",
   component: Stepper,
   tags: ["autodocs"],
   argTypes: {

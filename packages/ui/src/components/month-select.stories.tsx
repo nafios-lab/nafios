@@ -3,7 +3,7 @@ import { useState } from "react";
 import { MonthSelect, type MonthSelectProps } from "./month-select.tsx";
 
 const meta: Meta<MonthSelectProps> = {
-  title: "Primitives/MonthSelect",
+  title: "Composites/MonthSelect",
   component: MonthSelect,
   tags: ["autodocs"],
   argTypes: {

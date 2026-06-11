@@ -7,7 +7,7 @@ import {
 } from "./date-range-picker.tsx";
 
 const meta: Meta<DateRangePickerProps> = {
-  title: "Primitives/DateRangePicker",
+  title: "Composites/DateRangePicker",
   component: DateRangePicker,
   tags: ["autodocs"],
   argTypes: {

@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useCallback, useState } from "react";
 import { cn } from "../lib/utils.ts";
-import { TextInput, type TextInputProps } from "./ui/text-input.tsx";
+import { TextInput, type TextInputProps } from "./text-input.tsx";
 
 export interface CredentialInputProps
   extends Omit<TextInputProps, "type" | "iconRight"> {

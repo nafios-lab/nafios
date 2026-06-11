@@ -6,7 +6,7 @@ import {
 } from "./date-time-picker.tsx";
 
 const meta: Meta<DateTimePickerProps> = {
-  title: "Primitives/DateTimePicker",
+  title: "Composites/DateTimePicker",
   component: DateTimePicker,
   tags: ["autodocs"],
   argTypes: {

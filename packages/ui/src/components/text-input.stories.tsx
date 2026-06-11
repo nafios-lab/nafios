@@ -8,7 +8,7 @@ type StoryArgs = Omit<TextInputProps, "iconLeft" | "iconRight"> & {
 };
 
 const meta: Meta<StoryArgs> = {
-  title: "Primitives/TextInput",
+  title: "Composites/TextInput",
   component: TextInput,
   tags: ["autodocs"],
   argTypes: {

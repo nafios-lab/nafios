@@ -10,8 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./dialog.tsx";
-import { Label } from "./label.tsx";
-import { TextInput } from "./text-input.tsx";
+import { TextInput } from "../text-input.tsx";
 
 const meta: Meta = {
   title: "Primitives/Dialog",

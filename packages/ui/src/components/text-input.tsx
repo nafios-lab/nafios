@@ -1,8 +1,8 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 import { useId } from "react";
-import { cn } from "../../lib/utils.ts";
-import { Label } from "./label.tsx";
+import { cn } from "../lib/utils.ts";
+import { Label } from "./ui/label.tsx";
 
 const textInputVariants = cva(
   "flex h-9 w-full rounded-full border bg-card px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
