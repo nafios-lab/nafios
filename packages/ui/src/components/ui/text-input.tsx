@@ -29,6 +29,8 @@ export interface TextInputProps
   iconLeft?: React.ReactNode;
   iconRight?: React.ReactNode;
   borderLess?: boolean;
+  /** Content rendered inside the input's relative container (e.g. overlays). */
+  inputOverlay?: React.ReactNode;
 }
 
 function TextInput({
@@ -40,6 +42,7 @@ function TextInput({
   iconLeft,
   iconRight,
   borderLess,
+  inputOverlay,
   id: idProp,
   type,
   ...props
@@ -82,6 +85,7 @@ function TextInput({
             {iconRight}
           </span>
         )}
+        {inputOverlay}
       </div>
       {error && (
         <p id={`${id}-error`} className="text-xs text-destructive">
