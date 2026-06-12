@@ -14,6 +14,7 @@ import { TextInput } from "../text-input.tsx";
 
 const meta: Meta = {
   title: "Primitives/Dialog",
+  tags: ["autodocs"],
 };
 
 export default meta;

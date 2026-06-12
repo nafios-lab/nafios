@@ -35,7 +35,7 @@ const statusColors: Record<Payment["status"], string> = {
   pending: "text-status-pending",
   processing: "text-accent",
   success: "text-status-paid",
-  failed: "text-destructive",
+  failed: "text-error-foreground",
 };
 
 const columns: ColumnDef<Payment, unknown>[] = [

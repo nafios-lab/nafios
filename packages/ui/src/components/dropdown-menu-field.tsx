@@ -50,7 +50,7 @@ function renderItem(item: MenuItemDef, index: number) {
       key={index}
       disabled={item.disabled}
       onSelect={item.onSelect}
-      className={cn(item.destructive && "text-destructive focus:text-destructive")}
+      className={cn(item.destructive && "text-error-foreground focus:text-error-foreground")}
     >
       {Icon && <Icon className="size-4" />}
       <span>{item.label}</span>

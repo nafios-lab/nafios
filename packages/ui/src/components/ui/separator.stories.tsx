@@ -3,6 +3,7 @@ import { Separator } from "./separator.tsx";
 
 const meta: Meta = {
   title: "Primitives/Separator",
+  tags: ["autodocs"],
 };
 
 export default meta;

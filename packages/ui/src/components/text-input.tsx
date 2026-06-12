@@ -11,7 +11,7 @@ const textInputVariants = cva(
     variants: {
       variant: {
         default: "border-input focus-visible:ring-ring",
-        error: "border-destructive focus-visible:ring-destructive",
+        error: "border-error-foreground focus-visible:ring-error-foreground",
       },
     },
     defaultVariants: {
@@ -55,7 +55,7 @@ function TextInput({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <Label htmlFor={id} className={cn(error && "text-destructive")}>
+        <Label htmlFor={id} className={cn(error && "text-error-foreground")}>
           {label}
         </Label>
       )}
@@ -89,7 +89,7 @@ function TextInput({
         {inputOverlay}
       </div>
       {error && (
-        <Text id={`${id}-error`} size="xs" className="text-destructive">
+        <Text id={`${id}-error`} size="xs" className="text-error-foreground">
           {error}
         </Text>
       )}

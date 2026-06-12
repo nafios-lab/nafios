@@ -14,6 +14,7 @@ import {
 
 const meta: Meta = {
   title: "Primitives/DropdownMenu",
+  tags: ["autodocs"],
 };
 
 export default meta;

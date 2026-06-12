@@ -30,7 +30,7 @@ const preview: Preview = {
       const theme = context.globals.theme ?? "dark";
       document.documentElement.classList.toggle("dark", theme === "dark");
       return (
-        <div className="bg-background text-foreground  p-4">
+        <div className="bg-background text-foreground p-10">
           <Story />
         </div>
       );

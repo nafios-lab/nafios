@@ -37,7 +37,7 @@ const buttonVariants = cva(
         brand:
           "bg-brand-darker border border-brand text-fg-100 shadow hover:brightness-125",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-error text-error-foreground shadow-sm hover:bg-error/90",
         outline:
           "border border-input bg-background shadow-sm hover:brightness-150",
         secondary:

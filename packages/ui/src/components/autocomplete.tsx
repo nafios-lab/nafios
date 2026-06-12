@@ -14,7 +14,7 @@ const autocompleteVariants = cva(
       variant: {
         default: "border-input focus-within:ring-1 focus-within:ring-ring",
         error:
-          "border-destructive focus-within:ring-1 focus-within:ring-destructive",
+          "border-error-subtle focus-within:ring-1 focus-within:ring-error-subtle",
       },
     },
     defaultVariants: {
@@ -107,7 +107,7 @@ function Autocomplete({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <Label htmlFor={id} className={cn(error && "text-destructive")}>
+        <Label htmlFor={id} className={cn(error && "text-error-foreground")}>
           {label}
         </Label>
       )}
@@ -194,7 +194,7 @@ function Autocomplete({
         </PopoverContent>
       </Popover>
       {error && (
-        <Text id={`${id}-error`} size="xs" className="text-destructive">
+        <Text id={`${id}-error`} size="xs" className="text-error-foreground">
           {error}
         </Text>
       )}

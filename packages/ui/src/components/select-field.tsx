@@ -25,7 +25,7 @@ const selectFieldVariants = cva("", {
   variants: {
     variant: {
       default: "[&>button]:border-input [&>button]:focus:ring-ring",
-      error: "[&>button]:border-destructive [&>button]:focus:ring-destructive",
+      error: "[&>button]:border-error-foreground [&>button]:focus:ring-error-foreground",
     },
   },
   defaultVariants: {
@@ -40,7 +40,7 @@ const searchableTriggerVariants = cva(
       variant: {
         default: "border-input focus-within:ring-1 focus-within:ring-ring",
         error:
-          "border-destructive focus-within:ring-1 focus-within:ring-destructive",
+          "border-error-foreground focus-within:ring-1 focus-within:ring-error-foreground",
       },
     },
     defaultVariants: {
@@ -120,13 +120,13 @@ function SelectField(props: SelectFieldProps) {
   const resolvedVariant = error ? "error" : variant;
 
   const labelNode = label && (
-    <Label htmlFor={id} className={cn(error && "text-destructive")}>
+    <Label htmlFor={id} className={cn(error && "text-error-foreground")}>
       {label}
     </Label>
   );
 
   const errorNode = error && (
-    <Text id={`${id}-error`} size="xs" className="text-destructive">
+    <Text id={`${id}-error`} size="xs" className="text-error-foreground">
       {error}
     </Text>
   );

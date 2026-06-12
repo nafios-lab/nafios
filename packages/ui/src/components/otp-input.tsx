@@ -72,7 +72,7 @@ function OtpInput({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <Label className={cn(error && "text-destructive")}>{label}</Label>
+        <Label className={cn(error && "text-error-foreground")}>{label}</Label>
       )}
 
       <InputOTP
@@ -105,7 +105,7 @@ function OtpInput({
       </InputOTP>
 
       {error && (
-        <Text id={`${autoId}-error`} size="xs" className="text-destructive">
+        <Text id={`${autoId}-error`} size="xs" className="text-error-foreground">
           {error}
         </Text>
       )}

@@ -120,7 +120,7 @@ describe("ConfirmDialog", () => {
 
     await waitFor(() => {
       const btn = screen.getByRole("button", { name: "Delete" });
-      expect(btn.className).toContain("destructive");
+      expect(btn.className).toContain("bg-error");
     });
   });
 
@@ -132,7 +132,7 @@ describe("ConfirmDialog", () => {
 
     await waitFor(() => {
       const btn = screen.getByRole("button", { name: "Confirm" });
-      expect(btn.className).not.toContain("destructive");
+      expect(btn.className).not.toContain("bg-error");
     });
   });
 });

@@ -4,6 +4,7 @@ import { BlobBackground } from "./blob-background.tsx";
 const meta: Meta<typeof BlobBackground> = {
   title: "Primitives/BlobBackground",
   component: BlobBackground,
+  tags: ["autodocs"],
 };
 
 export default meta;

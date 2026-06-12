@@ -17,7 +17,7 @@ const checkboxVariants = cva(
         brand:
           "border-input bg-background data-[state=checked]:bg-brand-darker data-[state=checked]:border-brand data-[state=checked]:text-fg-100 data-[state=indeterminate]:bg-brand-darker data-[state=indeterminate]:border-brand data-[state=indeterminate]:text-fg-100",
         error:
-          "border-destructive bg-background data-[state=checked]:bg-destructive data-[state=checked]:border-destructive data-[state=checked]:text-destructive-foreground data-[state=indeterminate]:bg-destructive data-[state=indeterminate]:border-destructive data-[state=indeterminate]:text-destructive-foreground",
+          "border-error-foreground bg-background data-[state=checked]:bg-error data-[state=checked]:border-error-foreground data-[state=checked]:text-error-foreground data-[state=indeterminate]:bg-error data-[state=indeterminate]:border-error-foreground data-[state=indeterminate]:text-error-foreground",
       },
       size: {
         sm: "size-3.5",
@@ -107,7 +107,7 @@ function Checkbox({
           </Text>
         )}
         {error && (
-          <Text id={errorId} size="xs" className="text-destructive">
+          <Text id={errorId} size="xs" className="text-error-foreground">
             {error}
           </Text>
         )}
