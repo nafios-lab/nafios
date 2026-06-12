@@ -209,4 +209,46 @@
 
 @theme inline {
   --animate-caret-blink: caret-blink 1.2s ease-out infinite;
+  --animate-blob-drift: blob-drift 20s ease-in-out infinite;
+  --animate-blob-drift-reverse: blob-drift-reverse 24s ease-in-out infinite;
+  --animate-blob-pulse: blob-pulse 18s ease-in-out infinite;
+}
+
+/* Blob background ambient animations */
+@keyframes blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-8%, 6%) scale(1.05);
+  }
+  66% {
+    transform: translate(4%, -4%) scale(0.95);
+  }
+}
+
+@keyframes blob-drift-reverse {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(6%, -8%) scale(0.96);
+  }
+  66% {
+    transform: translate(-5%, 5%) scale(1.04);
+  }
+}
+
+@keyframes blob-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.7;
+  }
 }
