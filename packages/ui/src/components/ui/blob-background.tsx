@@ -28,15 +28,18 @@ function BlobBackground({
   ...props
 }: BlobBackgroundProps) {
   return (
-    <div className={cn(blobBackgroundVariants({ intensity }), className)} {...props}>
+    <div
+      className={cn(blobBackgroundVariants({ intensity }), className)}
+      {...props}
+    >
       {/* Blobs use -z-10 so children stay above without a wrapper */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -z-10 -top-1/4 -right-1/4 h-[60%] w-[60%] rounded-full bg-brand opacity-[var(--blob-opacity)] blur-[120px] animate-blob-drift"
+        className="pointer-events-none absolute -z-10 -top-1/4 -right-1/4 h-[60%] w-[60%] rounded-full bg-brand opacity-(--blob-opacity) blur-[120px] animate-blob-drift"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -z-10 -bottom-1/4 -left-1/4 h-[50%] w-[50%] rounded-full bg-accent opacity-[var(--blob-opacity)] blur-[100px] animate-blob-drift-reverse"
+        className="pointer-events-none absolute -z-10 -bottom-1/4 -left-1/4 h-[50%] w-[50%] rounded-full bg-accent opacity-(--blob-opacity) blur-[100px] animate-blob-drift-reverse"
       />
       <div
         aria-hidden
