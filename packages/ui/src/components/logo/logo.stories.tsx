@@ -2,13 +2,13 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Logo, type LogoProps } from "./logo.tsx";
 
 const meta: Meta<LogoProps> = {
-  title: "Composites/Logo",
+  title: "Logos/Logo",
   component: Logo,
   tags: ["autodocs"],
   argTypes: {
     variant: {
       control: "radio",
-      options: ["icon", "full"],
+      options: ["mark", "word", "wordmark"],
     },
   },
 };
@@ -16,22 +16,27 @@ const meta: Meta<LogoProps> = {
 export default meta;
 type Story = StoryObj<LogoProps>;
 
-export const Icon: Story = {
+export const Mark: Story = {
   args: {
-    variant: "icon",
+    variant: "mark",
   },
 };
 
-export const Full: Story = {
+export const Word: Story = {
   args: {
-    variant: "full",
+    variant: "word",
+  },
+};
+
+export const Wordmark: Story = {
+  args: {
+    variant: "wordmark",
   },
 };
 
 export const CustomSize: Story = {
   args: {
-    variant: "full",
+    variant: "wordmark",
     className: "h-16",
   },
 };
-

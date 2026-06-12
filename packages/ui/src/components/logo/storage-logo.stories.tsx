@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { StorageLogo, type StorageLogoProps } from "./storage-logo.tsx";
 
 const meta: Meta<StorageLogoProps> = {
-  title: "Composites/StorageLogo",
+  title: "Logos/StorageLogo",
   component: StorageLogo,
   tags: ["autodocs"],
 };

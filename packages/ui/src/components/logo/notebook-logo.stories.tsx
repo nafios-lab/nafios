@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { NotebookLogo, type NotebookLogoProps } from "./notebook-logo.tsx";
 
 const meta: Meta<NotebookLogoProps> = {
-  title: "Composites/NotebookLogo",
+  title: "Logos/NotebookLogo",
   component: NotebookLogo,
   tags: ["autodocs"],
 };

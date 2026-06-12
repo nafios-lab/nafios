@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { RadioLogo, type RadioLogoProps } from "./radio-logo.tsx";
 
 const meta: Meta<RadioLogoProps> = {
-  title: "Composites/RadioLogo",
+  title: "Logos/RadioLogo",
   component: RadioLogo,
   tags: ["autodocs"],
 };

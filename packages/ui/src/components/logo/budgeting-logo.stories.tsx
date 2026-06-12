@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { BudgetingLogo, type BudgetingLogoProps } from "./budgeting-logo.tsx";
 
 const meta: Meta<BudgetingLogoProps> = {
-  title: "Composites/BudgetingLogo",
+  title: "Logos/BudgetingLogo",
   component: BudgetingLogo,
   tags: ["autodocs"],
 };

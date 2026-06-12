@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { CalendarLogo, type CalendarLogoProps } from "./calendar-logo.tsx";
 
 const meta: Meta<CalendarLogoProps> = {
-  title: "Composites/CalendarLogo",
+  title: "Logos/CalendarLogo",
   component: CalendarLogo,
   tags: ["autodocs"],
 };
