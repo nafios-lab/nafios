@@ -4,6 +4,7 @@ import { Check, Minus } from "lucide-react";
 import type * as React from "react";
 import { useId } from "react";
 import { cn } from "../../lib/utils.ts";
+import { Text } from "../typography/text.tsx";
 import { Label } from "./label.tsx";
 
 const checkboxVariants = cva(
@@ -101,14 +102,14 @@ function Checkbox({
           </Label>
         )}
         {description && !error && (
-          <p id={descriptionId} className="text-xs text-muted-foreground">
+          <Text id={descriptionId} size="xs" muted>
             {description}
-          </p>
+          </Text>
         )}
         {error && (
-          <p id={errorId} className="text-xs text-destructive">
+          <Text id={errorId} size="xs" className="text-destructive">
             {error}
-          </p>
+          </Text>
         )}
       </div>
     </div>

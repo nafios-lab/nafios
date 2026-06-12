@@ -1,5 +1,6 @@
 import type * as React from "react";
 import { cn } from "../lib/utils.ts";
+import { Text } from "./typography/text.tsx";
 import {
   Popover,
   PopoverContent,
@@ -77,9 +78,9 @@ function ProductSwitcher({
             const inner = (
               <>
                 <Icon className="size-8" />
-                <span className="text-[11px] leading-tight font-medium">
+                <Text as="span" variant="label" size="xs" className="leading-tight">
                   {item.label}
-                </span>
+                </Text>
               </>
             );
 

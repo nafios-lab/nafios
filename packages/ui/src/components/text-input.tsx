@@ -2,10 +2,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 import { useId } from "react";
 import { cn } from "../lib/utils.ts";
+import { Text } from "./typography/text.tsx";
 import { Label } from "./ui/label.tsx";
 
 const textInputVariants = cva(
-  "flex h-9 w-full rounded-full border bg-card px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+  "flex h-9 w-full rounded-full border bg-card px-3 py-1 text-md shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
   {
     variants: {
       variant: {
@@ -88,14 +89,14 @@ function TextInput({
         {inputOverlay}
       </div>
       {error && (
-        <p id={`${id}-error`} className="text-xs text-destructive">
+        <Text id={`${id}-error`} size="xs" className="text-destructive">
           {error}
-        </p>
+        </Text>
       )}
       {!error && helperText && (
-        <p id={`${id}-helper`} className="text-xs text-muted-foreground">
+        <Text id={`${id}-helper`} size="xs" muted>
           {helperText}
-        </p>
+        </Text>
       )}
     </div>
   );

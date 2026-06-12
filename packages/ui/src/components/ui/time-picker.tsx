@@ -6,7 +6,7 @@ import { cn } from "../../lib/utils.ts";
 import { Label } from "./label.tsx";
 
 const timePickerVariants = cva(
-  "inline-flex items-center gap-1 rounded-full border bg-card text-base shadow-sm transition-colors focus-within:outline-none focus-within:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+  "inline-flex items-center gap-1 rounded-full border bg-card text-md shadow-sm transition-colors focus-within:outline-none focus-within:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
   {
     variants: {
       variant: {
@@ -213,7 +213,7 @@ function TimePicker({
         onBlur={(e) => commitHour(e.target.value)}
         disabled={disabled}
         aria-label="Hours"
-        className="w-6 bg-transparent text-center outline-none tabular-nums"
+        className="w-6 bg-transparent text-center outline-none font-mono tabular-nums"
         maxLength={2}
       />
       {spinner(incHour, decHour)}
@@ -232,7 +232,7 @@ function TimePicker({
         onBlur={(e) => commitMinute(e.target.value)}
         disabled={disabled}
         aria-label="Minutes"
-        className="w-6 bg-transparent text-center outline-none tabular-nums"
+        className="w-6 bg-transparent text-center outline-none font-mono tabular-nums"
         maxLength={2}
       />
       {spinner(incMinute, decMinute)}

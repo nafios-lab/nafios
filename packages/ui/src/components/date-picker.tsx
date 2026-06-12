@@ -86,7 +86,7 @@ function DatePicker({
             <button
               type="button"
               onClick={() => setNavView("month")}
-              className="absolute top-4 left-1/2 -translate-x-1/2 z-10 text-sm font-medium hover:underline cursor-pointer pointer-events-auto"
+              className="absolute top-4 left-1/2 -translate-x-1/2 z-10 font-display text-sm font-medium hover:underline cursor-pointer pointer-events-auto"
             >
               {format(viewMonth, "MMMM yyyy")}
             </button>
@@ -109,7 +109,7 @@ function DatePicker({
             <button
               type="button"
               onClick={() => setNavView("year")}
-              className="w-full text-center text-sm font-medium hover:underline cursor-pointer mb-2"
+              className="w-full text-center font-display text-sm font-medium hover:underline cursor-pointer mb-2"
             >
               {viewMonth.getFullYear()}
             </button>

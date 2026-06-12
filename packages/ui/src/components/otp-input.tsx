@@ -1,6 +1,7 @@
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useId } from "react";
 import { cn } from "../lib/utils.ts";
+import { Text } from "./typography/text.tsx";
 import {
   InputOTP,
   InputOTPGroup,
@@ -104,14 +105,14 @@ function OtpInput({
       </InputOTP>
 
       {error && (
-        <p id={`${autoId}-error`} className="text-xs text-destructive">
+        <Text id={`${autoId}-error`} size="xs" className="text-destructive">
           {error}
-        </p>
+        </Text>
       )}
       {!error && helperText && (
-        <p id={`${autoId}-helper`} className="text-xs text-muted-foreground">
+        <Text id={`${autoId}-helper`} size="xs" muted>
           {helperText}
-        </p>
+        </Text>
       )}
     </div>
   );

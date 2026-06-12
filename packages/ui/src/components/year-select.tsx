@@ -79,7 +79,7 @@ function YearSelect({
         >
           <ChevronLeft className="size-4" />
         </button>
-        <span className="text-sm font-medium">
+        <span className="font-display text-sm font-medium">
           {pageStart} – {pageStart + YEARS_PER_PAGE - 1}
         </span>
         <button

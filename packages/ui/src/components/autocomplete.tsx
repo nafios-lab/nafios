@@ -3,11 +3,12 @@ import { Check, ChevronDown, X } from "lucide-react";
 import type * as React from "react";
 import { useId, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/utils.ts";
+import { Text } from "./typography/text.tsx";
 import { Label } from "./ui/label.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover.tsx";
 
 const autocompleteVariants = cva(
-  "flex h-9 w-full items-center rounded-full border bg-card px-3 py-1 text-base shadow-sm transition-colors md:text-sm",
+  "flex h-9 w-full items-center rounded-full border bg-card px-3 py-1 text-md shadow-sm transition-colors md:text-sm",
   {
     variants: {
       variant: {
@@ -163,9 +164,9 @@ function Autocomplete({
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           {filtered.length === 0 ? (
-            <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+            <Text size="sm" muted className="px-2 py-4 text-center">
               {emptyMessage}
-            </p>
+            </Text>
           ) : (
             filtered.map((option) => (
               <button
@@ -193,14 +194,14 @@ function Autocomplete({
         </PopoverContent>
       </Popover>
       {error && (
-        <p id={`${id}-error`} className="text-xs text-destructive">
+        <Text id={`${id}-error`} size="xs" className="text-destructive">
           {error}
-        </p>
+        </Text>
       )}
       {!error && helperText && (
-        <p id={`${id}-helper`} className="text-xs text-muted-foreground">
+        <Text id={`${id}-helper`} size="xs" muted>
           {helperText}
-        </p>
+        </Text>
       )}
     </div>
   );

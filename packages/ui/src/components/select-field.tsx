@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { cn } from "../lib/utils.ts";
+import { Text } from "./typography/text.tsx";
 import { Label } from "./ui/label.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover.tsx";
 import {
@@ -33,7 +34,7 @@ const selectFieldVariants = cva("", {
 });
 
 const searchableTriggerVariants = cva(
-  "flex h-9 w-full items-center justify-between gap-2 rounded-full border bg-card px-3 py-1 text-base shadow-sm transition-colors md:text-sm",
+  "flex h-9 w-full items-center justify-between gap-2 rounded-full border bg-card px-3 py-1 text-md shadow-sm transition-colors md:text-sm",
   {
     variants: {
       variant: {
@@ -125,15 +126,15 @@ function SelectField(props: SelectFieldProps) {
   );
 
   const errorNode = error && (
-    <p id={`${id}-error`} className="text-xs text-destructive">
+    <Text id={`${id}-error`} size="xs" className="text-destructive">
       {error}
-    </p>
+    </Text>
   );
 
   const helperNode = !error && helperText && (
-    <p id={`${id}-helper`} className="text-xs text-muted-foreground">
+    <Text id={`${id}-helper`} size="xs" muted>
       {helperText}
-    </p>
+    </Text>
   );
 
   const maxHeight = maxVisibleItems * ITEM_HEIGHT + 8; // 8px for p-1 padding
@@ -385,9 +386,9 @@ function SearchableSelect({
             onScroll={updateScrollIndicators}
           >
             {filtered.length === 0 ? (
-              <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+              <Text size="sm" muted className="px-2 py-4 text-center">
                 {emptyMessage}
-              </p>
+              </Text>
             ) : (
               filtered.map((option) => (
                 <button
@@ -540,9 +541,9 @@ function MultiSelect({
             )}
           >
             {selectedOptions.length === 0 ? (
-              <span className="flex-1 truncate text-left text-sm text-muted-foreground">
+              <Text as="span" size="sm" muted className="flex-1 truncate text-left">
                 {placeholder}
-              </span>
+              </Text>
             ) : (
               <span className="flex flex-1 flex-wrap items-center gap-1 py-0.5">
                 {selectedOptions.map((opt) => (
@@ -632,9 +633,9 @@ function MultiSelect({
             onScroll={updateScrollIndicators}
           >
             {filtered.length === 0 ? (
-              <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+              <Text size="sm" muted className="px-2 py-4 text-center">
                 {emptyMessage}
-              </p>
+              </Text>
             ) : (
               filtered.map((option) => {
                 const isSelected = value.includes(option.value);

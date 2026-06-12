@@ -23,11 +23,11 @@ export interface StepperProps {
 const circleSize: Record<StepperSize, string> = {
   sm: "size-7 text-xs",
   md: "size-10 text-sm",
-  lg: "size-13 text-base",
+  lg: "size-13 text-md",
 };
 
 const labelSize: Record<StepperSize, string> = {
-  sm: "text-[10px] mt-1.5",
+  sm: "text-xs mt-1.5",
   md: "text-xs mt-2",
   lg: "text-sm mt-2.5",
 };
