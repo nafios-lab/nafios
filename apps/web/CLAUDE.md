@@ -83,6 +83,31 @@ After `bun run db:reset`, a seeded test user is available:
 - **Email:** `test@nafios.local`
 - **Password:** `password123`
 
+### Database schema
+
+**`public.profiles`** — one row per auth user. All domain tables FK here, never
+to `auth.users` directly (ADR-0016). Columns: `id`, `avatar_url`, `created_at`,
+`updated_at`, `deleted_at`, `created_by`, `updated_by`.
+
+A Postgres trigger (`on_auth_user_created`) auto-creates a `profiles` row on
+every `auth.users` INSERT — no application code needed. The trigger function
+(`public.handle_new_user()`) runs as `SECURITY DEFINER`.
+
+**`public.family_members`** — zero or more per profile. Columns: `id`,
+`profile_id` (FK → profiles), `name`, `relationship` (spouse/child/parent/
+sibling/other), `avatar_url`, `nric`, `mobile_no`, `date_of_birth`, plus
+standard audit columns. Cascades on profile deletion.
+
+A reusable `public.set_updated_at()` trigger auto-maintains `updated_at` on
+both tables.
+
+RLS is intentionally disabled — authorization is handled at the application
+layer (ADR-0019).
+
+Migrations:
+- `supabase/migrations/20260613000000_create_profiles_table.sql`
+- `supabase/migrations/20260613000001_create_family_members_table.sql`
+
 ### Useful commands
 
 ```sh

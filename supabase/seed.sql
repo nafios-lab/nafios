@@ -87,3 +87,42 @@ VALUES (
   now()
 )
 ON CONFLICT (provider_id, provider) DO NOTHING;
+
+-- ============================================================================
+-- Test profile for local development
+-- ============================================================================
+-- The on_auth_user_created trigger creates profiles automatically for new
+-- signups, but seeded auth.users rows bypass the trigger (they're inserted
+-- before migrations run during `supabase db reset`). Seed the profile
+-- explicitly so the test user is fully usable.
+
+INSERT INTO public.profiles (id, created_by)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001'
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================================
+-- Test family members for local development
+-- ============================================================================
+
+INSERT INTO public.family_members (id, profile_id, name, relationship, date_of_birth, created_by)
+VALUES
+  (
+    '00000000-0000-0000-0000-000000000101',
+    '00000000-0000-0000-0000-000000000001',
+    'Test Spouse',
+    'spouse',
+    '1990-01-15',
+    '00000000-0000-0000-0000-000000000001'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000102',
+    '00000000-0000-0000-0000-000000000001',
+    'Test Child',
+    'child',
+    '2020-06-01',
+    '00000000-0000-0000-0000-000000000001'
+  )
+ON CONFLICT (id) DO NOTHING;
