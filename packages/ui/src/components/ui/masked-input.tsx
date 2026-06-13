@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { withMask, type Mask, type Options } from "use-mask-input";
+import { type Mask, type Options, withMask } from "use-mask-input";
 import { Input } from "./input.tsx";
 
 interface MaskInputProps extends React.InputHTMLAttributes<HTMLInputElement> {

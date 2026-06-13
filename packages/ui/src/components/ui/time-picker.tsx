@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import { ChevronUp, ChevronDown, Clock } from "lucide-react";
-import { useCallback, useId, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, Clock } from "lucide-react";
 import type * as React from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { cn } from "../../lib/utils.ts";
 import { Label } from "./label.tsx";
 

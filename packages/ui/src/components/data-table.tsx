@@ -1,16 +1,16 @@
 import {
   type ColumnDef,
   type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getSortedRowModel,
   getPaginationRowModel,
-  useReactTable,
+  getSortedRowModel,
+  type SortingState,
   type TableOptions,
   type Table as TanStackTable,
+  useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
 import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import type * as React from "react";
@@ -288,5 +288,5 @@ function SortableHeader({ column, children, className }: SortableHeaderProps) {
   );
 }
 
+export type { ColumnDef, ColumnFiltersState, SortingState, VisibilityState };
 export { DataTable, SortableHeader };
-export type { ColumnDef, SortingState, ColumnFiltersState, VisibilityState };

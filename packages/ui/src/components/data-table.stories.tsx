@@ -1,5 +1,5 @@
-import type { ColumnDef } from "@tanstack/react-table";
 import type { Meta, StoryObj } from "@storybook/react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable, SortableHeader } from "./data-table.tsx";
 
 /* ------------------------------------------------------------------ */

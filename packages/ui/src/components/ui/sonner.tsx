@@ -1,5 +1,5 @@
-import { useTheme } from "../../hooks/use-theme.ts";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { useTheme } from "../../hooks/use-theme.ts";
 
 function Toaster({ ...props }: ToasterProps) {
   const { resolvedTheme } = useTheme();
@@ -28,5 +28,5 @@ function Toaster({ ...props }: ToasterProps) {
   );
 }
 
-export { Toaster };
 export { toast } from "sonner";
+export { Toaster };

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { LayoutDashboard, Receipt, Landmark } from "lucide-react";
+import { Landmark, LayoutDashboard, Receipt } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs.tsx";
 
 const meta: Meta = {
