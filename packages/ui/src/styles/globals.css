@@ -198,15 +198,16 @@
   --secondary-foreground: 0 0% 91%;
   --muted: 240 3% 17%;
   --muted-foreground: 240 1% 63%;
-  --accent: 198 68% 70%;
+  --accent: 214 40% 65%;
   --accent-foreground: 240 8% 7%;
+  --accent-darker: 214 45% 45%;
   --destructive: 0 62% 50%;
   --destructive-foreground: 0 0% 100%;
   --border: 240 2% 21%;
   --input: 240 2% 21%;
   --ring: 120 22% 61%;
   --chart-1: 120 22% 61%;
-  --chart-2: 198 68% 70%;
+  --chart-2: 214 40% 65%;
   --chart-3: 36 60% 58%;
   --chart-4: 270 40% 70%;
   --chart-5: 0 50% 65%;
@@ -236,7 +237,7 @@
   --warning-foreground: 36 60% 65%;
   --warning-subtle: 36 50% 15%;
   --info: 214 50% 8%;
-  --info-foreground: 198 68% 70%;
+  --info-foreground: 214 40% 70%;
   --info-subtle: 214 50% 16%;
   --note: 270 40% 9%;
   --note-foreground: 270 40% 70%;
@@ -271,6 +272,103 @@
   --animate-blob-drift: blob-drift 20s ease-in-out infinite;
   --animate-blob-drift-reverse: blob-drift-reverse 24s ease-in-out infinite;
   --animate-blob-pulse: blob-pulse 18s ease-in-out infinite;
+
+  /* ---- tailwindcss-animate equivalents for Tailwind v4 ---- */
+  --animate-in: enter var(--tw-animate-duration, 150ms) var(--tw-animate-easing, ease) var(--tw-animate-delay, 0s) 1 normal both;
+  --animate-out: exit var(--tw-animate-duration, 150ms) var(--tw-animate-easing, ease) var(--tw-animate-delay, 0s) 1 normal both;
+}
+
+/* ---- animate-in / animate-out keyframes ---- */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))
+      rotate(var(--tw-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))
+      rotate(var(--tw-exit-rotate, 0));
+  }
+}
+
+/* ---- Fade utilities ---- */
+@utility fade-in-* {
+  --tw-enter-opacity: calc(var(--value) / 100);
+}
+@utility fade-out-* {
+  --tw-exit-opacity: calc(var(--value) / 100);
+}
+
+/* ---- Zoom utilities ---- */
+@utility zoom-in-* {
+  --tw-enter-scale: calc(var(--value) / 100);
+}
+@utility zoom-out-* {
+  --tw-exit-scale: calc(var(--value) / 100);
+}
+
+/* ---- Spin-in / spin-out ---- */
+@utility spin-in-* {
+  --tw-enter-rotate: calc(var(--value) * 1deg);
+}
+@utility spin-out-* {
+  --tw-exit-rotate: calc(var(--value) * 1deg);
+}
+
+/* ---- Slide-in-from / slide-out-to ---- */
+@utility slide-in-from-top {
+  --tw-enter-translate-y: -100%;
+}
+@utility slide-in-from-top-* {
+  --tw-enter-translate-y: calc(var(--value) * -1 * var(--spacing));
+}
+@utility slide-in-from-bottom {
+  --tw-enter-translate-y: 100%;
+}
+@utility slide-in-from-bottom-* {
+  --tw-enter-translate-y: calc(var(--value) * var(--spacing));
+}
+@utility slide-in-from-left {
+  --tw-enter-translate-x: -100%;
+}
+@utility slide-in-from-left-* {
+  --tw-enter-translate-x: calc(var(--value) * -1 * var(--spacing));
+}
+@utility slide-in-from-right {
+  --tw-enter-translate-x: 100%;
+}
+@utility slide-in-from-right-* {
+  --tw-enter-translate-x: calc(var(--value) * var(--spacing));
+}
+@utility slide-out-to-top {
+  --tw-exit-translate-y: -100%;
+}
+@utility slide-out-to-top-* {
+  --tw-exit-translate-y: calc(var(--value) * -1 * var(--spacing));
+}
+@utility slide-out-to-bottom {
+  --tw-exit-translate-y: 100%;
+}
+@utility slide-out-to-bottom-* {
+  --tw-exit-translate-y: calc(var(--value) * var(--spacing));
+}
+@utility slide-out-to-left {
+  --tw-exit-translate-x: -100%;
+}
+@utility slide-out-to-left-* {
+  --tw-exit-translate-x: calc(var(--value) * -1 * var(--spacing));
+}
+@utility slide-out-to-right {
+  --tw-exit-translate-x: 100%;
+}
+@utility slide-out-to-right-* {
+  --tw-exit-translate-x: calc(var(--value) * var(--spacing));
 }
 
 /* Blob background ambient animations */
