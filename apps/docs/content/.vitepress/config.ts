@@ -109,6 +109,14 @@ export default defineConfig({
               text: "0017 — Manual Deploy",
               link: "/decisions/0017-manual-deploy-via-github-actions-netlify-cli",
             },
+            {
+              text: "0018 — Single Shell",
+              link: "/decisions/0018-single-shell-modules-as-packages",
+            },
+            {
+              text: "0019 — App-Layer Authz",
+              link: "/decisions/0019-app-layer-authz-rls-deferred",
+            },
           ],
         },
       ],
@@ -143,6 +151,14 @@ export default defineConfig({
                 { text: "Overview", link: "/packages/core-utils/" },
                 { text: "Specification", link: "/packages/core-utils/spec" },
                 { text: "Usage", link: "/packages/core-utils/usage" },
+              ],
+            },
+            {
+              text: "@nafios/auth-core",
+              collapsed: false,
+              items: [
+                { text: "Overview", link: "/packages/auth-core/" },
+                { text: "Specification", link: "/packages/auth-core/spec" },
               ],
             },
             {

@@ -41,6 +41,8 @@ const STATIC_MAPPINGS: DocMapping[] = [
   { src: "packages/core-utils/docs/usage.md", dest: "packages/core-utils/usage.md" },
   { src: "packages/ui/README.md", dest: "packages/ui/index.md" },
   { src: "packages/ui/spec.md", dest: "packages/ui/spec.md" },
+  { src: "packages/auth-core/README.md", dest: "packages/auth-core/index.md" },
+  { src: "packages/auth-core/spec.md", dest: "packages/auth-core/spec.md" },
 ];
 
 // ── Dynamic mappings: auto-discover ADRs and spec subdirs ──────────────
