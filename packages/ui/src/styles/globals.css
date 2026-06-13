@@ -244,7 +244,6 @@
   --note-subtle: 270 40% 16%;
 }
 
-
 @layer base {
   * {
     @apply border-border;
@@ -274,8 +273,10 @@
   --animate-blob-pulse: blob-pulse 18s ease-in-out infinite;
 
   /* ---- tailwindcss-animate equivalents for Tailwind v4 ---- */
-  --animate-in: enter var(--tw-animate-duration, 150ms) var(--tw-animate-easing, ease) var(--tw-animate-delay, 0s) 1 normal both;
-  --animate-out: exit var(--tw-animate-duration, 150ms) var(--tw-animate-easing, ease) var(--tw-animate-delay, 0s) 1 normal both;
+  --animate-in: enter var(--tw-animate-duration, 150ms) var(--tw-animate-easing, ease)
+    var(--tw-animate-delay, 0s) 1 normal both;
+  --animate-out: exit var(--tw-animate-duration, 150ms) var(--tw-animate-easing, ease)
+    var(--tw-animate-delay, 0s) 1 normal both;
 }
 
 /* ---- animate-in / animate-out keyframes ---- */

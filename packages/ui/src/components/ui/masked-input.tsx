@@ -2,8 +2,7 @@ import type * as React from "react";
 import { withMask, type Mask, type Options } from "use-mask-input";
 import { Input } from "./input.tsx";
 
-interface MaskInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+interface MaskInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   mask: Mask;
   maskOptions?: Options;
 }

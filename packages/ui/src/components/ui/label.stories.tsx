@@ -21,7 +21,5 @@ export const Default: Story = {
 };
 
 export const WithInput: Story = {
-  render: () => (
-    <TextInput label="Email" placeholder="you@example.com" />
-  ),
+  render: () => <TextInput label="Email" placeholder="you@example.com" />,
 };

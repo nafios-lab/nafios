@@ -37,10 +37,8 @@ const monthSelectVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "hover:bg-muted hover:text-foreground",
-        brand:
-          "hover:bg-brand/10 hover:text-brand-darker",
+        default: "hover:bg-muted hover:text-foreground",
+        brand: "hover:bg-brand/10 hover:text-brand-darker",
       },
     },
     defaultVariants: {

@@ -31,12 +31,7 @@ export interface HeadingProps
   as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 }
 
-function Heading({
-  as: Tag = "h2",
-  size,
-  className,
-  ...props
-}: HeadingProps) {
+function Heading({ as: Tag = "h2", size, className, ...props }: HeadingProps) {
   const resolvedSize = size ?? defaultSizeForLevel[Tag];
   return <Tag className={cn(headingVariants({ size: resolvedSize }), className)} {...props} />;
 }

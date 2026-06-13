@@ -18,10 +18,7 @@ export interface DateRangePickerProps
   disabled?: boolean;
   dateFormat?: string;
   numberOfMonths?: number;
-  calendarProps?: Omit<
-    CalendarProps,
-    "mode" | "selected" | "onSelect" | "numberOfMonths"
-  >;
+  calendarProps?: Omit<CalendarProps, "mode" | "selected" | "onSelect" | "numberOfMonths">;
 }
 
 function DateRangePicker({
@@ -53,9 +50,7 @@ function DateRangePicker({
       format(value.from, dateFormat)
     );
   } else {
-    displayText = (
-      <span className="text-muted-foreground">{placeholder}</span>
-    );
+    displayText = <span className="text-muted-foreground">{placeholder}</span>;
   }
 
   const content = (

@@ -54,9 +54,7 @@ function renderItem(item: MenuItemDef, index: number) {
     >
       {Icon && <Icon className="size-4" />}
       <span>{item.label}</span>
-      {item.shortcut && (
-        <DropdownMenuShortcut>{item.shortcut}</DropdownMenuShortcut>
-      )}
+      {item.shortcut && <DropdownMenuShortcut>{item.shortcut}</DropdownMenuShortcut>}
     </DropdownMenuItem>
   );
 }
@@ -91,11 +89,7 @@ function DropdownMenuField({
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent
-        align={align}
-        side={side}
-        className={cn("min-w-48", contentClassName)}
-      >
+      <DropdownMenuContent align={align} side={side} className={cn("min-w-48", contentClassName)}>
         {items.map((entry, index) => renderEntry(entry, index))}
       </DropdownMenuContent>
     </DropdownMenu>

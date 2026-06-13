@@ -1,9 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import {
-  RadioGroup,
-  RadioGroupItem,
-  type RadioGroupProps,
-} from "./radio-group.tsx";
+import { RadioGroup, RadioGroupItem, type RadioGroupProps } from "./radio-group.tsx";
 
 const meta: Meta<RadioGroupProps> = {
   title: "Primitives/RadioGroup",
@@ -114,34 +110,31 @@ export const Sizes: Story = {
 export const Card: Story = {
   render: () => (
     <RadioGroup defaultValue="push" className="max-w-sm">
+      {/* biome-ignore lint/a11y/noLabelWithoutControl: RadioGroupItem renders a native input */}
       <label className="flex items-start gap-3 rounded-lg border border-input bg-card p-4 cursor-pointer has-checked:border-brand has-checked:bg-brand/5 transition-colors">
         <RadioGroupItem value="push" variant="brand" className="mt-0.5" />
         <div className="grid gap-1">
-          <span className="text-sm font-medium text-foreground">
-            Push notifications
-          </span>
+          <span className="text-sm font-medium text-foreground">Push notifications</span>
           <span className="text-xs text-muted-foreground">
             Receive push notifications on your device.
           </span>
         </div>
       </label>
+      {/* biome-ignore lint/a11y/noLabelWithoutControl: RadioGroupItem renders a native input */}
       <label className="flex items-start gap-3 rounded-lg border border-input bg-card p-4 cursor-pointer has-checked:border-brand has-checked:bg-brand/5 transition-colors">
         <RadioGroupItem value="email" variant="brand" className="mt-0.5" />
         <div className="grid gap-1">
-          <span className="text-sm font-medium text-foreground">
-            Email digest
-          </span>
+          <span className="text-sm font-medium text-foreground">Email digest</span>
           <span className="text-xs text-muted-foreground">
             Get a weekly summary of your activity.
           </span>
         </div>
       </label>
+      {/* biome-ignore lint/a11y/noLabelWithoutControl: RadioGroupItem renders a native input */}
       <label className="flex items-start gap-3 rounded-lg border border-input bg-card p-4 cursor-pointer has-checked:border-brand has-checked:bg-brand/5 transition-colors">
         <RadioGroupItem value="sms" variant="brand" className="mt-0.5" />
         <div className="grid gap-1">
-          <span className="text-sm font-medium text-foreground">
-            SMS alerts
-          </span>
+          <span className="text-sm font-medium text-foreground">SMS alerts</span>
           <span className="text-xs text-muted-foreground">
             Receive critical alerts via text message.
           </span>

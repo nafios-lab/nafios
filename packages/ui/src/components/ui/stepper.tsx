@@ -38,19 +38,9 @@ const connectorHeight: Record<StepperSize, string> = {
   lg: "h-0.75",
 };
 
-function Stepper({
-  steps,
-  activeStep,
-  onStepClick,
-  size = "md",
-  className,
-}: StepperProps) {
+function Stepper({ steps, activeStep, onStepClick, size = "md", className }: StepperProps) {
   return (
-    <div
-      className={cn("flex w-full items-start justify-between", className)}
-      role="navigation"
-      aria-label="Progress"
-    >
+    <nav className={cn("flex w-full items-start justify-between", className)} aria-label="Progress">
       {steps.map((step, index) => {
         const isActive = index === activeStep;
         const isCompleted = index < activeStep;
@@ -66,9 +56,7 @@ function Stepper({
                   className={cn(
                     "flex-1",
                     connectorHeight[size],
-                    index <= activeStep
-                      ? "bg-primary"
-                      : "bg-muted-foreground/30",
+                    index <= activeStep ? "bg-primary" : "bg-muted-foreground/30",
                   )}
                 />
               ) : (
@@ -86,15 +74,10 @@ function Stepper({
                   "relative z-10 flex shrink-0 items-center justify-center rounded-full font-medium transition-colors",
                   circleSize[size],
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  isActive &&
-                    "bg-primary text-primary-foreground ring-4 ring-primary/20",
+                  isActive && "bg-primary text-primary-foreground ring-4 ring-primary/20",
                   isCompleted && "bg-primary/50 text-primary-foreground",
-                  !isActive &&
-                    !isCompleted &&
-                    "bg-muted-foreground/20 text-muted-foreground",
-                  onStepClick
-                    ? "cursor-pointer hover:opacity-80"
-                    : "cursor-default",
+                  !isActive && !isCompleted && "bg-muted-foreground/20 text-muted-foreground",
+                  onStepClick ? "cursor-pointer hover:opacity-80" : "cursor-default",
                 )}
               >
                 {index + 1}
@@ -106,9 +89,7 @@ function Stepper({
                   className={cn(
                     "flex-1",
                     connectorHeight[size],
-                    index < activeStep
-                      ? "bg-primary"
-                      : "bg-muted-foreground/30",
+                    index < activeStep ? "bg-primary" : "bg-muted-foreground/30",
                   )}
                 />
               ) : (
@@ -121,9 +102,7 @@ function Stepper({
               className={cn(
                 "uppercase tracking-wider",
                 labelSize[size],
-                isActive
-                  ? "font-bold text-foreground"
-                  : "font-medium text-muted-foreground",
+                isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground",
               )}
             >
               {step.label}
@@ -131,7 +110,7 @@ function Stepper({
           </div>
         );
       })}
-    </div>
+    </nav>
   );
 }
 

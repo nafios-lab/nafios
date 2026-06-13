@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
-import {
-  DateTimePicker,
-  type DateTimePickerProps,
-} from "./date-time-picker.tsx";
+import { DateTimePicker, type DateTimePickerProps } from "./date-time-picker.tsx";
 
 const meta: Meta<DateTimePickerProps> = {
   title: "Composites/DateTimePicker",
@@ -46,12 +43,7 @@ export const TwentyFourHour: Story = {
   render: () => {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
-      <DateTimePicker
-        value={date}
-        onChange={setDate}
-        use12Hour={false}
-        dateFormat="PPP HH:mm"
-      />
+      <DateTimePicker value={date} onChange={setDate} use12Hour={false} dateFormat="PPP HH:mm" />
     );
   },
 };
@@ -59,27 +51,14 @@ export const TwentyFourHour: Story = {
 export const WithLabel: Story = {
   render: () => {
     const [date, setDate] = useState<Date | undefined>();
-    return (
-      <DateTimePicker
-        value={date}
-        onChange={setDate}
-        label="Event date & time"
-      />
-    );
+    return <DateTimePicker value={date} onChange={setDate} label="Event date & time" />;
   },
 };
 
 export const FifteenMinuteSteps: Story = {
   render: () => {
     const [date, setDate] = useState<Date | undefined>(new Date());
-    return (
-      <DateTimePicker
-        value={date}
-        onChange={setDate}
-        minuteStep={15}
-        label="Meeting time"
-      />
-    );
+    return <DateTimePicker value={date} onChange={setDate} minuteStep={15} label="Meeting time" />;
   },
 };
 

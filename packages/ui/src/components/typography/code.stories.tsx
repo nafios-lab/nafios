@@ -56,11 +56,15 @@ export const DataDisplay: Story = {
     <div className="flex gap-4">
       <div className="text-center">
         <p className="text-xs text-muted-foreground">Balance</p>
-        <Code size="md" className="bg-transparent">$12,340.56</Code>
+        <Code size="md" className="bg-transparent">
+          $12,340.56
+        </Code>
       </div>
       <div className="text-center">
         <p className="text-xs text-muted-foreground">Account</p>
-        <Code size="md" className="bg-transparent">4821-XXXX</Code>
+        <Code size="md" className="bg-transparent">
+          4821-XXXX
+        </Code>
       </div>
     </div>
   ),

@@ -9,14 +9,7 @@ const meta: Meta<IconButtonProps> = {
   argTypes: {
     variant: {
       control: "select",
-      options: [
-        "default",
-        "brand",
-        "destructive",
-        "outline",
-        "secondary",
-        "ghost",
-      ],
+      options: ["default", "brand", "destructive", "outline", "secondary", "ghost"],
     },
     size: {
       control: "select",
@@ -64,11 +57,7 @@ export const AllVariants: Story = {
     <div className="flex items-center gap-3">
       <IconButton icon={<Plus />} aria-label="Default" />
       <IconButton icon={<Heart />} variant="brand" aria-label="Brand" />
-      <IconButton
-        icon={<Trash2 />}
-        variant="destructive"
-        aria-label="Destructive"
-      />
+      <IconButton icon={<Trash2 />} variant="destructive" aria-label="Destructive" />
       <IconButton icon={<Settings />} variant="outline" aria-label="Outline" />
       <IconButton icon={<Plus />} variant="secondary" aria-label="Secondary" />
       <IconButton icon={<X />} variant="ghost" aria-label="Ghost" />

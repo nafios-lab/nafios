@@ -10,15 +10,9 @@ function Loader({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
+      aria-hidden="true"
     >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"
@@ -34,12 +28,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-border text-fg-100 shadow hover:brightness-125",
-        brand:
-          "bg-brand-darker border border-brand text-fg-100 shadow hover:brightness-125",
-        destructive:
-          "bg-error text-error-foreground shadow-sm hover:bg-error/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:brightness-150",
+        brand: "bg-brand-darker border border-brand text-fg-100 shadow hover:brightness-125",
+        destructive: "bg-error text-error-foreground shadow-sm hover:bg-error/90",
+        outline: "border border-input bg-background shadow-sm hover:brightness-150",
         secondary:
           "bg-accent-darker/10 border border-accent text-accent shadow-sm hover:brightness-115",
         ghost: "hover:bg-border",
@@ -60,8 +51,7 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   showLoader?: boolean;
@@ -86,10 +76,7 @@ function Button({
   const Comp = asChild ? Slot : "button";
   return (
     <Comp
-      className={cn(
-        buttonVariants({ variant, size, className }),
-        "cursor-pointer!",
-      )}
+      className={cn(buttonVariants({ variant, size, className }), "cursor-pointer!")}
       disabled={disabled || showLoader}
       {...props}
     >

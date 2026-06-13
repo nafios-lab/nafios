@@ -8,23 +8,15 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "border-primary/20 bg-primary text-primary-foreground",
-        secondary:
-          "border-border bg-secondary text-secondary-foreground",
+        default: "border-primary/20 bg-primary text-primary-foreground",
+        secondary: "border-border bg-secondary text-secondary-foreground",
         outline: "border-border text-foreground",
-        success:
-          "border-success-subtle bg-success text-success-foreground",
-        error:
-          "border-error-subtle bg-error text-error-foreground",
-        warning:
-          "border-warning-subtle bg-warning text-warning-foreground",
-        info:
-          "border-info-subtle bg-info text-info-foreground",
-        note:
-          "border-note-subtle bg-note text-note-foreground",
-        destructive:
-          "border-error-subtle bg-error text-error-foreground",
+        success: "border-success-subtle bg-success text-success-foreground",
+        error: "border-error-subtle bg-error text-error-foreground",
+        warning: "border-warning-subtle bg-warning text-warning-foreground",
+        info: "border-info-subtle bg-info text-info-foreground",
+        note: "border-note-subtle bg-note text-note-foreground",
+        destructive: "border-error-subtle bg-error text-error-foreground",
       },
     },
     defaultVariants: {
@@ -38,13 +30,10 @@ function Badge({
   variant,
   asChild = false,
   ...props
-}: React.ComponentProps<"span"> &
-  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+}: React.ComponentProps<"span"> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
   const Comp = asChild ? Slot : "span";
 
-  return (
-    <Comp className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+  return <Comp className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
 export { Badge, badgeVariants };

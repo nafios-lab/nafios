@@ -42,9 +42,7 @@ function YearSelect({
   ...props
 }: YearSelectProps) {
   const currentYear = value ?? new Date().getFullYear();
-  const [pageStart, setPageStart] = useState(
-    () => currentYear - (currentYear % YEARS_PER_PAGE),
-  );
+  const [pageStart, setPageStart] = useState(() => currentYear - (currentYear % YEARS_PER_PAGE));
 
   const years = useMemo(() => {
     const result: number[] = [];

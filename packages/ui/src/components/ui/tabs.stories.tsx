@@ -19,19 +19,13 @@ export const Default: Story = {
         <TabsTrigger value="accounts">Accounts</TabsTrigger>
       </TabsList>
       <TabsContent value="overview">
-        <p className="text-sm text-muted-foreground">
-          Summary of your financial overview.
-        </p>
+        <p className="text-sm text-muted-foreground">Summary of your financial overview.</p>
       </TabsContent>
       <TabsContent value="transactions">
-        <p className="text-sm text-muted-foreground">
-          Recent transactions will appear here.
-        </p>
+        <p className="text-sm text-muted-foreground">Recent transactions will appear here.</p>
       </TabsContent>
       <TabsContent value="accounts">
-        <p className="text-sm text-muted-foreground">
-          Manage your linked accounts.
-        </p>
+        <p className="text-sm text-muted-foreground">Manage your linked accounts.</p>
       </TabsContent>
     </Tabs>
   ),
@@ -49,14 +43,10 @@ export const TwoTabs: Story = {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="login">
-        <p className="text-sm text-muted-foreground">
-          Sign in to your account.
-        </p>
+        <p className="text-sm text-muted-foreground">Sign in to your account.</p>
       </TabsContent>
       <TabsContent value="register">
-        <p className="text-sm text-muted-foreground">
-          Create a new account.
-        </p>
+        <p className="text-sm text-muted-foreground">Create a new account.</p>
       </TabsContent>
     </Tabs>
   ),
@@ -80,19 +70,13 @@ export const WithIcons: Story = {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="overview">
-        <p className="text-sm text-muted-foreground">
-          Summary of your financial overview.
-        </p>
+        <p className="text-sm text-muted-foreground">Summary of your financial overview.</p>
       </TabsContent>
       <TabsContent value="transactions">
-        <p className="text-sm text-muted-foreground">
-          Recent transactions will appear here.
-        </p>
+        <p className="text-sm text-muted-foreground">Recent transactions will appear here.</p>
       </TabsContent>
       <TabsContent value="accounts">
-        <p className="text-sm text-muted-foreground">
-          Manage your linked accounts.
-        </p>
+        <p className="text-sm text-muted-foreground">Manage your linked accounts.</p>
       </TabsContent>
     </Tabs>
   ),
@@ -122,19 +106,13 @@ export const CustomActiveColor: Story = {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="overview">
-        <p className="text-sm text-muted-foreground">
-          Brand-colored active tab.
-        </p>
+        <p className="text-sm text-muted-foreground">Brand-colored active tab.</p>
       </TabsContent>
       <TabsContent value="transactions">
-        <p className="text-sm text-muted-foreground">
-          Recent transactions will appear here.
-        </p>
+        <p className="text-sm text-muted-foreground">Recent transactions will appear here.</p>
       </TabsContent>
       <TabsContent value="accounts">
-        <p className="text-sm text-muted-foreground">
-          Manage your linked accounts.
-        </p>
+        <p className="text-sm text-muted-foreground">Manage your linked accounts.</p>
       </TabsContent>
     </Tabs>
   ),

@@ -47,13 +47,7 @@ export const Brand: Story = {
 export const DisabledMonths: Story = {
   render: () => {
     const [month, setMonth] = useState(0);
-    return (
-      <MonthSelect
-        value={month}
-        onChange={setMonth}
-        disabledMonths={[6, 7, 8]}
-      />
-    );
+    return <MonthSelect value={month} onChange={setMonth} disabledMonths={[6, 7, 8]} />;
   },
 };
 

@@ -96,8 +96,7 @@ function TimePicker({
   const decHour = () => emit({ hours: clamp(hours - 1, minHour, maxHour) });
   const incMinute = () => emit({ minutes: clamp(minutes + minuteStep, 0, 59) });
   const decMinute = () => emit({ minutes: clamp(minutes - minuteStep, 0, 59) });
-  const togglePeriod = () =>
-    emit({ period: period === "AM" ? "PM" : "AM" });
+  const togglePeriod = () => emit({ period: period === "AM" ? "PM" : "AM" });
 
   // Local editing state — allows intermediate values while typing
   const [editingHour, setEditingHour] = useState<string | null>(null);
@@ -195,10 +194,7 @@ function TimePicker({
   );
 
   const picker = (
-    <div
-      className={cn(timePickerVariants({ variant, size }), className)}
-      {...props}
-    >
+    <div className={cn(timePickerVariants({ variant, size }), className)} {...props}>
       {showIcon && <Clock className="size-4 text-muted-foreground shrink-0" />}
 
       {/* Hours */}

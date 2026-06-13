@@ -48,15 +48,11 @@ function SheetContent({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Content> &
-  VariantProps<typeof sheetVariants>) {
+}: React.ComponentProps<typeof SheetPrimitive.Content> & VariantProps<typeof sheetVariants>) {
   return (
     <SheetPortal>
       <SheetOverlay />
-      <SheetPrimitive.Content
-        className={cn(sheetVariants({ side }), className)}
-        {...props}
-      >
+      <SheetPrimitive.Content className={cn(sheetVariants({ side }), className)} {...props}>
         <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
           <X className="size-4" />
           <span className="sr-only">Close</span>
@@ -69,10 +65,7 @@ function SheetContent({
 
 function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      className={cn("flex flex-col space-y-2 text-center sm:text-left", className)}
-      {...props}
-    />
+    <div className={cn("flex flex-col space-y-2 text-center sm:text-left", className)} {...props} />
   );
 }
 
@@ -85,10 +78,7 @@ function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   );
 }
 
-function SheetTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Title>) {
+function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
   return (
     <SheetPrimitive.Title
       className={cn("font-display text-lg font-semibold text-foreground", className)}

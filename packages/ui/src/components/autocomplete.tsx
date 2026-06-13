@@ -13,8 +13,7 @@ const autocompleteVariants = cva(
     variants: {
       variant: {
         default: "border-input focus-within:ring-1 focus-within:ring-ring",
-        error:
-          "border-error-subtle focus-within:ring-1 focus-within:ring-error-subtle",
+        error: "border-error-subtle focus-within:ring-1 focus-within:ring-error-subtle",
       },
     },
     defaultVariants: {
@@ -29,8 +28,7 @@ export interface AutocompleteOption {
   disabled?: boolean;
 }
 
-export interface AutocompleteProps
-  extends VariantProps<typeof autocompleteVariants> {
+export interface AutocompleteProps extends VariantProps<typeof autocompleteVariants> {
   /** Currently selected value. */
   value?: string;
   /** Called when the selection changes. */
@@ -127,9 +125,7 @@ function Autocomplete({
               aria-expanded={open}
               aria-controls={`${id}-listbox`}
               aria-invalid={!!error}
-              aria-describedby={
-                error ? `${id}-error` : helperText ? `${id}-helper` : undefined
-              }
+              aria-describedby={error ? `${id}-error` : helperText ? `${id}-helper` : undefined}
               aria-autocomplete="list"
               disabled={disabled}
               placeholder={selectedOption ? selectedOption.label : placeholder}

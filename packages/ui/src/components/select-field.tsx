@@ -1,25 +1,12 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { Check, ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import type * as React from "react";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/utils.ts";
 import { Text } from "./typography/text.tsx";
 import { Label } from "./ui/label.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover.tsx";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select.tsx";
 
 const selectFieldVariants = cva("", {
   variants: {
@@ -39,8 +26,7 @@ const searchableTriggerVariants = cva(
     variants: {
       variant: {
         default: "border-input focus-within:ring-1 focus-within:ring-ring",
-        error:
-          "border-error-foreground focus-within:ring-1 focus-within:ring-error-foreground",
+        error: "border-error-foreground focus-within:ring-1 focus-within:ring-error-foreground",
       },
     },
     defaultVariants: {
@@ -58,9 +44,7 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-interface SelectFieldBaseProps extends VariantProps<
-  typeof selectFieldVariants
-> {
+interface SelectFieldBaseProps extends VariantProps<typeof selectFieldVariants> {
   /** Options to display. */
   options: SelectOption[];
   /** Placeholder text shown when nothing is selected. */
@@ -138,8 +122,7 @@ function SelectField(props: SelectFieldProps) {
   );
 
   const maxHeight = maxVisibleItems * ITEM_HEIGHT + 8; // 8px for p-1 padding
-  const ariaDescribedBy =
-    error ? `${id}-error` : helperText ? `${id}-helper` : undefined;
+  const ariaDescribedBy = error ? `${id}-error` : helperText ? `${id}-helper` : undefined;
 
   if (props.multiple) {
     return (
@@ -190,25 +173,13 @@ function SelectField(props: SelectFieldProps) {
     <div className={cn("flex flex-col gap-1.5", className)}>
       {labelNode}
       <div className={cn(selectFieldVariants({ variant: resolvedVariant }))}>
-        <Select
-          value={props.value}
-          onValueChange={props.onValueChange}
-          disabled={disabled}
-        >
-          <SelectTrigger
-            id={id}
-            aria-invalid={!!error}
-            aria-describedby={ariaDescribedBy}
-          >
+        <Select value={props.value} onValueChange={props.onValueChange} disabled={disabled}>
+          <SelectTrigger id={id} aria-invalid={!!error} aria-describedby={ariaDescribedBy}>
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent style={{ maxHeight }} className="overflow-y-auto">
             {options.map((option) => (
-              <SelectItem
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
+              <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
                 {option.label}
               </SelectItem>
             ))}
@@ -282,7 +253,7 @@ function SearchableSelect({
       const frame = requestAnimationFrame(updateScrollIndicators);
       return () => cancelAnimationFrame(frame);
     }
-  }, [open, filtered, updateScrollIndicators]);
+  }, [open, updateScrollIndicators]);
 
   function handleSelect(optionValue: string) {
     onValueChange?.(optionValue);
@@ -331,19 +302,15 @@ function SearchableSelect({
               )}
             </span>
             {value && !disabled ? (
-              <span
-                role="button"
+              <button
+                type="button"
                 tabIndex={-1}
                 onClick={handleClear}
-                onKeyDown={(e) =>
-                  e.key === "Enter" &&
-                  handleClear(e as unknown as React.MouseEvent)
-                }
                 className="text-muted-foreground hover:text-foreground"
                 aria-label="Clear selection"
               >
                 <X className="size-4" />
-              </span>
+              </button>
             ) : (
               <ChevronDown className="size-4 shrink-0 opacity-50" />
             )}
@@ -492,7 +459,7 @@ function MultiSelect({
       const frame = requestAnimationFrame(updateScrollIndicators);
       return () => cancelAnimationFrame(frame);
     }
-  }, [open, filtered, updateScrollIndicators]);
+  }, [open, updateScrollIndicators]);
 
   function handleToggle(optionValue: string) {
     if (!onValueChange) return;
@@ -553,41 +520,30 @@ function MultiSelect({
                   >
                     {opt.label}
                     {!disabled && (
-                      <span
-                        role="button"
+                      <button
+                        type="button"
                         tabIndex={-1}
                         onClick={(e) => handleRemove(opt.value, e)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" &&
-                          handleRemove(
-                            opt.value,
-                            e as unknown as React.MouseEvent,
-                          )
-                        }
                         className="text-muted-foreground hover:text-foreground"
                         aria-label={`Remove ${opt.label}`}
                       >
                         <X className="size-3" />
-                      </span>
+                      </button>
                     )}
                   </span>
                 ))}
               </span>
             )}
             {value.length > 0 && !disabled ? (
-              <span
-                role="button"
+              <button
+                type="button"
                 tabIndex={-1}
                 onClick={handleClearAll}
-                onKeyDown={(e) =>
-                  e.key === "Enter" &&
-                  handleClearAll(e as unknown as React.MouseEvent)
-                }
                 className="text-muted-foreground hover:text-foreground"
                 aria-label="Clear all selections"
               >
                 <X className="size-4" />
-              </span>
+              </button>
             ) : (
               <ChevronDown className="size-4 shrink-0 opacity-50" />
             )}

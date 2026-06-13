@@ -38,7 +38,7 @@ export const Success: Story = {
   args: { value: 100, variant: "success" },
 };
 
-export const Error: Story = {
+export const ErrorVariant: Story = {
   args: { value: 80, variant: "error" },
 };
 
@@ -72,9 +72,7 @@ export const Sizes: Story = {
 export const AllVariants: Story = {
   render: () => (
     <div className="grid w-full max-w-md gap-4">
-      {(
-        ["default", "brand", "success", "error", "warning", "info"] as const
-      ).map((v) => (
+      {(["default", "brand", "success", "error", "warning", "info"] as const).map((v) => (
         <div key={v} className="grid gap-1">
           <span className="text-xs text-muted-foreground capitalize">{v}</span>
           <Progress value={65} variant={v} />
@@ -87,9 +85,7 @@ export const AllVariants: Story = {
 export const BudgetUtilisation: Story = {
   render: () => (
     <div className="grid w-full max-w-sm gap-4 rounded-lg border border-input bg-card p-6">
-      <span className="text-sm font-medium text-foreground">
-        Budget Utilisation
-      </span>
+      <span className="text-sm font-medium text-foreground">Budget Utilisation</span>
       <div className="grid gap-3">
         <div className="grid gap-1">
           <div className="flex items-center justify-between">

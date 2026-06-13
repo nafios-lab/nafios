@@ -9,10 +9,7 @@ import {
   RadioLogo,
   StorageLogo,
 } from "./logo/index.ts";
-import {
-  ProductSwitcher,
-  type ProductSwitcherProps,
-} from "./product-switcher.tsx";
+import { ProductSwitcher, type ProductSwitcherProps } from "./product-switcher.tsx";
 import { Button } from "./ui/button.tsx";
 
 const products: ProductSwitcherProps["items"] = [

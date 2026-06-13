@@ -37,9 +37,7 @@ export const Brand: Story = {
 export const CustomRange: Story = {
   render: () => {
     const [year, setYear] = useState(2025);
-    return (
-      <YearSelect value={year} onChange={setYear} min={2020} max={2030} />
-    );
+    return <YearSelect value={year} onChange={setYear} min={2020} max={2030} />;
   },
 };
 

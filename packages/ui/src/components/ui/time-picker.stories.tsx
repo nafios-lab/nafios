@@ -102,10 +102,5 @@ export const Sizes: Story = {
 };
 
 export const Disabled: Story = {
-  render: () => (
-    <TimePicker
-      value={{ hours: 5, minutes: 30, period: "PM" }}
-      disabled
-    />
-  ),
+  render: () => <TimePicker value={{ hours: 5, minutes: 30, period: "PM" }} disabled />,
 };

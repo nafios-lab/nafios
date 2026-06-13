@@ -31,10 +31,7 @@ export interface ToggleProps
 
 function Toggle({ className, variant, size, ...props }: ToggleProps) {
   return (
-    <TogglePrimitive.Root
-      className={cn(toggleVariants({ variant, size, className }))}
-      {...props}
-    />
+    <TogglePrimitive.Root className={cn(toggleVariants({ variant, size, className }))} {...props} />
   );
 }
 

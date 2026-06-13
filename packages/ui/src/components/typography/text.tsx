@@ -33,10 +33,7 @@ const textVariants = cva("font-body", {
   },
 });
 
-const defaultSizeForVariant: Record<
-  string,
-  NonNullable<TextProps["size"]>
-> = {
+const defaultSizeForVariant: Record<string, NonNullable<TextProps["size"]>> = {
   default: "md",
   caption: "xs",
   overline: "xs",

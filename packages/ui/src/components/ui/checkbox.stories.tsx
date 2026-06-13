@@ -110,6 +110,7 @@ export const Colors: Story = {
 export const Card: Story = {
   render: () => (
     <div className="grid gap-3 max-w-sm">
+      {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders a native input */}
       <label className="flex items-start gap-3 rounded-lg border border-input bg-card p-4 cursor-pointer has-checked:border-brand has-checked:bg-brand/5 transition-colors">
         <Checkbox variant="brand" defaultChecked className="mt-0.5" />
         <div className="grid gap-1">
@@ -119,6 +120,7 @@ export const Card: Story = {
           </span>
         </div>
       </label>
+      {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders a native input */}
       <label className="flex items-start gap-3 rounded-lg border border-input bg-card p-4 cursor-pointer has-checked:border-brand has-checked:bg-brand/5 transition-colors">
         <Checkbox variant="brand" className="mt-0.5" />
         <div className="grid gap-1">
@@ -128,6 +130,7 @@ export const Card: Story = {
           </span>
         </div>
       </label>
+      {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders a native input */}
       <label className="flex items-start gap-3 rounded-lg border border-input bg-card p-4 cursor-pointer has-checked:border-brand has-checked:bg-brand/5 transition-colors">
         <Checkbox variant="brand" className="mt-0.5" />
         <div className="grid gap-1">

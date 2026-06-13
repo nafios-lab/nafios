@@ -14,15 +14,7 @@ const meta: Meta<StoryArgs> = {
   argTypes: {
     variant: {
       control: "select",
-      options: [
-        "default",
-        "brand",
-        "destructive",
-        "outline",
-        "secondary",
-        "ghost",
-        "link",
-      ],
+      options: ["default", "brand", "destructive", "outline", "secondary", "ghost", "link"],
     },
     size: {
       control: "select",

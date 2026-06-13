@@ -4,15 +4,11 @@ import { cn } from "../../lib/utils.ts";
 
 type IconButtonSize = "default" | "sm" | "lg";
 
-export interface IconButtonProps extends Omit<
-  ButtonProps,
-  | "size"
-  | "iconLeft"
-  | "iconRight"
-  | "children"
-  | "textOnLoading"
-  | "showLoader"
-> {
+export interface IconButtonProps
+  extends Omit<
+    ButtonProps,
+    "size" | "iconLeft" | "iconRight" | "children" | "textOnLoading" | "showLoader"
+  > {
   /** Any React node — lucide-react, heroicons, a custom SVG, etc. */
   icon: React.ReactNode;
   /** Controls the square dimensions. Defaults to "default" (36 px). */
@@ -27,18 +23,9 @@ const sizeMap: Record<IconButtonSize, string> = {
   lg: "size-10 [&_svg]:size-5",
 };
 
-function IconButton({
-  icon,
-  size = "default",
-  className,
-  ...props
-}: IconButtonProps) {
+function IconButton({ icon, size = "default", className, ...props }: IconButtonProps) {
   return (
-    <Button
-      size="icon"
-      className={cn(sizeMap[size], "rounded-full", className)}
-      {...props}
-    >
+    <Button size="icon" className={cn(sizeMap[size], "rounded-full", className)} {...props}>
       {icon}
     </Button>
   );

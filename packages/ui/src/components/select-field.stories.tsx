@@ -100,23 +100,21 @@ export const WithDisabledOptions: Story = {
     label: "Favourite Fruit",
     placeholder: "Pick a fruit...",
     options: fruitOptions.map((o) =>
-      o.value === "banana" || o.value === "grape"
-        ? { ...o, disabled: true }
-        : o,
+      o.value === "banana" || o.value === "grape" ? { ...o, disabled: true } : o,
     ),
   },
 };
 
 export const Controlled: Story = {
-  render: (args: any) => {
+  render: () => {
     const [value, setValue] = useState("cherry");
     return (
       <SelectField
-        {...args}
         value={value}
         onValueChange={setValue}
         label="Favourite Fruit"
         placeholder="Pick a fruit..."
+        options={fruitOptions}
       />
     );
   },
@@ -132,11 +130,10 @@ export const Searchable: Story = {
 };
 
 export const SearchableControlled: Story = {
-  render: (args: any) => {
+  render: () => {
     const [value, setValue] = useState("sg");
     return (
       <SelectField
-        {...args}
         value={value}
         onValueChange={setValue}
         label="Country"

@@ -29,14 +29,10 @@ export const Default: Story = {
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Sheet Title</SheetTitle>
-          <SheetDescription>
-            This is a description of the sheet content.
-          </SheetDescription>
+          <SheetDescription>This is a description of the sheet content.</SheetDescription>
         </SheetHeader>
         <div className="py-4">
-          <p className="text-sm text-muted-foreground">
-            Sheet content goes here.
-          </p>
+          <p className="text-sm text-muted-foreground">Sheet content goes here.</p>
         </div>
         <SheetFooter>
           <SheetClose asChild>
@@ -61,13 +57,11 @@ export const Left: Story = {
           <SheetDescription>Browse the app sections.</SheetDescription>
         </SheetHeader>
         <nav className="grid gap-2 py-4">
-          {["Dashboard", "Transactions", "Accounts", "Settings"].map(
-            (item) => (
-              <Button key={item} variant="ghost" className="justify-start">
-                {item}
-              </Button>
-            ),
-          )}
+          {["Dashboard", "Transactions", "Accounts", "Settings"].map((item) => (
+            <Button key={item} variant="ghost" className="justify-start">
+              {item}
+            </Button>
+          ))}
         </nav>
       </SheetContent>
     </Sheet>
@@ -83,9 +77,7 @@ export const Top: Story = {
       <SheetContent side="top">
         <SheetHeader>
           <SheetTitle>Notifications</SheetTitle>
-          <SheetDescription>
-            You have 3 unread notifications.
-          </SheetDescription>
+          <SheetDescription>You have 3 unread notifications.</SheetDescription>
         </SheetHeader>
       </SheetContent>
     </Sheet>
@@ -101,9 +93,7 @@ export const Bottom: Story = {
       <SheetContent side="bottom">
         <SheetHeader>
           <SheetTitle>Cookie Preferences</SheetTitle>
-          <SheetDescription>
-            Manage your cookie settings below.
-          </SheetDescription>
+          <SheetDescription>Manage your cookie settings below.</SheetDescription>
         </SheetHeader>
         <SheetFooter>
           <SheetClose asChild>

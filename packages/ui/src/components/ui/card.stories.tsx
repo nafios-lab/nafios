@@ -1,13 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "./button.tsx";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "./card.tsx";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card.tsx";
 
 const meta: Meta = {
   title: "Primitives/Card",
@@ -52,9 +45,7 @@ export const SimpleContent: Story = {
   render: () => (
     <Card className="w-72">
       <CardContent className="pt-6">
-        <p className="text-sm">
-          A card with only content — no header or footer.
-        </p>
+        <p className="text-sm">A card with only content — no header or footer.</p>
       </CardContent>
     </Card>
   ),
@@ -65,9 +56,7 @@ export const WithFooterActions: Story = {
     <Card className="w-80">
       <CardHeader>
         <CardTitle>Delete account</CardTitle>
-        <CardDescription>
-          This action is irreversible. All data will be lost.
-        </CardDescription>
+        <CardDescription>This action is irreversible. All data will be lost.</CardDescription>
       </CardHeader>
       <CardFooter className="justify-end gap-2">
         <Button variant="outline" size="sm">
@@ -90,9 +79,7 @@ export const GridLayout: Story = {
             <CardTitle className="text-base">{app}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Manage your {app.toLowerCase()}.
-            </p>
+            <p className="text-sm text-muted-foreground">Manage your {app.toLowerCase()}.</p>
           </CardContent>
         </Card>
       ))}

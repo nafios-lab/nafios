@@ -1,10 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
-import {
-  DateRangePicker,
-  type DateRangePickerProps,
-} from "./date-range-picker.tsx";
+import { DateRangePicker, type DateRangePickerProps } from "./date-range-picker.tsx";
 
 const meta: Meta<DateRangePickerProps> = {
   title: "Composites/DateRangePicker",
@@ -63,13 +60,7 @@ export const WithLabel: Story = {
 export const SingleMonth: Story = {
   render: () => {
     const [range, setRange] = useState<DateRange | undefined>();
-    return (
-      <DateRangePicker
-        value={range}
-        onChange={setRange}
-        numberOfMonths={1}
-      />
-    );
+    return <DateRangePicker value={range} onChange={setRange} numberOfMonths={1} />;
   },
 };
 

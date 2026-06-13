@@ -1,8 +1,7 @@
 import type * as React from "react";
 import { cn } from "../../lib/utils.ts";
 
-export interface CalendarLogoProps
-  extends Omit<React.SVGAttributes<SVGSVGElement>, "children"> {
+export interface CalendarLogoProps extends Omit<React.SVGAttributes<SVGSVGElement>, "children"> {
   className?: string;
 }
 
@@ -13,6 +12,7 @@ function CalendarLogo({ className, ...props }: CalendarLogoProps) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("h-8 w-auto", className)}
+      aria-hidden="true"
       {...props}
     >
       <path

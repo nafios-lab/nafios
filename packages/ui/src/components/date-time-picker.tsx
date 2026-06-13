@@ -106,12 +106,7 @@ function DateTimePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={value}
-          onSelect={handleDateSelect}
-          {...calendarProps}
-        />
+        <Calendar mode="single" selected={value} onSelect={handleDateSelect} {...calendarProps} />
         <Separator />
         <div className="p-3 flex items-center justify-center">
           <TimePicker

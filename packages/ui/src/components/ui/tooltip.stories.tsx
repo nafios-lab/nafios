@@ -36,25 +36,33 @@ export const Sides: Story = {
     <div className="flex items-center gap-8 p-16">
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline" size="sm">Top</Button>
+          <Button variant="outline" size="sm">
+            Top
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="top">Tooltip on top</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline" size="sm">Right</Button>
+          <Button variant="outline" size="sm">
+            Right
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="right">Tooltip on right</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline" size="sm">Bottom</Button>
+          <Button variant="outline" size="sm">
+            Bottom
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">Tooltip on bottom</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline" size="sm">Left</Button>
+          <Button variant="outline" size="sm">
+            Left
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="left">Tooltip on left</TooltipContent>
       </Tooltip>

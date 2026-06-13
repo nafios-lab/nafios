@@ -43,21 +43,15 @@ export const WithDescription: Story = {
 
 export const Success: Story = {
   render: () => (
-    <Button
-      variant="brand"
-      onClick={() => toast.success("Changes saved successfully")}
-    >
+    <Button variant="brand" onClick={() => toast.success("Changes saved successfully")}>
       Success
     </Button>
   ),
 };
 
-export const Error: Story = {
+export const ErrorToast: Story = {
   render: () => (
-    <Button
-      variant="destructive"
-      onClick={() => toast.error("Something went wrong")}
-    >
+    <Button variant="destructive" onClick={() => toast.error("Something went wrong")}>
       Error
     </Button>
   ),
@@ -81,7 +75,7 @@ export const WithAction: Story = {
   ),
 };
 
-export const Promise: Story = {
+export const PromiseToast: Story = {
   render: () => (
     <Button
       variant="outline"

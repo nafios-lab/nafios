@@ -24,10 +24,8 @@ const radioItemVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "border-input bg-background text-primary data-[state=checked]:border-primary",
-        brand:
-          "border-input bg-background text-brand-darker data-[state=checked]:border-brand",
+        default: "border-input bg-background text-primary data-[state=checked]:border-primary",
+        brand: "border-input bg-background text-brand-darker data-[state=checked]:border-brand",
         error:
           "border-error-foreground bg-background text-error-foreground data-[state=checked]:border-error-foreground",
       },
@@ -50,8 +48,7 @@ const indicatorIconSize: Record<string, string> = {
   lg: "size-3",
 };
 
-export interface RadioGroupProps
-  extends React.ComponentProps<typeof RadioGroupPrimitive.Root> {
+export interface RadioGroupProps extends React.ComponentProps<typeof RadioGroupPrimitive.Root> {
   error?: string;
 }
 
@@ -63,8 +60,7 @@ function RadioGroup({
   ...props
 }: RadioGroupProps) {
   const errorId = error ? `${props.id ?? "radio-group"}-error` : undefined;
-  const layoutOrientation =
-    orientation === "horizontal" ? "horizontal" : "vertical";
+  const layoutOrientation = orientation === "horizontal" ? "horizontal" : "vertical";
 
   return (
     <div className="grid gap-1.5">
@@ -92,10 +88,7 @@ function RadioGroup({
 }
 
 export interface RadioGroupItemProps
-  extends Omit<
-      React.ComponentProps<typeof RadioGroupPrimitive.Item>,
-      "children"
-    >,
+  extends Omit<React.ComponentProps<typeof RadioGroupPrimitive.Item>, "children">,
     VariantProps<typeof radioItemVariants> {
   label?: string;
   description?: string;

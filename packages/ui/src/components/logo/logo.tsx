@@ -15,6 +15,7 @@ function LogoMark(props: React.SVGAttributes<SVGSVGElement>) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("h-8 w-auto", className)}
+      aria-hidden="true"
       {...rest}
     >
       <path
@@ -29,12 +30,7 @@ function LogoMark(props: React.SVGAttributes<SVGSVGElement>) {
       </g>
       <defs>
         <clipPath id="clip-logo-mark">
-          <rect
-            width="40"
-            height="40"
-            fill="white"
-            transform="translate(4.78564 33) rotate(-45)"
-          />
+          <rect width="40" height="40" fill="white" transform="translate(4.78564 33) rotate(-45)" />
         </clipPath>
       </defs>
     </svg>
@@ -49,6 +45,7 @@ function LogoWord(props: React.SVGAttributes<SVGSVGElement>) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("h-10 w-auto", className)}
+      aria-hidden="true"
       {...rest}
     >
       <path
@@ -69,6 +66,7 @@ function LogoWordmark(props: React.SVGAttributes<SVGSVGElement>) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("h-10 w-auto", className)}
+      aria-hidden="true"
       {...rest}
     >
       <path
@@ -87,12 +85,7 @@ function LogoWordmark(props: React.SVGAttributes<SVGSVGElement>) {
       />
       <defs>
         <clipPath id="clip-logo-wordmark">
-          <rect
-            width="40"
-            height="40"
-            fill="white"
-            transform="translate(4.78564 33) rotate(-45)"
-          />
+          <rect width="40" height="40" fill="white" transform="translate(4.78564 33) rotate(-45)" />
         </clipPath>
       </defs>
     </svg>

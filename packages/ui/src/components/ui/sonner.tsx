@@ -17,11 +17,9 @@ function Toaster({ ...props }: ToasterProps) {
       toastOptions={{
         classNames: {
           toast: "!bg-background !text-foreground !border-border",
-          success:
-            "!bg-success !text-success-foreground !border-success-subtle",
+          success: "!bg-success !text-success-foreground !border-success-subtle",
           error: "!bg-error !text-error-foreground !border-error-subtle",
-          warning:
-            "!bg-warning !text-warning-foreground !border-warning-subtle",
+          warning: "!bg-warning !text-warning-foreground !border-warning-subtle",
           info: "!bg-info !text-info-foreground !border-info-subtle",
         },
       }}

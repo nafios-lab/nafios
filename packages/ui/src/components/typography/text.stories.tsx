@@ -77,7 +77,9 @@ export const Caption: Story = {
         <p className="text-lg font-semibold">Active</p>
       </div>
       <div>
-        <Text variant="caption" size="sm">Caption at sm size</Text>
+        <Text variant="caption" size="sm">
+          Caption at sm size
+        </Text>
       </div>
     </div>
   ),
@@ -120,7 +122,9 @@ export const AllVariants: Story = {
       <Text variant="caption">Caption -- uppercase widest tracking</Text>
       <Text variant="overline">Overline -- uppercase wider tracking</Text>
       <Text variant="label">Label -- medium weight, no line-height</Text>
-      <Text muted size="sm">Muted small helper text.</Text>
+      <Text muted size="sm">
+        Muted small helper text.
+      </Text>
     </div>
   ),
 };

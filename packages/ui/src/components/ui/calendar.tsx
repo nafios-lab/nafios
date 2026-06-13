@@ -6,12 +6,7 @@ import { buttonVariants } from "./button.tsx";
 
 type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-function Calendar({
-  className,
-  classNames,
-  showOutsideDays = true,
-  ...props
-}: CalendarProps) {
+function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   const isRange = props.mode === "range";
 
   return (
@@ -35,8 +30,7 @@ function Calendar({
         ),
         month_grid: "w-full border-collapse space-x-1",
         weekdays: "flex",
-        weekday:
-          "text-muted-foreground rounded-full w-8 font-normal text-sm",
+        weekday: "text-muted-foreground rounded-full w-8 font-normal text-sm",
         week: "flex w-full mt-2",
         day: cn(
           "relative p-0 text-center text-sm border border-transparent focus-within:relative focus-within:z-20",
@@ -55,12 +49,8 @@ function Calendar({
             ? "border border-brand rounded-full [&>button]:rounded-full"
             : "border border-brand rounded-full",
         ),
-        today: cn(
-          "text-brand bg-brand/10 rounded-full!",
-          isRange ? "rounded-md" : "rounded-full",
-        ),
-        outside:
-          "day-outside text-muted-foreground aria-selected:text-muted-foreground",
+        today: cn("text-brand bg-brand/10 rounded-full!", isRange ? "rounded-md" : "rounded-full"),
+        outside: "day-outside text-muted-foreground aria-selected:text-muted-foreground",
         disabled: "text-muted-foreground opacity-50",
         range_middle:
           "!rounded-none [&>button]:!rounded-none !border-t-brand !border-b-brand !border-l-transparent !border-r-transparent aria-selected:text-foreground",

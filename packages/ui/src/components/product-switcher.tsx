@@ -1,11 +1,7 @@
 import type * as React from "react";
 import { cn } from "../lib/utils.ts";
 import { Text } from "./typography/text.tsx";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./ui/popover.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 
 export interface ProductItem {
   /** Unique identifier for the product. */
@@ -60,19 +56,14 @@ function ProductSwitcher({
 }: ProductSwitcherProps) {
   return (
     <Popover open={controlledOpen} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        {renderTrigger({ open: controlledOpen ?? false })}
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{renderTrigger({ open: controlledOpen ?? false })}</PopoverTrigger>
       <PopoverContent
         align={align}
         side={side}
         sideOffset={sideOffset}
         className={cn("w-auto p-2", contentClassName)}
       >
-        <div
-          className="grid gap-1"
-          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
-        >
+        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
           {items.map((item) => {
             const Icon = item.icon;
             const inner = (

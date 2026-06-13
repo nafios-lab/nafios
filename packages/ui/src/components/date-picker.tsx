@@ -12,8 +12,7 @@ import { YearSelect } from "./year-select.tsx";
 
 type NavigationView = "calendar" | "month" | "year";
 
-export interface DatePickerProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
+export interface DatePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   value?: Date;
   onChange?: (date: Date | undefined) => void;
   placeholder?: string;
@@ -113,18 +112,11 @@ function DatePicker({
             >
               {viewMonth.getFullYear()}
             </button>
-            <MonthSelect
-              value={viewMonth.getMonth()}
-              onChange={handleMonthPick}
-              short
-            />
+            <MonthSelect value={viewMonth.getMonth()} onChange={handleMonthPick} short />
           </div>
         )}
         {navView === "year" && (
-          <YearSelect
-            value={viewMonth.getFullYear()}
-            onChange={handleYearPick}
-          />
+          <YearSelect value={viewMonth.getFullYear()} onChange={handleYearPick} />
         )}
       </PopoverContent>
     </Popover>

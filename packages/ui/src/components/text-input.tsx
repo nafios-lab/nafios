@@ -21,8 +21,7 @@ const textInputVariants = cva(
 );
 
 export interface TextInputProps
-  extends
-    Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
     VariantProps<typeof textInputVariants> {
   label?: string;
   helperText?: string;
@@ -76,9 +75,7 @@ function TextInput({
             borderLess && "border-transparent",
           )}
           aria-invalid={!!error}
-          aria-describedby={
-            error ? `${id}-error` : helperText ? `${id}-helper` : undefined
-          }
+          aria-describedby={error ? `${id}-error` : helperText ? `${id}-helper` : undefined}
           {...props}
         />
         {iconRight && (

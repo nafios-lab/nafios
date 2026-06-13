@@ -3,8 +3,7 @@ import { useCallback, useState } from "react";
 import { cn } from "../lib/utils.ts";
 import { TextInput, type TextInputProps } from "./text-input.tsx";
 
-export interface CredentialInputProps
-  extends Omit<TextInputProps, "type" | "iconRight"> {
+export interface CredentialInputProps extends Omit<TextInputProps, "type" | "iconRight"> {
   /** When true the value is displayed as plain text. Defaults to false (masked). */
   visible?: boolean;
   /** Called when the visibility toggle is clicked. Use for controlled mode. */

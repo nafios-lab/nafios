@@ -5,10 +5,7 @@ import type * as React from "react";
 import { cn } from "../../lib/utils.ts";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.tsx";
 
-function Command({
-  className,
-  ...props
-}: React.ComponentProps<typeof CommandPrimitive>) {
+function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
   return (
     <CommandPrimitive
       className={cn(
@@ -57,10 +54,7 @@ function CommandInput({
   );
 }
 
-function CommandList({
-  className,
-  ...props
-}: React.ComponentProps<typeof CommandPrimitive.List>) {
+function CommandList({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.List>) {
   return (
     <CommandPrimitive.List
       className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
@@ -69,9 +63,7 @@ function CommandList({
   );
 }
 
-function CommandEmpty({
-  ...props
-}: React.ComponentProps<typeof CommandPrimitive.Empty>) {
+function CommandEmpty({ ...props }: React.ComponentProps<typeof CommandPrimitive.Empty>) {
   return <CommandPrimitive.Empty className="py-6 text-center text-sm" {...props} />;
 }
 
@@ -95,17 +87,11 @@ function CommandSeparator({
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Separator>) {
   return (
-    <CommandPrimitive.Separator
-      className={cn("-mx-1 h-px bg-border", className)}
-      {...props}
-    />
+    <CommandPrimitive.Separator className={cn("-mx-1 h-px bg-border", className)} {...props} />
   );
 }
 
-function CommandItem({
-  className,
-  ...props
-}: React.ComponentProps<typeof CommandPrimitive.Item>) {
+function CommandItem({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Item>) {
   return (
     <CommandPrimitive.Item
       className={cn(
@@ -117,10 +103,7 @@ function CommandItem({
   );
 }
 
-function CommandShortcut({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) {
+function CommandShortcut({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       className={cn("ml-auto text-xs tracking-widest text-muted-foreground", className)}

@@ -1,7 +1,12 @@
 import type * as React from "react";
 import { cn } from "../../lib/utils.ts";
 
-function Input({ className, type, ref, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { ref?: React.Ref<HTMLInputElement> }) {
+function Input({
+  className,
+  type,
+  ref,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { ref?: React.Ref<HTMLInputElement> }) {
   return (
     <input
       ref={ref}

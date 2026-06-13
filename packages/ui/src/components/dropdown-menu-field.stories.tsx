@@ -1,17 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Cloud,
-  CreditCard,
-  LogOut,
-  Settings,
-  Trash2,
-  User,
-} from "lucide-react";
+import { Cloud, CreditCard, LogOut, Settings, Trash2, User } from "lucide-react";
 import { Button } from "./ui/button.tsx";
-import {
-  DropdownMenuField,
-  type DropdownMenuFieldProps,
-} from "./dropdown-menu-field.tsx";
+import { DropdownMenuField, type DropdownMenuFieldProps } from "./dropdown-menu-field.tsx";
 
 type StoryArgs = DropdownMenuFieldProps;
 
@@ -104,9 +94,7 @@ export const WithGroups: Story = {
       {
         type: "group",
         label: "Danger Zone",
-        items: [
-          { label: "Delete account", icon: Trash2, destructive: true },
-        ],
+        items: [{ label: "Delete account", icon: Trash2, destructive: true }],
       },
     ],
   },

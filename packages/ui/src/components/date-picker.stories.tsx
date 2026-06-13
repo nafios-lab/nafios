@@ -53,13 +53,7 @@ export const WithLabel: Story = {
 export const CustomFormat: Story = {
   render: () => {
     const [date, setDate] = useState<Date | undefined>(new Date());
-    return (
-      <DatePicker
-        value={date}
-        onChange={setDate}
-        dateFormat="dd/MM/yyyy"
-      />
-    );
+    return <DatePicker value={date} onChange={setDate} dateFormat="dd/MM/yyyy" />;
   },
 };
 

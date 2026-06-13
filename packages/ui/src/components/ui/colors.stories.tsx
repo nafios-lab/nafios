@@ -38,17 +38,9 @@ const FEEDBACK_SWATCHES = [
   },
 ] as const;
 
-function Swatch({
-  name,
-  bg,
-  fg,
-  border,
-  description,
-}: (typeof FEEDBACK_SWATCHES)[number]) {
+function Swatch({ name, bg, fg, border, description }: (typeof FEEDBACK_SWATCHES)[number]) {
   return (
-    <div
-      className={`${bg} ${fg} ${border} flex flex-col gap-3 rounded-lg border p-5`}
-    >
+    <div className={`${bg} ${fg} ${border} flex flex-col gap-3 rounded-lg border p-5`}>
       <div className="flex items-center justify-between">
         <span className="font-display text-lg font-semibold">{name}</span>
         <span className="font-mono text-xs opacity-70">{bg}</span>
@@ -56,15 +48,11 @@ function Swatch({
       <p className="text-sm leading-relaxed opacity-80">{description}</p>
       <div className="flex gap-2 pt-1">
         <div className="flex items-center gap-1.5 font-mono text-xs">
-          <span
-            className={`${bg} ${border} inline-block h-3 w-3 rounded-sm border`}
-          />
+          <span className={`${bg} ${border} inline-block h-3 w-3 rounded-sm border`} />
           base
         </div>
         <div className="flex items-center gap-1.5 font-mono text-xs">
-          <span
-            className={`${border} inline-block h-3 w-3 rounded-sm border-2 bg-transparent`}
-          />
+          <span className={`${border} inline-block h-3 w-3 rounded-sm border-2 bg-transparent`} />
           subtle
         </div>
         <div className="flex items-center gap-1.5 font-mono text-xs">
@@ -98,7 +86,7 @@ export const Success: Story = {
   render: () => <Swatch {...FEEDBACK_SWATCHES[0]} />,
 };
 
-export const Error: Story = {
+export const ErrorVariant: Story = {
   render: () => <Swatch {...FEEDBACK_SWATCHES[1]} />,
 };
 

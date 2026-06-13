@@ -27,13 +27,7 @@ export interface CodeProps
   block?: boolean;
 }
 
-function Code({
-  size,
-  block = false,
-  className,
-  children,
-  ...props
-}: CodeProps) {
+function Code({ size, block = false, className, children, ...props }: CodeProps) {
   if (block) {
     return (
       <pre className={cn(codeVariants({ size, block }), className)} {...props}>

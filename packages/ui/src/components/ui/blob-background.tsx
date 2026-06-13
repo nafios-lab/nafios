@@ -2,36 +2,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 import { cn } from "../../lib/utils.ts";
 
-const blobBackgroundVariants = cva(
-  "relative isolate overflow-hidden bg-background",
-  {
-    variants: {
-      intensity: {
-        subtle: "[--blob-opacity:0.08]",
-        medium: "[--blob-opacity:0.14]",
-        vivid: "[--blob-opacity:0.22]",
-      },
-    },
-    defaultVariants: {
-      intensity: "medium",
+const blobBackgroundVariants = cva("relative isolate overflow-hidden bg-background", {
+  variants: {
+    intensity: {
+      subtle: "[--blob-opacity:0.08]",
+      medium: "[--blob-opacity:0.14]",
+      vivid: "[--blob-opacity:0.22]",
     },
   },
-);
+  defaultVariants: {
+    intensity: "medium",
+  },
+});
 
 type BlobBackgroundProps = React.ComponentProps<"div"> &
   VariantProps<typeof blobBackgroundVariants>;
 
-function BlobBackground({
-  className,
-  intensity,
-  children,
-  ...props
-}: BlobBackgroundProps) {
+function BlobBackground({ className, intensity, children, ...props }: BlobBackgroundProps) {
   return (
-    <div
-      className={cn(blobBackgroundVariants({ intensity }), className)}
-      {...props}
-    >
+    <div className={cn(blobBackgroundVariants({ intensity }), className)} {...props}>
       {/* Blobs use -z-10 so children stay above without a wrapper */}
       <div
         aria-hidden

@@ -14,9 +14,7 @@ type Story = StoryObj<typeof Calendar>;
 export const Default: Story = {
   render: () => {
     const [date, setDate] = useState<Date | undefined>(new Date());
-    return (
-      <Calendar mode="single" selected={date} onSelect={setDate} />
-    );
+    return <Calendar mode="single" selected={date} onSelect={setDate} />;
   },
 };
 
@@ -43,9 +41,7 @@ export const Range: Story = {
 export const Multiple: Story = {
   render: () => {
     const [dates, setDates] = useState<Date[]>([new Date()]);
-    return (
-      <Calendar mode="multiple" selected={dates} onSelect={(d) => setDates(d ?? [])} />
-    );
+    return <Calendar mode="multiple" selected={dates} onSelect={(d) => setDates(d ?? [])} />;
   },
 };
 
@@ -57,9 +53,7 @@ export const DisabledDates: Story = {
         mode="single"
         selected={date}
         onSelect={setDate}
-        disabled={[
-          { dayOfWeek: [0, 6] },
-        ]}
+        disabled={[{ dayOfWeek: [0, 6] }]}
       />
     );
   },
@@ -68,13 +62,6 @@ export const DisabledDates: Story = {
 export const WithoutOutsideDays: Story = {
   render: () => {
     const [date, setDate] = useState<Date | undefined>(new Date());
-    return (
-      <Calendar
-        mode="single"
-        selected={date}
-        onSelect={setDate}
-        showOutsideDays={false}
-      />
-    );
+    return <Calendar mode="single" selected={date} onSelect={setDate} showOutsideDays={false} />;
   },
 };

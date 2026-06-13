@@ -2,12 +2,7 @@ import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useId } from "react";
 import { cn } from "../lib/utils.ts";
 import { Text } from "./typography/text.tsx";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "./ui/input-otp.tsx";
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "./ui/input-otp.tsx";
 import { Label } from "./ui/label.tsx";
 
 export interface OtpInputProps {
@@ -53,10 +48,7 @@ function OtpInput({
   className,
 }: OtpInputProps) {
   const autoId = useId();
-  const groupSize =
-    groupSizeProp !== undefined
-      ? groupSizeProp
-      : Math.floor(length / 2);
+  const groupSize = groupSizeProp !== undefined ? groupSizeProp : Math.floor(length / 2);
 
   // Build groups of slot indices
   const indices = Array.from({ length }, (_, i) => i);
@@ -71,9 +63,7 @@ function OtpInput({
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      {label && (
-        <Label className={cn(error && "text-error-foreground")}>{label}</Label>
-      )}
+      {label && <Label className={cn(error && "text-error-foreground")}>{label}</Label>}
 
       <InputOTP
         maxLength={length}
@@ -83,13 +73,7 @@ function OtpInput({
         disabled={disabled}
         pattern={pattern}
         aria-invalid={!!error}
-        aria-describedby={
-          error
-            ? `${autoId}-error`
-            : helperText
-              ? `${autoId}-helper`
-              : undefined
-        }
+        aria-describedby={error ? `${autoId}-error` : helperText ? `${autoId}-helper` : undefined}
       >
         {groups.map((slots, gi) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: groups are static

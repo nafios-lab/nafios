@@ -39,10 +39,7 @@ const indicatorIconSize: Record<string, string> = {
 };
 
 export interface CheckboxProps
-  extends Omit<
-      React.ComponentProps<typeof CheckboxPrimitive.Root>,
-      "children"
-    >,
+  extends Omit<React.ComponentProps<typeof CheckboxPrimitive.Root>, "children">,
     VariantProps<typeof checkboxVariants> {
   label?: string;
   description?: string;
@@ -70,11 +67,15 @@ function Checkbox({
   const checkbox = (
     <CheckboxPrimitive.Root
       id={id}
-      className={cn(checkboxVariants({ variant: resolvedVariant, size, className: label ? undefined : className }))}
+      className={cn(
+        checkboxVariants({
+          variant: resolvedVariant,
+          size,
+          className: label ? undefined : className,
+        }),
+      )}
       aria-invalid={error ? true : undefined}
-      aria-describedby={
-        error ? errorId : description ? descriptionId : undefined
-      }
+      aria-describedby={error ? errorId : description ? descriptionId : undefined}
       {...props}
     >
       <CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
@@ -94,10 +95,7 @@ function Checkbox({
       {checkbox}
       <div className="grid gap-1">
         {label && (
-          <Label
-            htmlFor={id}
-            className="cursor-pointer leading-none"
-          >
+          <Label htmlFor={id} className="cursor-pointer leading-none">
             {label}
           </Label>
         )}

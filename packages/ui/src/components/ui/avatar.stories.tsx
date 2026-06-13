@@ -19,10 +19,7 @@ type Story = StoryObj<AvatarProps>;
 export const WithImage: Story = {
   render: (args) => (
     <Avatar {...args}>
-      <AvatarImage
-        src="https://api.dicebear.com/9.x/initials/svg?seed=HY"
-        alt="Hanafi Yakub"
-      />
+      <AvatarImage src="https://api.dicebear.com/9.x/initials/svg?seed=HY" alt="Hanafi Yakub" />
       <AvatarFallback>HY</AvatarFallback>
     </Avatar>
   ),

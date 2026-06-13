@@ -11,10 +11,8 @@ const switchVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
-        brand:
-          "data-[state=checked]:bg-brand-darker data-[state=unchecked]:bg-input",
+        default: "data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
+        brand: "data-[state=checked]:bg-brand-darker data-[state=unchecked]:bg-input",
       },
       size: {
         sm: "h-4 w-7",
@@ -68,13 +66,9 @@ function Switch({
   const switchEl = (
     <SwitchPrimitive.Root
       id={id}
-      className={cn(
-        switchVariants({ variant, size, className: label ? undefined : className }),
-      )}
+      className={cn(switchVariants({ variant, size, className: label ? undefined : className }))}
       aria-invalid={error ? true : undefined}
-      aria-describedby={
-        error ? errorId : description ? descriptionId : undefined
-      }
+      aria-describedby={error ? errorId : description ? descriptionId : undefined}
       {...props}
     >
       <SwitchPrimitive.Thumb
