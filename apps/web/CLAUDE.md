@@ -44,6 +44,53 @@ After `bun run build`:
 - Netlify SSR function: `.netlify/v1/functions/server.mjs` (auto-emitted by plugin)
 - Netlify publish dir: `.output/public`
 
+## Local Supabase Stack
+
+This app depends on a running local Supabase instance for auth and data.
+
+### Prerequisites
+
+- Docker must be running (Supabase CLI uses Docker containers)
+- Supabase CLI is installed as a workspace devDependency (`supabase` in root `package.json`)
+
+### One-command bring-up
+
+```sh
+bun run supabase:start     # starts Postgres, Auth, Inbucket, Studio, etc.
+```
+
+After start, grab the local keys:
+
+```sh
+bun run supabase:status    # prints API URL, anon key, service-role key
+```
+
+Copy the keys into your `.env` file (use `.env.example` as a template).
+
+### Local services
+
+| Service       | URL                          | Purpose                        |
+|---------------|------------------------------|--------------------------------|
+| API (PostgREST) | http://127.0.0.1:54321     | Supabase API endpoint          |
+| Postgres      | postgresql://postgres:postgres@127.0.0.1:54322/postgres | Direct DB access |
+| Studio        | http://localhost:54323       | Supabase dashboard             |
+| Mailpit       | http://localhost:54324       | Local email testing (captures signup/reset emails) |
+
+### Test user
+
+After `bun run db:reset`, a seeded test user is available:
+
+- **Email:** `test@nafios.local`
+- **Password:** `password123`
+
+### Useful commands
+
+```sh
+bun run db:reset            # replay all migrations + seed data
+bun run db:types            # regenerate TypeScript types from local schema
+bun run supabase:stop       # tear down local Supabase containers
+```
+
 ## Root context
 
 See [root CLAUDE.md](../../CLAUDE.md) for monorepo-wide conventions.

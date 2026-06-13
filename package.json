@@ -27,6 +27,9 @@
     "docs:sync": "bun --filter '@nafios/docs' sync",
     "docs:preview": "bun --filter '@nafios/docs' preview",
     "test:integration": "bun test tests/integration/",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
     "db:reset": "supabase db reset",
     "db:seed": "supabase db reset",
     "db:types": "supabase gen types typescript --local"
