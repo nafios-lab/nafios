@@ -1,7 +1,13 @@
 import type { Preview } from "@storybook/react";
+import { themes } from "@storybook/theming";
 import "@nafios/ui/globals.css";
 
 const preview: Preview = {
+  parameters: {
+    docs: {
+      theme: themes.dark,
+    },
+  },
   globalTypes: {
     theme: {
       description: "NafiOS theme",
@@ -24,7 +30,7 @@ const preview: Preview = {
       const theme = context.globals.theme ?? "dark";
       document.documentElement.classList.toggle("dark", theme === "dark");
       return (
-        <div className="p-4">
+        <div className="bg-background text-foreground p-10">
           <Story />
         </div>
       );

@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "@fontsource-variable/outfit";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
@@ -51,11 +54,56 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
+  /* NafiOS brand palette */
+  --color-brand: hsl(var(--brand));
+  --color-brand-darker: hsl(var(--brand-darker));
+  --color-accent-darker: hsl(var(--accent-darker));
+  --color-fg-100: hsl(var(--fg-100));
+  --color-fg-90: hsl(var(--fg-90));
+  --color-fg-80: hsl(var(--fg-80));
+  --color-fg-70: hsl(var(--fg-70));
+  --color-fg-60: hsl(var(--fg-60));
+  --color-fg-50: hsl(var(--fg-50));
+
   /* NafiOS domain-specific status colors */
   --color-status-pending: hsl(var(--status-pending));
   --color-status-paid: hsl(var(--status-paid));
   --color-status-on-hold: hsl(var(--status-on-hold));
   --color-status-carry-over: hsl(var(--status-carry-over));
+
+  /* ---- Semantic feedback colors ----
+   * Each swatch has three stops:
+   *   base       — surface / background fill
+   *   foreground — text that sits on the base
+   *   subtle     — border / divider accent
+   */
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-success-subtle: hsl(var(--success-subtle));
+  --color-error: hsl(var(--error));
+  --color-error-foreground: hsl(var(--error-foreground));
+  --color-error-subtle: hsl(var(--error-subtle));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-warning-subtle: hsl(var(--warning-subtle));
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+  --color-info-subtle: hsl(var(--info-subtle));
+  --color-note: hsl(var(--note));
+  --color-note-foreground: hsl(var(--note-foreground));
+  --color-note-subtle: hsl(var(--note-subtle));
+
+  /* ---- Typography ---- */
+  --font-display: "Outfit Variable", "Outfit", ui-rounded, system-ui, sans-serif;
+  --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.5rem;
 }
 
 /* ──────────────────────────────────────────────
@@ -101,6 +149,36 @@
   --status-paid: 108 26% 55%;
   --status-on-hold: 230 10% 59%;
   --status-carry-over: 19 58% 60%;
+
+  /* Semantic feedback surfaces — derived from brand hues
+   * Hue sources: success=primary(120), error=destructive(0),
+   * warning=status-pending(36), info=accent(214), note=chart-4(270) */
+  --success: 120 20% 96%;
+  --success-foreground: 120 20% 30%;
+  --success-subtle: 120 20% 88%;
+  --error: 0 62% 97%;
+  --error-foreground: 0 62% 35%;
+  --error-subtle: 0 62% 90%;
+  --warning: 36 60% 97%;
+  --warning-foreground: 36 60% 32%;
+  --warning-subtle: 36 60% 88%;
+  --info: 214 50% 97%;
+  --info-foreground: 214 50% 35%;
+  --info-subtle: 214 50% 88%;
+  --note: 270 40% 97%;
+  --note-foreground: 270 40% 33%;
+  --note-subtle: 270 40% 88%;
+
+  /** Nafios palettes */
+  --brand: 120 22% 61%;
+  --brand-darker: 120 20% 41%;
+  --accent-darker: 214 50% 49%;
+  --fg-100: 0 0% 100%;
+  --fg-90: 0 0% 91%;
+  --fg-80: 240 1% 81%;
+  --fg-70: 0 0% 72%;
+  --fg-60: 240 1% 63%;
+  --fg-50: 240 1% 53%;
 }
 
 /* ──────────────────────────────────────────────
@@ -120,15 +198,16 @@
   --secondary-foreground: 0 0% 91%;
   --muted: 240 3% 17%;
   --muted-foreground: 240 1% 63%;
-  --accent: 198 68% 70%;
+  --accent: 214 40% 65%;
   --accent-foreground: 240 8% 7%;
+  --accent-darker: 214 45% 45%;
   --destructive: 0 62% 50%;
   --destructive-foreground: 0 0% 100%;
   --border: 240 2% 21%;
   --input: 240 2% 21%;
   --ring: 120 22% 61%;
   --chart-1: 120 22% 61%;
-  --chart-2: 198 68% 70%;
+  --chart-2: 214 40% 65%;
   --chart-3: 36 60% 58%;
   --chart-4: 270 40% 70%;
   --chart-5: 0 50% 65%;
@@ -146,6 +225,23 @@
   --status-paid: 108 26% 55%;
   --status-on-hold: 230 10% 59%;
   --status-carry-over: 19 58% 60%;
+
+  /* Semantic feedback surfaces */
+  --success: 120 20% 8%;
+  --success-foreground: 120 22% 61%;
+  --success-subtle: 120 20% 16%;
+  --error: 0 50% 9%;
+  --error-foreground: 0 62% 70%;
+  --error-subtle: 0 50% 16%;
+  --warning: 36 50% 8%;
+  --warning-foreground: 36 60% 65%;
+  --warning-subtle: 36 50% 15%;
+  --info: 214 50% 8%;
+  --info-foreground: 214 40% 70%;
+  --info-subtle: 214 50% 16%;
+  --note: 270 40% 9%;
+  --note-foreground: 270 40% 70%;
+  --note-subtle: 270 40% 16%;
 }
 
 @layer base {
@@ -153,6 +249,164 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
+  }
+}
+
+/* OTP caret blink animation */
+@keyframes caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  50% {
+    opacity: 0;
+  }
+}
+
+@theme inline {
+  --animate-caret-blink: caret-blink 1.2s ease-out infinite;
+  --animate-blob-drift: blob-drift 20s ease-in-out infinite;
+  --animate-blob-drift-reverse: blob-drift-reverse 24s ease-in-out infinite;
+  --animate-blob-pulse: blob-pulse 18s ease-in-out infinite;
+
+  /* ---- tailwindcss-animate equivalents for Tailwind v4 ---- */
+  --animate-in: enter var(--tw-animate-duration, 150ms) var(--tw-animate-easing, ease)
+    var(--tw-animate-delay, 0s) 1 normal both;
+  --animate-out: exit var(--tw-animate-duration, 150ms) var(--tw-animate-easing, ease)
+    var(--tw-animate-delay, 0s) 1 normal both;
+}
+
+/* ---- animate-in / animate-out keyframes ---- */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))
+      rotate(var(--tw-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))
+      rotate(var(--tw-exit-rotate, 0));
+  }
+}
+
+/* ---- Fade utilities ---- */
+@utility fade-in-* {
+  --tw-enter-opacity: calc(var(--value) / 100);
+}
+@utility fade-out-* {
+  --tw-exit-opacity: calc(var(--value) / 100);
+}
+
+/* ---- Zoom utilities ---- */
+@utility zoom-in-* {
+  --tw-enter-scale: calc(var(--value) / 100);
+}
+@utility zoom-out-* {
+  --tw-exit-scale: calc(var(--value) / 100);
+}
+
+/* ---- Spin-in / spin-out ---- */
+@utility spin-in-* {
+  --tw-enter-rotate: calc(var(--value) * 1deg);
+}
+@utility spin-out-* {
+  --tw-exit-rotate: calc(var(--value) * 1deg);
+}
+
+/* ---- Slide-in-from / slide-out-to ---- */
+@utility slide-in-from-top {
+  --tw-enter-translate-y: -100%;
+}
+@utility slide-in-from-top-* {
+  --tw-enter-translate-y: calc(var(--value) * -1 * var(--spacing));
+}
+@utility slide-in-from-bottom {
+  --tw-enter-translate-y: 100%;
+}
+@utility slide-in-from-bottom-* {
+  --tw-enter-translate-y: calc(var(--value) * var(--spacing));
+}
+@utility slide-in-from-left {
+  --tw-enter-translate-x: -100%;
+}
+@utility slide-in-from-left-* {
+  --tw-enter-translate-x: calc(var(--value) * -1 * var(--spacing));
+}
+@utility slide-in-from-right {
+  --tw-enter-translate-x: 100%;
+}
+@utility slide-in-from-right-* {
+  --tw-enter-translate-x: calc(var(--value) * var(--spacing));
+}
+@utility slide-out-to-top {
+  --tw-exit-translate-y: -100%;
+}
+@utility slide-out-to-top-* {
+  --tw-exit-translate-y: calc(var(--value) * -1 * var(--spacing));
+}
+@utility slide-out-to-bottom {
+  --tw-exit-translate-y: 100%;
+}
+@utility slide-out-to-bottom-* {
+  --tw-exit-translate-y: calc(var(--value) * var(--spacing));
+}
+@utility slide-out-to-left {
+  --tw-exit-translate-x: -100%;
+}
+@utility slide-out-to-left-* {
+  --tw-exit-translate-x: calc(var(--value) * -1 * var(--spacing));
+}
+@utility slide-out-to-right {
+  --tw-exit-translate-x: 100%;
+}
+@utility slide-out-to-right-* {
+  --tw-exit-translate-x: calc(var(--value) * var(--spacing));
+}
+
+/* Blob background ambient animations */
+@keyframes blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-8%, 6%) scale(1.05);
+  }
+  66% {
+    transform: translate(4%, -4%) scale(0.95);
+  }
+}
+
+@keyframes blob-drift-reverse {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(6%, -8%) scale(0.96);
+  }
+  66% {
+    transform: translate(-5%, 5%) scale(1.04);
+  }
+}
+
+@keyframes blob-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.7;
   }
 }

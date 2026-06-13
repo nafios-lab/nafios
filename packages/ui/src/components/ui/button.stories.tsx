@@ -1,27 +1,59 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Button } from "./button.tsx";
+import { Lock, User } from "lucide-react";
+import { Button, type ButtonProps } from "./button.tsx";
 
-const meta = {
+type StoryArgs = Omit<ButtonProps, "iconLeft" | "iconRight"> & {
+  iconLeft?: boolean;
+  iconRight?: boolean;
+};
+
+const meta: Meta<StoryArgs> = {
   title: "Primitives/Button",
   component: Button,
   tags: ["autodocs"],
   argTypes: {
     variant: {
       control: "select",
-      options: ["default", "destructive", "outline", "secondary", "ghost", "link"],
+      options: ["default", "brand", "destructive", "outline", "secondary", "ghost", "link"],
     },
     size: {
       control: "select",
       options: ["default", "sm", "lg", "icon"],
     },
+    disabled: {
+      control: "boolean",
+    },
+    showLoader: {
+      control: "boolean",
+    },
+    textOnLoading: {
+      control: "text",
+    },
+    iconLeft: {
+      control: "boolean",
+    },
+    iconRight: {
+      control: "boolean",
+    },
   },
-} satisfies Meta<typeof Button>;
+  render: ({ iconLeft, iconRight, ...args }) => (
+    <Button
+      {...args}
+      iconLeft={iconLeft ? <User /> : undefined}
+      iconRight={iconRight ? <Lock /> : undefined}
+    />
+  ),
+};
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 export const Default: Story = {
-  args: { children: "Button" },
+  args: { children: "Default" },
+};
+
+export const Brand: Story = {
+  args: { children: "Brand", variant: "brand" },
 };
 
 export const Destructive: Story = {
