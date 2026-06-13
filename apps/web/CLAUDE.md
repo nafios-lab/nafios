@@ -6,8 +6,9 @@ grow into the main user-facing app.
 
 ## What this app does
 
-TanStack Start SSR app. Currently renders a staging marker page showing
-`NafiOS Staging — build <SHA>` and a `/health` route.
+TanStack Start SSR app with session-gated routing. Public landing page,
+auth flow pages (login, signup, etc.), and a protected shell with navbar
+behind session gating.
 
 ## Stack
 
@@ -25,6 +26,35 @@ bun run preview   # preview production build locally
 bun run typecheck # tsc --noEmit
 bun run test      # placeholder — no tests yet
 ```
+
+## Route structure
+
+There are no public-facing pages — every route requires an active session.
+If no session exists, the user lands on `/auth/login`.
+
+| Group | Directory | URL | Session behavior |
+|-------|-----------|-----|------------------|
+| Root | `src/routes/index.tsx` | `/` | Redirects: session → `/dashboard`, no session → `/auth/login` |
+| Health | `src/routes/health.tsx` | `/health` | Infrastructure endpoint, no session check |
+| Auth | `src/routes/auth/` | `/auth/*` | Redirects to `/dashboard` if already signed in |
+| Protected | `src/routes/_protected/` | Pathless layout — children have their own URLs | Redirects to `/auth/login` if not signed in |
+
+Session checking uses `@nafios/auth-core` via server functions in `src/lib/auth-fns.ts`.
+The protected layout renders a navbar with app name, user email, and logout button.
+
+## Module mount point
+
+Domain modules (Finance, Calendar, SmartTodo, etc.) will mount into the
+protected route group at `src/routes/_protected/app/`. The expected pattern:
+
+- Mount path: `/app/:module/*` (e.g., `/app/finance/...`)
+- Each module is a `@nafios/*` package that exports a route subtree
+- Modules are lazy-loaded into the shell's route tree
+
+**Module mounting machinery is owned by the first domain-module epic.** This
+includes the module registry, dynamic route composition, and the module
+contract (types/interfaces). The placeholder at `_protected/app/` marks
+where that machinery will plug in.
 
 ## Conventions
 
