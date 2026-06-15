@@ -15,6 +15,7 @@
     "verify": "bun tooling/scripts/verify-workspace.ts",
     "typecheck": "bun --filter '*' typecheck",
     "test": "bun --filter '*' test",
+    "test:coverage": "bun --filter '*' test --coverage",
     "lint": "biome lint .",
     "format": "biome check --write .",
     "format:check": "biome format .",

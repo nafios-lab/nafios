@@ -1,5 +1,6 @@
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
+import { Avatar, AvatarFallback, AvatarImage } from "@nafios/ui/components/ui/avatar";
 import { Button } from "@nafios/ui/components/ui/button";
 import { ArrowLeft, Check, Pencil } from "lucide-react";
 import type { StepIndex } from "../context/signup-wizard";
@@ -48,12 +49,26 @@ export function SignupStepReview() {
         <ReviewSection title="Family" onEdit={() => goTo(2 as StepIndex)}>
           {data.family?.familyMembers?.length ? (
             data.family.familyMembers.map((member, i) => (
-              <ReviewRow
+              <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: display-only list
                 key={i}
-                label={RELATIONSHIP_LABELS[member.relationship] ?? member.relationship}
-                value={member.name}
-              />
+                className="flex items-center justify-between gap-2"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <Avatar size="sm" className="shrink-0">
+                    {member.avatar ? <AvatarImage src={member.avatar} alt="" /> : null}
+                    <AvatarFallback className="text-[10px] font-semibold">
+                      {member.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Text size="sm" className="truncate">
+                    {member.name}
+                  </Text>
+                </div>
+                <Text size="sm" muted>
+                  {RELATIONSHIP_LABELS[member.relationship] ?? member.relationship}
+                </Text>
+              </div>
             ))
           ) : (
             <Text size="sm" muted>

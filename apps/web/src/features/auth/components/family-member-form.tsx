@@ -1,3 +1,4 @@
+import { AvatarUpload } from "@nafios/ui/components/avatar-upload";
 import { DobInput } from "@nafios/ui/components/dob-input";
 import { SelectField } from "@nafios/ui/components/select-field";
 import { TextInput } from "@nafios/ui/components/text-input";
@@ -5,8 +6,14 @@ import { Text } from "@nafios/ui/components/typography/text";
 import { Button } from "@nafios/ui/components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
-import { Camera } from "lucide-react";
 import { familyMemberFormSchema, type FamilyMemberValues } from "../schemas/signup-schema";
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "";
+  return ((parts[0][0] ?? "") + (parts[parts.length - 1][0] ?? "")).toUpperCase();
+}
 
 const RELATIONSHIP_OPTIONS = [
   { value: "spouse", label: "Spouse" },
@@ -47,6 +54,7 @@ export function FamilyMemberForm({
       onSubmit({
         name: value.name.trim(),
         relationship: value.relationship as FamilyMemberValues["relationship"],
+        avatar,
         nric: value.nric || undefined,
         mobile: value.mobile || undefined,
         dateOfBirth: value.dateOfBirth || undefined,
@@ -55,6 +63,7 @@ export function FamilyMemberForm({
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [avatar, setAvatar] = useState<string | undefined>(defaultValues?.avatar);
 
   const handleSubmit = () => {
     setSubmitted(true);
@@ -65,28 +74,11 @@ export function FamilyMemberForm({
     <div className="rounded-xl border border-input p-4 flex flex-col gap-4">
       <Text className="font-semibold">{title}</Text>
 
-      {/* Photo upload placeholder */}
-      <div className="flex items-center gap-3">
-        <div className="rounded-full size-12 border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/50">
-          <Camera className="size-4 text-muted-foreground" />
-        </div>
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <Text size="sm" className="font-medium">
-              Photo or avatar
-            </Text>
-            <Text size="xs" muted className="uppercase tracking-widest font-medium">
-              Optional
-            </Text>
-          </div>
-          <Text size="xs" muted>
-            PNG or JPG, square works best.
-          </Text>
-          <button type="button" className="text-brand text-xs font-medium text-left mt-0.5">
-            Upload Photo
-          </button>
-        </div>
-      </div>
+      <form.Subscribe selector={(s) => s.values.name}>
+        {(name) => (
+          <AvatarUpload value={avatar} onChange={setAvatar} fallback={getInitials(name)} optional />
+        )}
+      </form.Subscribe>
 
       <form
         className="flex flex-col gap-3"

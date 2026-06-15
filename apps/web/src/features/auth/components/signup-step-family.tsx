@@ -1,5 +1,6 @@
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
+import { Avatar, AvatarFallback, AvatarImage } from "@nafios/ui/components/ui/avatar";
 import { Button } from "@nafios/ui/components/ui/button";
 import { Card } from "@nafios/ui/components/ui/card";
 import { ArrowLeft, ArrowRight, HeartHandshakeIcon, Pencil, Plus, Trash2 } from "lucide-react";
@@ -92,11 +93,12 @@ export function SignupStepFamily() {
           {members.map((member, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: no stable ID before persistence
             <div key={index} className="flex items-center gap-3 rounded-xl border border-input p-3">
-              <div className="rounded-full size-10 bg-muted flex items-center justify-center shrink-0">
-                <Text size="xs" className="font-semibold">
+              <Avatar size="default" className="shrink-0">
+                {member.avatar ? <AvatarImage src={member.avatar} alt="" /> : null}
+                <AvatarFallback className="text-xs font-semibold">
                   {getInitials(member.name)}
-                </Text>
-              </div>
+                </AvatarFallback>
+              </Avatar>
               <div className="flex flex-col flex-1 min-w-0">
                 <Text size="sm" className="font-semibold truncate">
                   {member.name}

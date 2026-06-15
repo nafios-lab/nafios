@@ -54,6 +54,7 @@ export function SignupStepSecurity() {
           {(field) => (
             <CredentialInput
               placeholder="Password"
+              autoComplete="new-password"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               error={submitted ? field.state.meta.errors?.[0]?.message : undefined}
@@ -65,6 +66,7 @@ export function SignupStepSecurity() {
           {(field) => (
             <CredentialInput
               placeholder="Confirm Password"
+              autoComplete="new-password"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               error={submitted ? field.state.meta.errors?.[0]?.message : undefined}

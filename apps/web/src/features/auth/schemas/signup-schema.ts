@@ -32,6 +32,8 @@ export type SecurityStepValues = z.infer<typeof securityStepSchema>;
 export const familyMemberSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   relationship: z.enum(["spouse", "child", "parent", "sibling", "other"]),
+  /** Processed avatar as a data URL, held in-memory until signup persists it. */
+  avatar: z.string().optional(),
   nric: z.string().optional(),
   mobile: z
     .string()

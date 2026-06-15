@@ -40,7 +40,11 @@ function MaskInput({ mask, maskOptions, onValueChange, ...props }: MaskInputProp
     return () => el.removeEventListener("input", handler, true);
   }, []);
 
-  return <TextInput {...props} ref={combinedRef} />;
+  // No-op onChange: the real change path is the capture-phase "input" listener
+  // above (inputmask swallows the synthetic event). React still needs *an*
+  // onChange to treat the controlled `value` as writable — without it, it warns
+  // "value without onChange = read-only" on every render.
+  return <TextInput {...props} ref={combinedRef} onChange={() => {}} />;
 }
 
 export { MaskInput, type MaskInputProps };

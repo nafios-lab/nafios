@@ -63,6 +63,7 @@ export function SignupStepAccount() {
             <TextInput
               name={field.name}
               type="text"
+              autoComplete="off"
               value={field.state.value}
               placeholder="Username"
               iconLeft={<User />}
@@ -77,6 +78,7 @@ export function SignupStepAccount() {
             <TextInput
               name={field.name}
               type="email"
+              autoComplete="off"
               value={field.state.value}
               placeholder="Email address"
               iconLeft={<Mail />}
@@ -99,6 +101,7 @@ export function SignupStepAccount() {
               placeholder="(+65) 9000 0000"
               onValueChange={(v) => field.handleChange(v)}
               onBlur={field.handleBlur}
+              autoComplete="off"
             />
           )}
         </form.Field>
