@@ -1,6 +1,6 @@
-import { Heading } from "@nafios/ui/components/typography/heading";
-import { Text } from "@nafios/ui/components/typography/text";
+import { Logo } from "@nafios/ui/components/logo";
 import { createFileRoute } from "@tanstack/react-router";
+import { LoginForm } from "~/features/auth/components/login-form";
 
 export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
@@ -8,15 +8,17 @@ export const Route = createFileRoute("/auth/login")({
 
 function LoginPage() {
   return (
-    <div className="flex w-full max-w-sm flex-col gap-6">
-      <div className="flex flex-col gap-2 text-center">
-        <Heading size={"2xl"} as="h1">
-          Sign in to nafios
-        </Heading>
+    <div className="flex h-screen w-full flex-col gap-0">
+      <div
+        id="page-header"
+        className="flex h-[70px] w-full flex-row items-center justify-start px-6"
+      >
+        <Logo variant="word" />
+      </div>
 
-        <Text variant={"default"} muted>
-          Login form will be implemented in D2.
-        </Text>
+      <div id="form-container" className="flex h-full flex-row items-center justify-center">
+        {/* Login Form Component */}
+        <LoginForm />
       </div>
     </div>
   );

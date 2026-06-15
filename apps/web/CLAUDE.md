@@ -56,15 +56,92 @@ includes the module registry, dynamic route composition, and the module
 contract (types/interfaces). The placeholder at `_protected/app/` marks
 where that machinery will plug in.
 
+## Source structure
+
+```
+src/
+  routes/          file-based routing — TanStack Router owns this tree
+  features/        frontend feature slices (components, hooks, schemas)
+  lib/             server functions, helpers, and app-level infrastructure
+  components/      shell-wide UI shared across multiple features/routes
+  styles.css       global styles
+  router.tsx       TanStack Router instance
+  routeTree.gen.ts generated — never edit
+```
+
+### `routes/` — routing layer only
+
+Route files live here. TanStack Router generates `routeTree.gen.ts` from this
+tree — never edit the generated file. Route files must be **thin**: they import
+and compose from `features/` or `components/`, but contain no business logic,
+form handling, or data-fetching code themselves.
+
+### `features/` — frontend feature slices
+
+Each shell-owned UI feature gets a slice. A feature is a cohesive group of
+frontend code — components, hooks, and validation schemas — that belong
+together. Features are **not shared across other features**. If something is
+needed by multiple features, lift it to `components/` or a `@nafios/*` package.
+
+```
+features/<name>/
+  components/      UI components specific to this feature
+  hooks/           React hooks specific to this feature
+  schemas/         Zod/Valibot validation schemas
+```
+
+Not every feature needs all three folders — create them as needed.
+
+Current features:
+- `features/auth/` — login form, signup form, password reset form components
+
+### `lib/` — server functions and app infrastructure
+
+Server-side code that is not frontend UI: TanStack server functions
+(`createServerFn`), cookie handling, and app-level helpers. This is backend
+infrastructure that routes and features call into.
+
+Current files:
+- `lib/auth-fns.ts` — session and sign-out server functions (wraps `@nafios/auth-core`)
+
+### `components/` — shell-wide shared UI
+
+Components used across multiple features or routes. Not feature-specific.
+Examples: `navbar.tsx`, `sidebar.tsx`, `page-header.tsx`.
+
+If a component is only used by one feature, it belongs in that feature's
+`components/` folder, not here.
+
+### What does NOT belong in `apps/web`
+
+- **Domain product logic** (Finance, Budgeting, etc.) → `packages/` as domain
+  packages mounted into the shell (ADR-0018).
+- **Reusable utilities** → `@nafios/core-utils` or a new `@nafios/*` package.
+- **Auth operations / session logic** → `@nafios/auth-core` (already exists).
+- **Design system components** → `@nafios/ui`.
+
+The shell owns **infrastructure** (routing, session gating, layout, navigation)
+and **shell-specific features** (auth UI, onboarding, settings). Everything
+else is a package.
+
 ## Conventions
 
 - **File-based routing:** routes live in `src/routes/`. TanStack Router generates
   `src/routeTree.gen.ts` — never edit it by hand.
+- **Thin routes:** route files import from `features/` and `components/`. No
+  inline business logic, form handling, or validation in route files.
 - **No direct Supabase imports.** Auth and data access go through `@nafios/*`
   packages (e.g. `@nafios/auth-core`). This app must never depend on
   `@supabase/supabase-js` or `@supabase/ssr` directly.
 - **kebab-case filenames** — enforced by Biome.
-- **Routes call services** — no business logic in route files.
+- **Feature-first organization:** new shell UI goes into a `features/<name>/`
+  slice, not scattered across top-level `hooks/` or `utils/` folders.
+- **`lib/` is for server/infra code only.** Server functions, cookie helpers,
+  and app-level infrastructure. Never put React components or hooks here.
+- **`features/` is for frontend code only.** Components, hooks, and schemas.
+  Never put server functions here.
+- **No top-level `hooks/`, `utils/`, or `types/` folders.** Colocate frontend
+  code with the feature that owns it. Shared shell UI goes in `components/`.
 
 ## Build output
 

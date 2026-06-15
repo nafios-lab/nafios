@@ -1,4 +1,6 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
+import { TanStackDevtools } from "@tanstack/react-devtools";
 import { useTheme } from "@nafios/ui/hooks/use-theme";
 import "../styles.css";
 
@@ -24,6 +26,7 @@ function RootDocument() {
       <body className="min-h-screen bg-background text-foreground font-body antialiased">
         <Outlet />
         <Scripts />
+        <TanStackDevtools config={{ hideUntilHover: true }} plugins={[formDevtoolsPlugin()]} />
       </body>
     </html>
   );

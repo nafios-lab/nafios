@@ -15,6 +15,11 @@ Object.assign(process.env, loadEnv("development", monorepoRoot, ""));
 
 export default defineConfig({
   envDir: monorepoRoot,
+  resolve: {
+    alias: {
+      "~": path.resolve(import.meta.dirname, "src"),
+    },
+  },
   server: {
     port: 3000,
   },
