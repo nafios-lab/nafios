@@ -1,0 +1,13 @@
+# Coverage scope & 90% gate — see adr/0020-test-coverage-scoping-and-gate.md.
+# Runtime logic (auth ops, client, mappers, unwrap) is in scope. Excluded: the
+# barrel re-export, the type-only module, and test files. The threshold is
+# enforced only under `--coverage` (the `test:coverage` script), so plain
+# `bun test` / CI `check` are unaffected.
+[test]
+coverageReporter = ["text"]
+coverageThreshold = 0.9
+coveragePathIgnorePatterns = [
+  "**/index.ts",
+  "**/types.ts",
+  "**/tests/**",
+]

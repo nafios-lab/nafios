@@ -1,2 +1,16 @@
 [test]
 preload = ["./tests/setup.ts"]
+
+# Coverage scope & 90% gate — see adr/0020-test-coverage-scoping-and-gate.md.
+# The denominator is first-party UI only. Excluded: shadcn/ui primitives
+# (vendored Radix wrappers under components/ui/), Storybook stories, barrel
+# re-exports, and test files. The threshold is enforced only under `--coverage`
+# (the `test:coverage` script), so plain `bun test` / CI `check` are unaffected.
+coverageReporter = ["text"]
+coverageThreshold = 0.9
+coveragePathIgnorePatterns = [
+  "**/components/ui/**",
+  "**/*.stories.tsx",
+  "**/index.ts",
+  "**/tests/**",
+]
