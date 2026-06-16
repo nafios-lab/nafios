@@ -1,12 +1,22 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 // fitAvatar uses <canvas>, which happy-dom doesn't implement — mock it so the
 // component's validation/processing/remove branches are what we exercise.
+//
+// Bun's mock.module is process-global and persists across test files, so snapshot
+// the real implementation first and restore it in afterAll — otherwise this mock
+// leaks into crop-image.test.ts (which tests the real fitAvatar).
+const realFitAvatar = (await import("../../src/internal/crop-image.ts")).fitAvatar;
+
 let fitImpl: (file: File) => Promise<string> = async () => "data:image/webp;base64,MOCK";
 mock.module("../../src/internal/crop-image.ts", () => ({
   fitAvatar: (file: File) => fitImpl(file),
 }));
+
+afterAll(() => {
+  mock.module("../../src/internal/crop-image.ts", () => ({ fitAvatar: realFitAvatar }));
+});
 
 const { AvatarUpload } = await import("../../src/components/avatar-upload.tsx");
 

@@ -16,6 +16,7 @@
     "typecheck": "bun --filter '*' typecheck",
     "test": "bun --filter '*' test",
     "test:coverage": "bun --filter '*' test --coverage",
+    "test:coverage:summary": "bun tooling/scripts/coverage-summary.ts",
     "lint": "biome lint .",
     "format": "biome check --write .",
     "format:check": "biome format .",
