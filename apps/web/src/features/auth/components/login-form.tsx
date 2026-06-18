@@ -2,28 +2,60 @@ import { CredentialInput } from "@nafios/ui/components/credential-input";
 import { TextInput } from "@nafios/ui/components/text-input";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
+import { Alert, AlertDescription } from "@nafios/ui/components/ui/alert";
 import { Button } from "@nafios/ui/components/ui/button";
 import { Checkbox } from "@nafios/ui/components/ui/checkbox";
 import { useForm } from "@tanstack/react-form";
-import { Link } from "@tanstack/react-router";
-import { ArrowRight, LockIcon as PasswordIcon, User as UsernameIcon } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, CircleAlert, Mail as EmailIcon, LockIcon as PasswordIcon } from "lucide-react";
+import { useState } from "react";
+import { useSignIn } from "../hooks/use-sign-in";
 import { loginSchema } from "../schemas/login-schema";
 
-export function LoginForm() {
+interface LoginFormProps {
+  /** Where to land after a successful sign-in. Defaults to `/` (which routes on
+   *  to the dashboard or back into onboarding). Used for redirect-back when the
+   *  user was bounced here from a protected route. */
+  redirectTo?: string;
+}
+
+export function LoginForm({ redirectTo = "/" }: LoginFormProps) {
+  const navigate = useNavigate();
+  const [submitted, setSubmitted] = useState(false);
+
+  const { signIn, isLoading, error } = useSignIn({
+    // The session cookie is set server-side by signInFn; navigating re-runs the
+    // target's beforeLoad, which now sees the session and lets the user through.
+    onSuccess: () => navigate({ to: redirectTo }),
+  });
+
   const form = useForm({
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
       rememberMe: false,
     },
     validators: {
-      onBlur: loginSchema,
+      onSubmit: loginSchema,
+      onChange: loginSchema,
     },
     onSubmit: async ({ value }) => {
-      // TODO: call auth server function
-      console.log("login submit", value);
+      await signIn({ email: value.email, password: value.password });
     },
   });
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+    form.handleSubmit();
+  };
+
+  // Wrong credentials are shown verbatim; a system fault gets a calm, generic
+  // retry message rather than a raw Supabase/network string.
+  const formError = error
+    ? error.kind === "user"
+      ? error.message
+      : "Something went wrong. Please try again."
+    : null;
 
   return (
     <div className="flex flex-col min-w-[400px]">
@@ -40,17 +72,19 @@ export function LoginForm() {
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          form.handleSubmit();
+          handleSubmit();
         }}
       >
-        <form.Field name="username">
+        <form.Field name="email">
           {(field) => (
             <TextInput
               name={field.name}
+              type="email"
+              autoComplete="email"
               value={field.state.value}
-              placeholder="username"
-              iconLeft={<UsernameIcon />}
-              error={field.state.meta.errors?.[0]?.message}
+              placeholder="Email address"
+              iconLeft={<EmailIcon />}
+              error={submitted ? field.state.meta.errors?.[0]?.message : undefined}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
             />
@@ -61,10 +95,11 @@ export function LoginForm() {
           {(field) => (
             <CredentialInput
               name={field.name}
+              autoComplete="current-password"
               value={field.state.value}
               placeholder="password"
               iconLeft={<PasswordIcon />}
-              error={field.state.meta.errors?.[0]?.message}
+              error={submitted ? field.state.meta.errors?.[0]?.message : undefined}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
             />
@@ -81,23 +116,22 @@ export function LoginForm() {
               />
             )}
           </form.Field>
+          {/* Wired to /auth/forgot-password in D3 (route not built yet). */}
           <Button variant={"link"} type="button">
             Forgot Password ?
           </Button>
         </div>
 
-        <form.Subscribe selector={(state) => state.isSubmitting}>
-          {(isSubmitting) => (
-            <Button
-              variant="brand"
-              type="submit"
-              iconRight={<ArrowRight />}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Signing in..." : "Login"}
-            </Button>
-          )}
-        </form.Subscribe>
+        {formError ? (
+          <Alert variant="error">
+            <CircleAlert />
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <Button variant="brand" type="submit" iconRight={<ArrowRight />} disabled={isLoading}>
+          {isLoading ? "Signing in..." : "Login"}
+        </Button>
       </form>
 
       <div className="flex items-center gap-4 my-5">

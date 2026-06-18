@@ -63,12 +63,17 @@ export const signUp = mock(
   (..._args: unknown[]): Promise<AuthResult> =>
     Promise.resolve({ error: null, data: { user: null } }),
 );
+export const signInWithPassword = mock(
+  (..._args: unknown[]): Promise<AuthResult> =>
+    Promise.resolve({ error: null, data: { user: null, session: null } }),
+);
 export const createServerClient = mock((..._args: unknown[]) => ({ __authClient: true }));
 
 mock.module("@nafios/auth-core", () => ({
   createServerClient,
   getSession,
   getUser,
+  signInWithPassword,
   signOut,
   signUp,
 }));
@@ -126,6 +131,8 @@ export function resetServerFnMocks(): void {
   signOut.mockResolvedValue({ error: null });
   signUp.mockReset();
   signUp.mockResolvedValue({ error: null, data: { user: null } });
+  signInWithPassword.mockReset();
+  signInWithPassword.mockResolvedValue({ error: null, data: { user: null, session: null } });
   createServerClient.mockReset();
   createServerClient.mockReturnValue({ __authClient: true });
 

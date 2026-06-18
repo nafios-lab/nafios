@@ -4,7 +4,7 @@ import type { AuthSession, AuthUser } from "@nafios/auth-core";
 // tests/setup.ts (createServerFn is stubbed there to a directly-callable handler,
 // and auth-core/database are mocked as spies). We import the REAL modules and
 // drive them through those spies.
-import { getSessionFn, getUserFn, signOutFn, signUpFn } from "../../src/lib/auth-fns.ts";
+import { getSessionFn, getUserFn, signInFn, signOutFn, signUpFn } from "../../src/lib/auth-fns.ts";
 import { getOnboardingStatusFn, insertUserProfileFn } from "../../src/lib/onboarding-fns.ts";
 import {
   createServerDb,
@@ -15,6 +15,7 @@ import {
   insertUserProfile,
   maybeSingle,
   resetServerFnMocks,
+  signInWithPassword,
   signOut,
   signUp,
 } from "../setup.ts";
@@ -107,6 +108,35 @@ describe("signUpFn", () => {
       ok: false,
       code: "user_already_exists",
       message: "User already registered",
+    });
+  });
+});
+
+describe("signInFn", () => {
+  const input = { email: "user@nafios.local", password: "hunter2hunter2" };
+
+  test("returns ok:true with the user and forwards validated data to the client", async () => {
+    const user = fakeUser({ id: "u1", email: input.email });
+    signInWithPassword.mockResolvedValue({ error: null, data: { user, session: {} } });
+
+    const result = await signInFn({ data: input });
+
+    expect(result).toEqual({ ok: true, user });
+    expect(signInWithPassword).toHaveBeenCalledTimes(1);
+    expect(signInWithPassword).toHaveBeenCalledWith({ __authClient: true }, input);
+  });
+
+  test("surfaces an auth failure as ok:false data with code and message", async () => {
+    signInWithPassword.mockResolvedValue({
+      error: { code: "invalid_credentials", message: "Invalid login credentials" },
+    });
+
+    const result = await signInFn({ data: input });
+
+    expect(result).toEqual({
+      ok: false,
+      code: "invalid_credentials",
+      message: "Invalid login credentials",
     });
   });
 });

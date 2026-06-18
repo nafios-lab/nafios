@@ -4,6 +4,7 @@ import {
   createServerClient,
   getSession,
   getUser,
+  signInWithPassword,
   signOut,
   signUp,
 } from "@nafios/auth-core";
@@ -71,6 +72,34 @@ export const signUpFn = createServerFn({ method: "POST" })
     }
 
     const result = await signUp(client, data);
+    if (result.error) {
+      return { ok: false, code: result.error.code, message: result.error.message };
+    }
+    return { ok: true, user: result.data.user };
+  });
+
+/**
+ * Input contract for {@link signInFn} — derived from auth-core's
+ * `signInWithPassword` so it stays the single source of truth.
+ */
+export type SignInInput = Parameters<typeof signInWithPassword>[1];
+
+/**
+ * Discriminated outcome of {@link signInFn}. Auth-level failures (e.g. wrong
+ * credentials) come back as `{ ok: false }` *data* — not a thrown error — so the
+ * caller can classify them by `code` across the server-fn boundary (thrown
+ * errors lose their custom fields in transit). Genuinely unexpected failures
+ * (network, etc.) still reject the call.
+ */
+export type SignInResult =
+  | { ok: true; user: AuthUser }
+  | { ok: false; code: string | undefined; message: string };
+
+export const signInFn = createServerFn({ method: "POST" })
+  .validator((input: SignInInput) => input)
+  .handler(async ({ data }): Promise<SignInResult> => {
+    const client = await getServerAuthClient();
+    const result = await signInWithPassword(client, data);
     if (result.error) {
       return { ok: false, code: result.error.code, message: result.error.message };
     }
