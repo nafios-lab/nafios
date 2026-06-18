@@ -29,12 +29,11 @@
     "docs:sync": "bun --filter '@nafios/docs' sync",
     "docs:preview": "bun --filter '@nafios/docs' preview",
     "test:integration": "bun test tests/integration/",
-    "supabase:start": "supabase start",
-    "supabase:stop": "supabase stop",
-    "supabase:status": "supabase status",
-    "db:reset": "supabase db reset",
-    "db:seed": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > packages/database/src/database.types.ts"
+    "db:migrate:new": "supabase migration new",
+    "db:migrate": "supabase db push",
+    "db:migrate:status": "supabase migration list --linked",
+    "db:diff": "supabase db diff --linked",
+    "db:types": "supabase gen types typescript --linked > packages/database/src/database.types.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",

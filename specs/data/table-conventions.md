@@ -69,7 +69,13 @@ decided (first product epic). `auth.uid()` is the canonical identity function
    write rows.
 3. The `auth` schema is referenced, never owned — no migration touches `auth.*`.
 4. These templates are **runnable SQL** — they can be applied inside a transaction
-   and rolled back (the pipeline proof test does exactly this).
+   and rolled back.
+
+> **Note (ADR-0019):** authorization is currently handled at the **application
+> layer**; RLS is deferred, and the live tables (`profiles`, `family_members`)
+> run with RLS disabled. Invariants 1–2 describe the *target* convention for when
+> RLS is adopted (first product epic, once the `<owner_col>` model is decided),
+> not current practice.
 
 ## Public API
 
@@ -81,9 +87,8 @@ N/A.
 
 ## Examples
 
-The pipeline proof test ([`tests/integration/pipeline-proof.test.ts`](../../tests/integration/pipeline-proof.test.ts))
-instantiates these templates inside a rolled-back transaction, proving they are
-valid SQL and that RLS isolation works.
+See the applied migrations under `supabase/migrations/` for concrete tables that
+follow this column template (e.g. the `profiles` and `family_members` tables).
 
 ## Open questions
 

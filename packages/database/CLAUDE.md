@@ -14,6 +14,9 @@ is where application data access lives.
   return a `SupabaseClient<Database>` (aliased `Db`) so `.from(...)` / `.rpc(...)`
   are checked against the real schema.
 - **`asDb(client)`** — applies schema typing to a raw client from supabase-core.
+- **Data-access operations:** typed wrappers over queries / RPCs. First one is
+  `insertUserProfile(db, input)` — atomically completes the authenticated user's
+  profile and inserts their family members via the `insert_user_profile` RPC.
 
 ## Public API surface
 
@@ -21,6 +24,8 @@ All public exports live in `src/index.ts` (the barrel):
 
 - `createServerDb(cookies)` / `createBrowserDb()` — schema-typed data clients
 - `asDb(client)` — type a raw client; `Db` — the typed client alias
+- `insertUserProfile(db, input)` — atomic profile + family-member write;
+  types `InsertUserProfileInput`, `FamilyMemberInput`
 - Types: `Database`, `Tables`, `TablesInsert`, `TablesUpdate`, `Enums`,
   `CompositeTypes`, `Json`; value: `Constants`
 
@@ -61,9 +66,10 @@ bun run typecheck # tsc --noEmit
 
 ```
 src/
-  index.ts            # barrel — public exports only
-  client.ts           # createServerDb, createBrowserDb, asDb, Db
-  database.types.ts   # GENERATED — do not edit
+  index.ts              # barrel — public exports only
+  client.ts             # createServerDb, createBrowserDb, asDb, Db
+  user-profiles.repo.ts # insertUserProfile + input types (RPC-backed)
+  database.types.ts     # GENERATED — do not edit
 tests/unit/           # bun:test unit tests
 spec.md               # package specification
 ```

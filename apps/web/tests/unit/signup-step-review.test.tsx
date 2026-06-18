@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
 import { SignupStepReview } from "../../src/features/auth/components/signup-step-review.tsx";
 import {
@@ -8,6 +8,23 @@ import {
 } from "../../src/features/auth/context/signup-wizard.tsx";
 import { useSignupWizard } from "../../src/features/auth/hooks/use-signup-wizard.ts";
 import type { SignupWizardData } from "../../src/features/auth/schemas/signup-schema.ts";
+import { insertUserProfile, navigate, resetServerFnMocks, signUp } from "../setup.ts";
+
+// The REAL account-creation chain runs here — SignupStepReview → useAccountCreation
+// → the real signUpFn / insertUserProfileFn server fns. Those fns build against
+// the process-wide stubs in tests/setup.ts (createServerFn + auth-core/database
+// spies + the router boundary); we steer the flow through `signUp` and
+// `insertUserProfile` rather than mocking the leaf server-fn modules (bun's
+// mock.module is global, so mocking them would break the server-fn unit tests).
+
+beforeEach(() => {
+  resetServerFnMocks();
+  // Default: a registering user (no prior session) whose signup yields a user.
+  signUp.mockResolvedValue({
+    error: null,
+    data: { user: { id: "u1", email: "test@nafios.local" } },
+  });
+});
 
 afterEach(cleanup);
 
@@ -28,12 +45,7 @@ function Seeder({
     }
   }, []);
   onCtx?.(ctx);
-  return (
-    <>
-      <span data-testid="active">{ctx.activeStep}</span>
-      <span data-testid="submitting">{String(ctx.isSubmitting)}</span>
-    </>
-  );
+  return <span data-testid="active">{ctx.activeStep}</span>;
 }
 
 function renderReview(seed: Partial<SignupWizardData> = {}) {
@@ -59,7 +71,6 @@ const fullSeed: Partial<SignupWizardData> = {
 };
 
 const active = () => screen.getByTestId("active").textContent;
-const submitting = () => screen.getByTestId("submitting").textContent;
 
 describe("SignupStepReview — summary rendering", () => {
   test("shows the collected account email and masked secrets", () => {
@@ -139,32 +150,95 @@ describe("SignupStepReview — navigation", () => {
 });
 
 describe("SignupStepReview — submit", () => {
-  test("Create account toggles isSubmitting and logs the collected data", async () => {
-    const logSpy = spyOn(console, "log").mockImplementation(() => {});
-    try {
-      renderReview(fullSeed);
-      expect(submitting()).toBe("false");
-      const submitBtn = screen.getByRole("button", { name: /Create account/ });
-      await act(async () => {
-        fireEvent.click(submitBtn);
-        await Promise.resolve();
-      });
-      // handleSubmit logs the payload then resets isSubmitting in the finally.
-      expect(logSpy).toHaveBeenCalledWith("signup submit", expect.anything());
-      expect(submitting()).toBe("false");
-    } finally {
-      logSpy.mockRestore();
-    }
+  test("signs up, persists profile + family atomically, then navigates home", async () => {
+    renderReview(fullSeed);
+    fireEvent.click(screen.getByRole("button", { name: /Create account/ }));
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/" }));
+
+    // Step 1: credentials → auth signup (the server fn forwards them to auth-core).
+    expect(signUp).toHaveBeenCalledWith(
+      { __authClient: true },
+      { email: "test@nafios.local", password: "password123" },
+    );
+    // Step 2: profile + family, mapped to the DB input shape (camelCase keys,
+    // null defaults, no account-holder avatar source yet).
+    expect(insertUserProfile).toHaveBeenCalledWith(
+      { from: expect.anything() },
+      {
+        avatarUrl: null,
+        familyMembers: [
+          {
+            name: "Jane Doe",
+            relationship: "spouse",
+            avatarUrl: "data:image/webp;base64,X",
+            nric: null,
+            mobileNo: null,
+            dateOfBirth: null,
+          },
+          {
+            name: "bobby",
+            relationship: "child",
+            avatarUrl: null,
+            nric: null,
+            mobileNo: null,
+            dateOfBirth: null,
+          },
+        ],
+      },
+    );
   });
 
-  test("the submit button is disabled and relabelled while submitting", () => {
-    const { getCtx } = renderReview(fullSeed);
-    act(() => {
-      getCtx().setIsSubmitting(true);
+  test("shows an inline, actionable error for a duplicate email and does not profile or navigate", async () => {
+    // A duplicate email is the one user-fixable failure: it stays inline so the
+    // user can edit the email — it must NOT route to the system error page.
+    signUp.mockResolvedValue({
+      error: { code: "user_already_exists", message: "User already registered" },
     });
-    expect(submitting()).toBe("true");
-    const submitBtn = screen.getByRole("button", { name: /Creating account/ }) as HTMLButtonElement;
-    expect(submitBtn.disabled).toBe(true);
-    expect(screen.getByText("Creating account...")).toBeDefined();
+
+    renderReview(fullSeed);
+    fireEvent.click(screen.getByRole("button", { name: /Create account/ }));
+
+    expect(await screen.findByText(/already registered/i)).toBeDefined();
+    expect(insertUserProfile).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  test("routes to the generic error page when the profile step fails every retry", async () => {
+    // Signup succeeds (auth user created) but the profile persist keeps failing:
+    // an unrecoverable system fault → retried, then sent to /error.
+    insertUserProfile.mockRejectedValue(new Error("boom"));
+
+    renderReview(fullSeed);
+    fireEvent.click(screen.getByRole("button", { name: /Create account/ }));
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/error" }));
+    // Retried up to the max before giving up.
+    expect(insertUserProfile).toHaveBeenCalledTimes(3);
+    expect(navigate).not.toHaveBeenCalledWith({ to: "/" });
+  });
+
+  test("disables and relabels the submit button while the request is in flight", async () => {
+    let resolveSignup: (value: { error: unknown; data?: unknown }) => void = () => {};
+    signUp.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSignup = resolve;
+        }),
+    );
+
+    renderReview(fullSeed);
+    fireEvent.click(screen.getByRole("button", { name: /Create account/ }));
+
+    const inFlight = (await screen.findByRole("button", {
+      name: /Creating account/,
+    })) as HTMLButtonElement;
+    expect(inFlight.disabled).toBe(true);
+
+    // Let the flow settle so no state update escapes act().
+    await act(async () => {
+      resolveSignup({ error: null, data: { user: { id: "u1", email: "test@nafios.local" } } });
+      await Promise.resolve();
+    });
   });
 });

@@ -151,50 +151,46 @@ After `bun run build`:
 - Netlify SSR function: `.netlify/v1/functions/server.mjs` (auto-emitted by plugin)
 - Netlify publish dir: `.output/public`
 
-## Local Supabase Stack
+## Supabase (Cloud: nafios-staging)
 
-This app depends on a running local Supabase instance for auth and data.
+This app talks to the hosted `nafios-staging` Supabase project for auth and
+data. The local Docker stack is sunset — there is nothing to boot locally.
 
 ### Prerequisites
 
-- Docker must be running (Supabase CLI uses Docker containers)
-- Supabase CLI is installed as a workspace devDependency (`supabase` in root `package.json`)
+- Supabase CLI is installed as a workspace devDependency (`supabase` in root `package.json`) — use `bunx supabase`
+- Authenticated + linked once per machine (see below)
+- A populated `.env` (copy from `.env.example`, fill from the dashboard)
 
-### One-command bring-up
-
-```sh
-bun run supabase:start     # starts Postgres, Auth, Inbucket, Studio, etc.
-```
-
-After start, grab the local keys:
+### One-time setup
 
 ```sh
-bun run supabase:status    # prints API URL, anon key, service-role key
+bunx supabase login                                      # browser OAuth
+bunx supabase link --project-ref ohkyujzctlukaifigmon    # prompts DB password
+cp .env.example .env                                     # fill from dashboard
 ```
 
-Copy the keys into your `.env` file (use `.env.example` as a template).
+Full CLI runbook: [supabase/README.md](../../supabase/README.md). Spec:
+[specs/data/supabase-local-stack.md](../../specs/data/supabase-local-stack.md).
 
-### Local services
+### Connection
 
-| Service       | URL                          | Purpose                        |
-|---------------|------------------------------|--------------------------------|
-| API (PostgREST) | http://127.0.0.1:54321     | Supabase API endpoint          |
-| Postgres      | postgresql://postgres:postgres@127.0.0.1:54322/postgres | Direct DB access |
-| Studio        | http://localhost:54323       | Supabase dashboard             |
-| Mailpit       | http://localhost:54324       | Local email testing (captures signup/reset emails) |
+| Service | URL | Purpose |
+|---------|-----|---------|
+| API (PostgREST) | `https://ohkyujzctlukaifigmon.supabase.co` | Supabase API endpoint |
+| Studio (Dashboard) | `https://supabase.com/dashboard/project/ohkyujzctlukaifigmon` | Schema, auth, logs, SQL editor |
+| Postgres | from `DATABASE_URL` (Project Settings → Database) | Direct DB access |
 
-### Test user
-
-After `bun run db:reset`, a seeded test user is available:
-
-- **Email:** `test@nafios.local`
-- **Password:** `password123`
+Email testing now uses the project's configured SMTP / the Auth → Users flow in
+the dashboard rather than a local Mailpit inbox.
 
 ### Database schema
 
 **`public.profiles`** — one row per auth user. All domain tables FK here, never
-to `auth.users` directly (ADR-0016). Columns: `id`, `avatar_url`, `created_at`,
-`updated_at`, `deleted_at`, `created_by`, `updated_by`.
+to `auth.users` directly (ADR-0016). Columns: `id`, `avatar_url`,
+`onboarding_completed_at` (NULL until the signup flow finishes — route guards
+gate the dashboard on it), `created_at`, `updated_at`, `deleted_at`,
+`created_by`, `updated_by`.
 
 A Postgres trigger (`on_auth_user_created`) auto-creates a `profiles` row on
 every `auth.users` INSERT — no application code needed. The trigger function
@@ -214,13 +210,15 @@ layer (ADR-0019).
 Migrations:
 - `supabase/migrations/20260613000000_create_profiles_table.sql`
 - `supabase/migrations/20260613000001_create_family_members_table.sql`
+- `supabase/migrations/20260618000000_create_insert_user_profile_rpc.sql`
+- `supabase/migrations/20260618000001_add_onboarding_completed_and_idempotent_rpc.sql`
 
 ### Useful commands
 
 ```sh
-bun run db:reset            # replay all migrations + seed data
-bun run db:types            # regenerate TypeScript types from local schema
-bun run supabase:stop       # tear down local Supabase containers
+bun run db:migrate          # apply pending migrations to staging (supabase db push)
+bun run db:types            # regenerate TypeScript types from the staging schema
+bun run db:migrate:status   # compare local vs. remote migration history
 ```
 
 ## Root context

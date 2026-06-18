@@ -13,12 +13,12 @@
  * layer (routes/, router.tsx, routeTree.gen.ts) is excluded via
  * coveragePathIgnorePatterns in bunfig.toml.
  *
- * DEFERRED — not imported here yet because they pull in `createServerFn` from
- * @tanstack/react-start, which needs the Vite/Start compiler transform and
- * throws on a raw import. They remain in-scope and will enter the denominator
- * once their tests mock the runtime:
- *   - src/lib/auth-fns.ts
- *   - src/components/navbar.tsx (imports auth-fns)
+ * The former DEFERRED set — the `createServerFn` server fns (lib/auth-fns,
+ * lib/onboarding-fns), the request-scoped cookie adapter (lib/server-cookies),
+ * and navbar — now have real tests. `createServerFn` and the auth/db/router
+ * boundaries are stubbed process-wide in tests/setup.ts so those modules build
+ * and their real bodies run under test. They enter the denominator via those
+ * tests; no manifest import is needed.
  */
 import { expect, test } from "bun:test";
 

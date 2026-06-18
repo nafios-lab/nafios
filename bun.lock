@@ -27,6 +27,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@nafios/auth-core": "workspace:*",
+        "@nafios/database": "workspace:*",
         "@nafios/ui": "workspace:*",
         "@tanstack/react-form": "^1.33.0",
         "@tanstack/react-router": "^1.170.15",

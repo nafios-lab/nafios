@@ -2,8 +2,10 @@ import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
 import { Avatar, AvatarFallback, AvatarImage } from "@nafios/ui/components/ui/avatar";
 import { Button } from "@nafios/ui/components/ui/button";
+import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, Pencil } from "lucide-react";
 import type { StepIndex } from "../context/signup-wizard";
+import { useAccountCreation } from "../hooks/use-account-creation";
 import { useSignupWizard } from "../hooks/use-signup-wizard";
 
 const RELATIONSHIP_LABELS: Record<string, string> = {
@@ -15,16 +17,27 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
 };
 
 export function SignupStepReview() {
-  const { data, back, goTo, isSubmitting, setIsSubmitting } = useSignupWizard();
+  const { data, back, goTo } = useSignupWizard();
+  const navigate = useNavigate();
+  const { createAccount, isLoading, error } = useAccountCreation({
+    // Session cookie is set by signup; the root route redirects to the
+    // dashboard once it sees a session with completed onboarding.
+    onSuccess: () => navigate({ to: "/" }),
+    // System faults are unrecoverable here (the input is already valid) — send
+    // the user to the generic error page. User-actionable errors (duplicate
+    // email) stay inline below so they can edit and retry.
+    onError: (err) => {
+      if (err.kind === "system") navigate({ to: "/error" });
+    },
+  });
 
   async function handleSubmit() {
-    setIsSubmitting(true);
-    try {
-      // TODO: call signup server function with data
-      console.log("signup submit", data);
-    } finally {
-      setIsSubmitting(false);
-    }
+    if (!data.account || !data.security || !data.family) return;
+    await createAccount({
+      account: data.account,
+      security: data.security,
+      family: data.family,
+    });
   }
 
   return (
@@ -78,6 +91,12 @@ export function SignupStepReview() {
         </ReviewSection>
       </div>
 
+      {error ? (
+        <Text size="sm" className="text-destructive">
+          {error.message}
+        </Text>
+      ) : null}
+
       <div className="flex gap-3">
         <Button variant="outline" iconLeft={<ArrowLeft />} onClick={back} className="flex-1">
           Back
@@ -86,10 +105,10 @@ export function SignupStepReview() {
           variant="brand"
           iconRight={<Check />}
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isLoading}
           className="flex-1"
         >
-          {isSubmitting ? "Creating account..." : "Create account"}
+          {isLoading ? "Creating account..." : "Create account"}
         </Button>
       </div>
     </div>

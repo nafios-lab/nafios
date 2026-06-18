@@ -19,8 +19,8 @@ package is where that layer and its types live.
 ## Scope
 
 **In:** generated schema types (`Database` and helpers), schema-typed client
-construction (`createServerDb`, `createBrowserDb`), and the `asDb` typing
-helper. Future shared query helpers / RPC wrappers also belong here.
+construction (`createServerDb`, `createBrowserDb`), the `asDb` typing helper,
+and data-access operations (typed wrappers over queries / RPCs).
 
 **Out:** the raw connection and `@supabase/*` dependency (owned by
 `@nafios/supabase-core`), auth operations (`@nafios/auth-core`), and per-domain
@@ -45,6 +45,50 @@ function createServerDb(cookies: CookieAdapter): Db;
 /** Schema-typed browser-side data client. */
 function createBrowserDb(): Db;
 ```
+
+### Data-access operations
+
+```ts
+interface FamilyMemberInput {
+  name: string;
+  relationship: "spouse" | "child" | "parent" | "sibling" | "other";
+  avatarUrl?: string | null;
+  nric?: string | null;
+  mobileNo?: string | null;
+  dateOfBirth?: string | null; // ISO YYYY-MM-DD
+}
+
+interface InsertUserProfileInput {
+  avatarUrl?: string | null;
+  familyMembers: FamilyMemberInput[];
+}
+
+/**
+ * Completes the authenticated user's profile (avatar) and inserts their family
+ * members as ONE atomic transaction. Backed by the `insert_user_profile`
+ * Postgres function; `profile_id` is derived server-side from `auth.uid()`.
+ * Requires an authenticated client. Throws on database error.
+ *
+ * Idempotent: the RPC replaces the profile's family members (delete-then-insert)
+ * and stamps `profiles.onboarding_completed_at`, so a resumed or retried
+ * onboarding submit is safe and never duplicates rows.
+ */
+function insertUserProfile(db: Db, input: InsertUserProfileInput): Promise<void>;
+```
+
+**Idempotency & completion:** onboarding can be retried (a prior attempt may
+have created the auth user + session but failed here). The RPC therefore: (a)
+deletes the caller's existing `family_members` before re-inserting, and (b) sets
+`onboarding_completed_at = now()`. Route guards gate the dashboard on that
+timestamp — a session whose profile has a NULL `onboarding_completed_at` is sent
+back into the signup flow rather than into the app.
+
+**Why an RPC, not two `.from()` calls:** the profile update and the family
+inserts span two tables and must be all-or-nothing. supabase-js has no
+client-side transaction, so two `.from()` calls would autocommit independently
+(partial state on failure). A single `plpgsql` function body is one transaction.
+Single-table, single-statement writes should still use `.from()` directly — the
+RPC is reserved for genuine multi-write atomicity.
 
 ### Generated types
 
@@ -77,7 +121,9 @@ type-check without a live database.
 
 ## Open Questions
 
-- **Shared query / RPC helpers:** none yet. Per ADR-0014, a thin SQL/RPC layer
-  is added per-domain only on real query friction — not speculatively.
+- **Shared query / RPC helpers:** the first is `insertUserProfile` (atomic
+  profile + family-member write, backed by the `insert_user_profile` RPC). Per
+  ADR-0014, further SQL/RPC layers are added per-domain only on real query
+  friction — not speculatively.
 - **RLS:** disabled for now; authorization is app-layer (ADR-0019). Revisit if
   RLS is adopted.

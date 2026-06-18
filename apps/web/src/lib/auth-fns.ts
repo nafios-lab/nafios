@@ -1,7 +1,6 @@
 import {
   type AuthSession,
   type AuthUser,
-  type CookieAdapter,
   createServerClient,
   getSession,
   getUser,
@@ -9,38 +8,10 @@ import {
   signUp,
 } from "@nafios/auth-core";
 import { createServerFn } from "@tanstack/react-start";
-
-function createCookieAdapter(
-  rawCookie: string | undefined,
-  setCookieFn: (name: string, value: string, options: Record<string, unknown>) => void,
-): CookieAdapter {
-  return {
-    getAll() {
-      if (!rawCookie) return [];
-      return rawCookie.split(";").map((pair) => {
-        const [name, ...rest] = pair.trim().split("=");
-        return { name, value: rest.join("=") };
-      });
-    },
-    setAll(cookies) {
-      for (const { name, value, options } of cookies) {
-        setCookieFn(name, value, {
-          domain: options.domain,
-          path: options.path ?? "/",
-          maxAge: options.maxAge,
-          httpOnly: options.httpOnly,
-          secure: options.secure,
-          sameSite: options.sameSite,
-        });
-      }
-    },
-  };
-}
+import { getRequestCookieAdapter } from "./server-cookies";
 
 async function getServerAuthClient() {
-  const { getRequestHeader, setCookie } = await import("@tanstack/react-start/server");
-  const raw = getRequestHeader("cookie");
-  return createServerClient(createCookieAdapter(raw, setCookie));
+  return createServerClient(await getRequestCookieAdapter());
 }
 
 export const getSessionFn = createServerFn({ method: "GET" }).handler(
@@ -74,13 +45,34 @@ export const signOutFn = createServerFn({ method: "POST" }).handler(async () => 
  */
 export type SignUpInput = Parameters<typeof signUp>[1];
 
+/**
+ * Discriminated outcome of {@link signUpFn}. Auth-level failures (e.g. the email
+ * is already registered) come back as `{ ok: false }` *data* — not a thrown
+ * error — so the caller can classify them by `code` across the server-fn
+ * boundary (thrown errors lose their custom fields in transit). Genuinely
+ * unexpected failures (network, etc.) still reject the call.
+ */
+export type SignUpResult =
+  | { ok: true; user: AuthUser | null }
+  | { ok: false; code: string | undefined; message: string };
+
 export const signUpFn = createServerFn({ method: "POST" })
   .validator((input: SignUpInput) => input)
-  .handler(async ({ data }): Promise<{ user: AuthUser | null }> => {
+  .handler(async ({ data }): Promise<SignUpResult> => {
     const client = await getServerAuthClient();
+
+    // Resume path: a prior attempt may have created the auth user (and session)
+    // but failed at the profile step. The user no longer needs re-registering —
+    // return the existing user so the caller proceeds straight to the profile
+    // step. Re-running signUp here would fail with "user already registered".
+    const existing = await getSession(client);
+    if (!existing.error && existing.data.session) {
+      return { ok: true, user: existing.data.session.user };
+    }
+
     const result = await signUp(client, data);
     if (result.error) {
-      throw new Error(result.error.message);
+      return { ok: false, code: result.error.code, message: result.error.message };
     }
-    return { user: result.data.user };
+    return { ok: true, user: result.data.user };
   });

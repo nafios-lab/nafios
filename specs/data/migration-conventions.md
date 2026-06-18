@@ -47,16 +47,17 @@ See the following ADRs:
 
 ### Workflow
 
-See [Supabase Local Stack](supabase-local-stack.md) for:
-- Lifecycle commands (`start`, `stop`, `status`)
-- `db:reset`, `db:seed`, `db:types` scripts
-- `.env` handling and cloud-link pattern
+See [Supabase Staging Stack](supabase-local-stack.md) for:
+- CLI authentication and project linking (`login`, `link`)
+- `db:migrate` (`db push`), `db:migrate:new`, `db:types` scripts
+- `.env` handling against the hosted `nafios-staging` project
 
 ## Invariants
 
 1. Migrations are SQL files — no ORM migration tool.
 2. One logical change per migration file.
-3. `db:reset` is the canonical rebuild command.
+3. `db:migrate` (`supabase db push`) is the canonical forward-only apply command;
+   migrations against shared staging are never reset/destructive.
 4. Templates are documented, not applied — zero NafiOS tables in the foundation.
 
 ## Public API
