@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
 // Track matchMedia listeners so we can trigger them in tests
@@ -6,7 +6,6 @@ const mediaQueryListeners: Array<(e: MediaQueryListEvent) => void> = [];
 let mockMatches = false;
 
 // Mock matchMedia BEFORE importing useTheme so the listener is registered with our mock
-const originalMatchMedia = window.matchMedia;
 window.matchMedia = ((query: string) => ({
   matches: mockMatches,
   media: query,
@@ -103,9 +102,11 @@ describe("useTheme", () => {
     expect(mediaQueryListeners.length).toBeGreaterThan(0);
 
     // Simulate system theme changing to dark
+    const listener = mediaQueryListeners[0];
+    expect(listener).toBeDefined();
     act(() => {
       mockMatches = true;
-      mediaQueryListeners[0]({ matches: true } as MediaQueryListEvent);
+      listener?.({ matches: true } as MediaQueryListEvent);
     });
 
     // Theme should still be "system" but the DOM should reflect the change
