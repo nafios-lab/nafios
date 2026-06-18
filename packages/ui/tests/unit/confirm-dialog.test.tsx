@@ -88,7 +88,7 @@ describe("ConfirmDialog", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
-  test("does not render description when omitted", async () => {
+  test("renders sr-only description when no description provided", async () => {
     const user = userEvent.setup();
     renderDialog(); // no description prop
 
@@ -98,7 +98,9 @@ describe("ConfirmDialog", () => {
       expect(screen.getByText("Confirm action")).toBeDefined();
     });
 
-    expect(screen.queryByRole("paragraph")).toBeNull();
+    // sr-only description should be present for accessibility
+    const desc = screen.getByText("Confirm action confirmation dialog");
+    expect(desc.className).toContain("sr-only");
   });
 
   test("renders description when provided", async () => {

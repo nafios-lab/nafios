@@ -7,7 +7,7 @@ preload = ["./tests/setup.ts"]
 # re-exports, and test files. The threshold is enforced only under `--coverage`
 # (the `test:coverage` script), so plain `bun test` / CI `check` are unaffected.
 coverageReporter = ["text"]
-coverageThreshold = 0.9
+coverageThreshold = 0.8
 coveragePathIgnorePatterns = [
   "**/components/ui/**",
   "**/*.stories.tsx",

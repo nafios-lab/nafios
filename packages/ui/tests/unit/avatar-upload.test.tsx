@@ -122,4 +122,26 @@ describe("AvatarUpload", () => {
     expect(screen.getByRole("button", { name: "Upload photo" })).toHaveProperty("disabled", true);
     expect(fileInput().disabled).toBe(true);
   });
+
+  test("clicking the upload button opens the file picker", () => {
+    render(<AvatarUpload onChange={() => {}} />);
+
+    const input = fileInput();
+    const clickSpy = mock(() => {});
+    input.click = clickSpy;
+
+    fireEvent.click(screen.getByRole("button", { name: "Upload photo" }));
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  test("clicking Change photo button opens the file picker when value exists", () => {
+    render(<AvatarUpload value="data:image/webp;base64,EXISTING" onChange={() => {}} />);
+
+    const input = fileInput();
+    const clickSpy = mock(() => {});
+    input.click = clickSpy;
+
+    fireEvent.click(screen.getByRole("button", { name: "Change photo" }));
+    expect(clickSpy).toHaveBeenCalled();
+  });
 });

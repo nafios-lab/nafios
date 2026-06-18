@@ -135,27 +135,27 @@ describe("SelectField (single, searchable)", () => {
     expect(screen.getByText("Fruit")).toBeDefined();
     expect(screen.getByText("Required")).toBeDefined();
 
-    fireEvent.click(screen.getByRole("button"));
-    const input = await screen.findByRole("combobox");
+    fireEvent.click(screen.getByRole("combobox"));
+    const input = await screen.findByPlaceholderText("Search...");
     expect(input.getAttribute("aria-describedby")).toBe("sf-error");
     expect(input.getAttribute("aria-invalid")).toBe("true");
   });
 
   test("opens popover on trigger click and shows search + options", async () => {
     render(<SelectField options={OPTIONS} searchable />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
 
     await waitFor(() => {
-      expect(screen.getByRole("combobox")).toBeDefined();
+      expect(screen.getByPlaceholderText("Search...")).toBeDefined();
       expect(screen.getByRole("option", { name: "Apple" })).toBeDefined();
     });
   });
 
   test("filters options as the user types in the search box", async () => {
     render(<SelectField options={OPTIONS} searchable />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
 
-    const input = await screen.findByRole("combobox");
+    const input = await screen.findByPlaceholderText("Search...");
     fireEvent.change(input, { target: { value: "ban" } });
 
     await waitFor(() => {
@@ -166,9 +166,9 @@ describe("SelectField (single, searchable)", () => {
 
   test("shows the empty message when no option matches", async () => {
     render(<SelectField options={OPTIONS} searchable emptyMessage="Nothing here" />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
 
-    const input = await screen.findByRole("combobox");
+    const input = await screen.findByPlaceholderText("Search...");
     fireEvent.change(input, { target: { value: "zzzz" } });
 
     await waitFor(() => {
@@ -180,7 +180,7 @@ describe("SelectField (single, searchable)", () => {
     const onValueChange = mock((_: string) => {});
     render(<SelectField options={OPTIONS} searchable onValueChange={onValueChange} />);
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
     const option = await screen.findByRole("option", { name: "Apple" });
     fireEvent.click(option);
 
@@ -192,8 +192,8 @@ describe("SelectField (single, searchable)", () => {
 
   test("marks the currently selected option as selected with a check", async () => {
     render(<SelectField options={OPTIONS} searchable value="banana" />);
-    // the trigger shows "Banana"; open via the main trigger button (first button)
-    fireEvent.click(screen.getAllByRole("button")[0] as HTMLElement);
+    // the trigger shows "Banana"; open via the combobox trigger
+    fireEvent.click(screen.getByRole("combobox"));
     await waitFor(() => {
       const banana = screen.getByRole("option", { name: "Banana" });
       expect(banana.getAttribute("aria-selected")).toBe("true");
@@ -211,8 +211,8 @@ describe("SelectField (single, searchable)", () => {
 
   test("Escape in the search box closes the popover", async () => {
     render(<SelectField options={OPTIONS} searchable />);
-    fireEvent.click(screen.getByRole("button"));
-    const input = await screen.findByRole("combobox");
+    fireEvent.click(screen.getByRole("combobox"));
+    const input = await screen.findByPlaceholderText("Search...");
     fireEvent.change(input, { target: { value: "ap" } });
     fireEvent.keyDown(input, { key: "Escape" });
     await waitFor(() => {
@@ -222,14 +222,14 @@ describe("SelectField (single, searchable)", () => {
 
   test("disabled trigger does not open the popover", () => {
     render(<SelectField options={OPTIONS} searchable disabled />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
     expect(screen.queryByRole("option")).toBeNull();
   });
 
   test("disabled option is rendered disabled and does not fire onValueChange", async () => {
     const onValueChange = mock((_: string) => {});
     render(<SelectField options={OPTIONS} searchable onValueChange={onValueChange} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
     const cherry = await screen.findByRole("option", { name: "Cherry" });
     expect((cherry as HTMLButtonElement).disabled).toBe(true);
   });
@@ -261,7 +261,7 @@ describe("SelectField (multiple)", () => {
 
   test("opens the popover and lists options on trigger click", async () => {
     render(<SelectField options={OPTIONS} multiple />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "Apple" })).toBeDefined();
       expect(screen.getByRole("listbox").getAttribute("aria-multiselectable")).toBe("true");
@@ -271,7 +271,7 @@ describe("SelectField (multiple)", () => {
   test("toggling an option on adds it to the selection", async () => {
     const onValueChange = mock((_: string[]) => {});
     render(<SelectField options={OPTIONS} multiple value={[]} onValueChange={onValueChange} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
     const apple = await screen.findByRole("option", { name: "Apple" });
     fireEvent.click(apple);
     expect(onValueChange).toHaveBeenCalledWith(["apple"]);
@@ -287,8 +287,8 @@ describe("SelectField (multiple)", () => {
         onValueChange={onValueChange}
       />,
     );
-    // open via the main trigger (first button); chips also render buttons
-    fireEvent.click(screen.getAllByRole("button")[0] as HTMLElement);
+    // open via the combobox trigger; chips also render buttons
+    fireEvent.click(screen.getByRole("combobox"));
     const apple = await screen.findByRole("option", { name: "Apple" });
     expect(apple.getAttribute("aria-selected")).toBe("true");
     fireEvent.click(apple);
@@ -297,7 +297,7 @@ describe("SelectField (multiple)", () => {
 
   test("toggle is a no-op when onValueChange is missing", async () => {
     render(<SelectField options={OPTIONS} multiple value={[]} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
     const apple = await screen.findByRole("option", { name: "Apple" });
     expect(() => fireEvent.click(apple)).not.toThrow();
   });
@@ -334,8 +334,8 @@ describe("SelectField (multiple)", () => {
     render(
       <SelectField options={OPTIONS} multiple searchable emptyMessage="None left" value={[]} />,
     );
-    fireEvent.click(screen.getByRole("button"));
-    const input = await screen.findByRole("combobox");
+    fireEvent.click(screen.getByRole("combobox"));
+    const input = await screen.findByPlaceholderText("Search...");
     fireEvent.change(input, { target: { value: "ban" } });
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "Banana" })).toBeDefined();
@@ -349,8 +349,8 @@ describe("SelectField (multiple)", () => {
 
   test("Escape in the searchable multi input closes the popover", async () => {
     render(<SelectField options={OPTIONS} multiple searchable value={[]} />);
-    fireEvent.click(screen.getByRole("button"));
-    const input = await screen.findByRole("combobox");
+    fireEvent.click(screen.getByRole("combobox"));
+    const input = await screen.findByPlaceholderText("Search...");
     fireEvent.keyDown(input, { key: "Escape" });
     await waitFor(() => {
       expect(screen.queryByRole("option")).toBeNull();
@@ -362,13 +362,13 @@ describe("SelectField (multiple)", () => {
     // no remove button while disabled
     expect(screen.queryByRole("button", { name: "Remove Apple" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Clear all selections" })).toBeNull();
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
     expect(screen.queryByRole("option")).toBeNull();
   });
 
   test("disabled option in multi mode is rendered disabled", async () => {
     render(<SelectField options={OPTIONS} multiple value={[]} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("combobox"));
     const cherry = await screen.findByRole("option", { name: "Cherry" });
     expect((cherry as HTMLButtonElement).disabled).toBe(true);
   });

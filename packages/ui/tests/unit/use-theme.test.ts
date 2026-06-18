@@ -1,11 +1,32 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
-import { useTheme } from "../../src/hooks/use-theme.ts";
+
+// Track matchMedia listeners so we can trigger them in tests
+const mediaQueryListeners: Array<(e: MediaQueryListEvent) => void> = [];
+let mockMatches = false;
+
+// Mock matchMedia BEFORE importing useTheme so the listener is registered with our mock
+const originalMatchMedia = window.matchMedia;
+window.matchMedia = ((query: string) => ({
+  matches: mockMatches,
+  media: query,
+  onchange: null,
+  addListener: () => {},
+  removeListener: () => {},
+  addEventListener: (_event: string, listener: (e: MediaQueryListEvent) => void) => {
+    mediaQueryListeners.push(listener);
+  },
+  removeEventListener: () => {},
+  dispatchEvent: () => true,
+})) as typeof window.matchMedia;
+
+const { useTheme } = await import("../../src/hooks/use-theme.ts");
 
 beforeEach(() => {
   // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API unavailable in test env
   document.cookie = "nafios-theme=; max-age=0; path=/";
   document.documentElement.classList.remove("dark");
+  mockMatches = false;
 });
 
 afterEach(cleanup);
@@ -72,5 +93,24 @@ describe("useTheme", () => {
 
     expect(result.current.theme).toBe("system");
     expect(["light", "dark"]).toContain(result.current.resolvedTheme);
+  });
+
+  test("reacts to system color scheme changes when theme is system", () => {
+    const { result } = renderHook(() => useTheme());
+    act(() => result.current.setTheme("system"));
+
+    // Verify listener was registered
+    expect(mediaQueryListeners.length).toBeGreaterThan(0);
+
+    // Simulate system theme changing to dark
+    act(() => {
+      mockMatches = true;
+      mediaQueryListeners[0]({ matches: true } as MediaQueryListEvent);
+    });
+
+    // Theme should still be "system" but the DOM should reflect the change
+    expect(result.current.theme).toBe("system");
+    // The applyTheme function should have been called
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 });
