@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  type ColumnDef,
-  DataTable,
-  SortableHeader,
-} from "../../src/components/data-table.tsx";
+import { type ColumnDef, DataTable, SortableHeader } from "../../src/components/data-table.tsx";
 
 afterEach(cleanup);
 
@@ -163,9 +159,7 @@ describe("DataTable", () => {
   });
 
   test("selects a single row via its checkbox and marks the row selected", () => {
-    render(
-      <DataTable columns={selectableColumns()} data={PEOPLE} showColumnVisibility={false} />,
-    );
+    render(<DataTable columns={selectableColumns()} data={PEOPLE} showColumnVisibility={false} />);
 
     const aliceCheckbox = screen.getByRole("checkbox", { name: "Select Alice" });
     expect(aliceCheckbox).toHaveProperty("checked", false);
@@ -179,9 +173,7 @@ describe("DataTable", () => {
   });
 
   test("select-all checkbox toggles every row on the page", () => {
-    render(
-      <DataTable columns={selectableColumns()} data={PEOPLE} showColumnVisibility={false} />,
-    );
+    render(<DataTable columns={selectableColumns()} data={PEOPLE} showColumnVisibility={false} />);
 
     const selectAll = screen.getByRole("checkbox", { name: "Select all" });
     fireEvent.click(selectAll);
@@ -270,13 +262,7 @@ describe("DataTable", () => {
   });
 
   test("hides the toolbar entirely when no filter and no column visibility", () => {
-    render(
-      <DataTable
-        columns={basicColumns()}
-        data={PEOPLE}
-        showColumnVisibility={false}
-      />,
-    );
+    render(<DataTable columns={basicColumns()} data={PEOPLE} showColumnVisibility={false} />);
     expect(screen.queryByText("Columns")).toBeNull();
     expect(screen.queryByPlaceholderText("Filter...")).toBeNull();
   });
@@ -299,8 +285,8 @@ describe("SortableHeader", () => {
   test("toggles sorting state on click using the column API", () => {
     const sortStates: Array<false | "asc" | "desc"> = ["asc"];
     const column = {
-      toggleSorting: mock((desc?: boolean) => {}),
-      getIsSorted: () => sortStates[0],
+      toggleSorting: mock((_desc?: boolean) => {}),
+      getIsSorted: () => sortStates[0] as false | "asc" | "desc",
     };
     render(<SortableHeader column={column}>Header label</SortableHeader>);
 
@@ -312,7 +298,7 @@ describe("SortableHeader", () => {
 
   test("requests ascending sort when not currently sorted ascending", () => {
     const column = {
-      toggleSorting: mock((desc?: boolean) => {}),
+      toggleSorting: mock((_desc?: boolean) => {}),
       getIsSorted: () => false as const,
     };
     render(<SortableHeader column={column}>Col</SortableHeader>);

@@ -6,7 +6,7 @@ import { Text } from "@nafios/ui/components/typography/text";
 import { Button } from "@nafios/ui/components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
-import { familyMemberFormSchema, type FamilyMemberValues } from "../schemas/signup-schema";
+import { type FamilyMemberValues, familyMemberFormSchema } from "../schemas/signup-schema";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

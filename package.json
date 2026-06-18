@@ -34,7 +34,7 @@
     "supabase:status": "supabase status",
     "db:reset": "supabase db reset",
     "db:seed": "supabase db reset",
-    "db:types": "supabase gen types typescript --local"
+    "db:types": "supabase gen types typescript --local > packages/database/src/database.types.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",

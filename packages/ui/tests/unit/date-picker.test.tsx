@@ -75,7 +75,7 @@ describe("DatePicker", () => {
     clickDay("2026-01-20");
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    const picked = onChange.mock.calls[0][0] as Date;
+    const picked = onChange.mock.calls[0]?.[0] as Date;
     expect(picked.getFullYear()).toBe(2026);
     expect(picked.getMonth()).toBe(0);
     expect(picked.getDate()).toBe(20);

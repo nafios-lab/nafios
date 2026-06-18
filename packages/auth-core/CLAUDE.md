@@ -4,6 +4,11 @@ Wraps Supabase Auth behind a provider-agnostic API. Every auth operation in the
 monorepo goes through this package — `apps/web` must never import `@supabase/*`
 directly.
 
+The Supabase connection comes from `@nafios/supabase-core` (the only package
+that depends on `@supabase/*`); auth-core is a **consumer** of that foundation,
+not the owner of the SDK dependency. Data access and schema types live in
+`@nafios/database`, a sibling consumer.
+
 ## What this package does
 
 - **Client construction:** `createServerClient(cookies)` for SSR / server
@@ -26,8 +31,9 @@ All public exports live in `src/index.ts` (the barrel):
 
 ## Invariants
 
-1. `@supabase/supabase-js` and `@supabase/ssr` are dependencies of **this
-   package only**. No other workspace may depend on them.
+1. auth-core does **not** depend on `@supabase/*` directly. The connection and
+   any provider types come from `@nafios/supabase-core`. (`@supabase/*` is owned
+   solely by supabase-core.)
 2. Nothing under `src/internal/` is re-exported from the barrel.
 3. `AuthClient` is branded/opaque — consumers cannot call Supabase methods.
 4. All auth operations return `AuthResult<T>` (`{ data, error }` union).

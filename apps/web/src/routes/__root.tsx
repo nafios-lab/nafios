@@ -1,7 +1,7 @@
-import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
-import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import { useTheme } from "@nafios/ui/hooks/use-theme";
+import { TanStackDevtools } from "@tanstack/react-devtools";
+import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
+import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import "../styles.css";
 
 export const Route = createRootRoute({

@@ -1,10 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  DropdownMenuField,
-  type MenuEntry,
-} from "../../src/components/dropdown-menu-field.tsx";
+import { DropdownMenuField, type MenuEntry } from "../../src/components/dropdown-menu-field.tsx";
 
 afterEach(cleanup);
 

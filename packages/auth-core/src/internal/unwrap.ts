@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@nafios/supabase-core";
 import type { AuthClient } from "../types";
 
 export function wrapClient(client: SupabaseClient): AuthClient {

@@ -1,4 +1,4 @@
-import type { AuthError as SupaAuthError } from "@supabase/supabase-js";
+import type { AuthError as SupaAuthError } from "@nafios/supabase-core";
 import type { AuthError, AuthSession, AuthUser } from "../types";
 
 type SupaUser = {

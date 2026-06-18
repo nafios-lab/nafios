@@ -1,12 +1,12 @@
+import { CredentialInput } from "@nafios/ui/components/credential-input";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
 import { Button } from "@nafios/ui/components/ui/button";
 import { useForm } from "@tanstack/react-form";
-import { useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useState } from "react";
 import { useSignupWizard } from "../hooks/use-signup-wizard";
 import { securityStepSchema } from "../schemas/signup-schema";
-import { CredentialInput } from "@nafios/ui/components/credential-input";
 
 export function SignupStepSecurity() {
   const { data, setStepData, next, back } = useSignupWizard();

@@ -77,7 +77,7 @@ describe("DateTimePicker", () => {
     fireEvent.click(anyDay);
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    const next = onChange.mock.calls[0][0] as Date;
+    const next = onChange.mock.calls[0]?.[0] as Date;
     expect(next).toBeInstanceOf(Date);
     // Time (14:30) carried over from the previous value.
     expect(next.getHours()).toBe(14);
@@ -118,7 +118,7 @@ describe("DateTimePicker", () => {
     fireEvent.click(anyDay);
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0][0]).toBeInstanceOf(Date);
+    expect(onChange.mock.calls[0]?.[0]).toBeInstanceOf(Date);
   });
 
   test("changing the time updates the value (12-hour mode, PM preserved)", async () => {
@@ -128,9 +128,8 @@ describe("DateTimePicker", () => {
 
     // Increment the hours spinner. With a PM value (2 PM), incrementing to 3
     // and converting back to 24h must give 15:00.
-    fireEvent.click(within(screen.getByLabelText("Hours").closest("div")!).getAllByLabelText(
-      "Increment",
-    )[0]);
+    const hoursContainer = screen.getByLabelText("Hours").closest("div") as HTMLElement;
+    fireEvent.click(within(hoursContainer).getAllByLabelText("Increment")[0] as HTMLElement);
 
     expect(onChange).toHaveBeenCalled();
     const next = onChange.mock.calls.at(-1)?.[0] as Date;

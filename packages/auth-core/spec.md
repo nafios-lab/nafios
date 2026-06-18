@@ -1,10 +1,10 @@
 ---
 title: "@nafios/auth-core"
 status: active
-version: 1.0.0
-updated: 2026-06-13
+version: 1.1.0
+updated: 2026-06-18
 owner: Hanafi
-related_adrs: [0006, 0008, 0012, 0016, 0018, 0019]
+related_adrs: [0006, 0008, 0012, 0016, 0018, 0019, 0021]
 ---
 
 # @nafios/auth-core — Specification
@@ -26,8 +26,14 @@ real-time subscriptions, and direct Supabase data-access calls.
 
 ## Key Constraint
 
-`@supabase/supabase-js` and `@supabase/ssr` are dependencies of this package
-**only**. No other workspace package or app may import them directly.
+auth-core does **not** depend on `@supabase/*` directly. The Supabase connection
+(and any provider types) come from `@nafios/supabase-core`, the sole owner of
+the `@supabase/*` dependency. auth-core is one consumer of that foundation;
+`@nafios/database` is another. `apps/web` and other workspaces still must never
+import `@supabase/*` directly — they go through these `@nafios/*` packages.
+
+`CookieAdapter` / `CookieOptions` are defined in `@nafios/supabase-core` and
+re-exported from auth-core for backward compatibility.
 
 ## Public API
 

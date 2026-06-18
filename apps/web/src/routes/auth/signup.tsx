@@ -1,7 +1,7 @@
 import { Logo } from "@nafios/ui/components/logo";
 import { Text } from "@nafios/ui/components/typography/text";
 import { Button } from "@nafios/ui/components/ui/button";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { SignupWizard } from "../../features/auth/components/signup-wizard";
 

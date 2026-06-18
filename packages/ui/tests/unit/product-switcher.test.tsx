@@ -1,10 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  type ProductItem,
-  ProductSwitcher,
-} from "../../src/components/product-switcher.tsx";
+import { type ProductItem, ProductSwitcher } from "../../src/components/product-switcher.tsx";
 
 afterEach(cleanup);
 
@@ -54,9 +51,7 @@ describe("ProductSwitcher", () => {
         {open ? "Open" : "Closed"}
       </button>
     );
-    render(
-      <ProductSwitcher items={items()} renderTrigger={renderTrigger} open />,
-    );
+    render(<ProductSwitcher items={items()} renderTrigger={renderTrigger} open />);
     expect(screen.getByText("Open")).toBeDefined();
   });
 
@@ -79,10 +74,7 @@ describe("ProductSwitcher", () => {
     const user = userEvent.setup();
     const onSelect = mock(() => {});
     render(
-      <ProductSwitcher
-        items={items([{}, { onSelect }, {}])}
-        renderTrigger={() => trigger()}
-      />,
+      <ProductSwitcher items={items([{}, { onSelect }, {}])} renderTrigger={() => trigger()} />,
     );
 
     await user.click(screen.getByTestId("trigger"));
@@ -119,9 +111,7 @@ describe("ProductSwitcher", () => {
 
   test("does not throw when a button item without onSelect is clicked", async () => {
     const user = userEvent.setup();
-    render(
-      <ProductSwitcher items={items()} renderTrigger={() => trigger()} />,
-    );
+    render(<ProductSwitcher items={items()} renderTrigger={() => trigger()} />);
 
     await user.click(screen.getByTestId("trigger"));
     await waitFor(() => {
@@ -153,10 +143,7 @@ describe("ProductSwitcher", () => {
   test("highlights the active product", async () => {
     const user = userEvent.setup();
     render(
-      <ProductSwitcher
-        items={items([{ active: true }, {}, {}])}
-        renderTrigger={() => trigger()}
-      />,
+      <ProductSwitcher items={items([{ active: true }, {}, {}])} renderTrigger={() => trigger()} />,
     );
 
     await user.click(screen.getByTestId("trigger"));

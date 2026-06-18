@@ -60,13 +60,27 @@
       "name": "@nafios/auth-core",
       "version": "0.0.0",
       "dependencies": {
-        "@supabase/ssr": "^0.6.1",
-        "@supabase/supabase-js": "^2.49.4",
+        "@nafios/supabase-core": "workspace:*",
       },
     },
     "packages/core-utils": {
       "name": "@nafios/core-utils",
       "version": "0.0.0",
+    },
+    "packages/database": {
+      "name": "@nafios/database",
+      "version": "0.0.0",
+      "dependencies": {
+        "@nafios/supabase-core": "workspace:*",
+      },
+    },
+    "packages/supabase-core": {
+      "name": "@nafios/supabase-core",
+      "version": "0.0.0",
+      "dependencies": {
+        "@supabase/ssr": "^0.6.1",
+        "@supabase/supabase-js": "^2.49.4",
+      },
     },
     "packages/ui": {
       "name": "@nafios/ui",
@@ -426,9 +440,13 @@
 
     "@nafios/core-utils": ["@nafios/core-utils@workspace:packages/core-utils"],
 
+    "@nafios/database": ["@nafios/database@workspace:packages/database"],
+
     "@nafios/docs": ["@nafios/docs@workspace:apps/docs"],
 
     "@nafios/storybook": ["@nafios/storybook@workspace:tooling/storybook"],
+
+    "@nafios/supabase-core": ["@nafios/supabase-core@workspace:packages/supabase-core"],
 
     "@nafios/ui": ["@nafios/ui@workspace:packages/ui"],
 

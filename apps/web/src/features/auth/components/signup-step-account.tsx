@@ -2,12 +2,12 @@ import { TextInput } from "@nafios/ui/components/text-input";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
 import { Button } from "@nafios/ui/components/ui/button";
+import { MaskInput } from "@nafios/ui/components/ui/masked-input";
 import { useForm } from "@tanstack/react-form";
-import { useState } from "react";
 import { ArrowRight, Mail, Phone, User } from "lucide-react";
+import { useState } from "react";
 import { useSignupWizard } from "../hooks/use-signup-wizard";
 import { accountStepSchema } from "../schemas/signup-schema";
-import { MaskInput } from "@nafios/ui/components/ui/masked-input";
 
 export function SignupStepAccount() {
   const { data, setStepData, next } = useSignupWizard();

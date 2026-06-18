@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as ReactRouter from "@tanstack/react-router";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 // LoginForm imports `Link` from @tanstack/react-router, which needs a live
 // router context to render. Stub just `Link` with a plain anchor and spread the

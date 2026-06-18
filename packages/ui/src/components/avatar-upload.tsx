@@ -1,7 +1,7 @@
 import { Camera, Loader2 } from "lucide-react";
 import { type ChangeEvent, useRef, useState } from "react";
-import { fitAvatar } from "../internal/crop-image.ts";
 import { ACCEPTED_AVATAR_TYPES, validateAvatarFile } from "../internal/avatar-validation.ts";
+import { fitAvatar } from "../internal/crop-image.ts";
 import { cn } from "../lib/utils.ts";
 import { Text } from "./typography/text.tsx";
 import {

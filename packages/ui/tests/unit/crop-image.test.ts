@@ -50,8 +50,8 @@ beforeEach(() => {
   RealImage = globalThis.Image;
   // FakeImage reads the let-bound dimensions at construction time.
   globalThis.Image = class extends FakeImage {
-    naturalWidth = naturalWidth;
-    naturalHeight = naturalHeight;
+    override naturalWidth = naturalWidth;
+    override naturalHeight = naturalHeight;
   } as unknown as typeof Image;
 
   realCreateObjectURL = URL.createObjectURL;
@@ -148,8 +148,8 @@ describe("fitAvatar", () => {
     naturalWidth = 400;
     naturalHeight = 1000;
     globalThis.Image = class extends FakeImage {
-      naturalWidth = 400;
-      naturalHeight = 1000;
+      override naturalWidth = 400;
+      override naturalHeight = 1000;
     } as unknown as typeof Image;
 
     await fitAvatar(SRC);

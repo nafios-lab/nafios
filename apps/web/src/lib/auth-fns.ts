@@ -1,11 +1,12 @@
 import {
+  type AuthSession,
+  type AuthUser,
+  type CookieAdapter,
   createServerClient,
   getSession,
   getUser,
   signOut,
-  type AuthSession,
-  type AuthUser,
-  type CookieAdapter,
+  signUp,
 } from "@nafios/auth-core";
 import { createServerFn } from "@tanstack/react-start";
 
@@ -65,3 +66,21 @@ export const signOutFn = createServerFn({ method: "POST" }).handler(async () => 
   await signOut(client);
   return { success: true };
 });
+
+/**
+ * Input contract for {@link signUpFn} — derived from auth-core's `signUp` so it
+ * stays the single source of truth. The forms (client) and Supabase (the trust
+ * boundary) own validation; this server fn is a thin authenticated pass-through.
+ */
+export type SignUpInput = Parameters<typeof signUp>[1];
+
+export const signUpFn = createServerFn({ method: "POST" })
+  .validator((input: SignUpInput) => input)
+  .handler(async ({ data }): Promise<{ user: AuthUser | null }> => {
+    const client = await getServerAuthClient();
+    const result = await signUp(client, data);
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+    return { user: result.data.user };
+  });

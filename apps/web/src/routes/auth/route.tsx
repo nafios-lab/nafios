@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { getSessionFn } from "../../lib/auth-fns";
 
 export const Route = createFileRoute("/auth")({

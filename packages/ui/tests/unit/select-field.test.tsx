@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SelectField, selectFieldVariants } from "../../src/components/select-field.tsx";
 
 afterEach(cleanup);
@@ -47,9 +47,7 @@ describe("SelectField (single, non-searchable)", () => {
   });
 
   test("error message replaces helper text and sets aria-invalid", () => {
-    render(
-      <SelectField options={OPTIONS} label="Fruit" helperText="Pick one" error="Required" />,
-    );
+    render(<SelectField options={OPTIONS} label="Fruit" helperText="Pick one" error="Required" />);
     expect(screen.getByText("Required")).toBeDefined();
     expect(screen.queryByText("Pick one")).toBeNull();
     const trigger = screen.getByRole("combobox");
@@ -195,7 +193,7 @@ describe("SelectField (single, searchable)", () => {
   test("marks the currently selected option as selected with a check", async () => {
     render(<SelectField options={OPTIONS} searchable value="banana" />);
     // the trigger shows "Banana"; open via the main trigger button (first button)
-    fireEvent.click(screen.getAllByRole("button")[0]);
+    fireEvent.click(screen.getAllByRole("button")[0] as HTMLElement);
     await waitFor(() => {
       const banana = screen.getByRole("option", { name: "Banana" });
       expect(banana.getAttribute("aria-selected")).toBe("true");
@@ -204,7 +202,9 @@ describe("SelectField (single, searchable)", () => {
 
   test("clear button resets the value to empty string", () => {
     const onValueChange = mock((_: string) => {});
-    render(<SelectField options={OPTIONS} searchable value="banana" onValueChange={onValueChange} />);
+    render(
+      <SelectField options={OPTIONS} searchable value="banana" onValueChange={onValueChange} />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
     expect(onValueChange).toHaveBeenCalledWith("");
   });
@@ -288,7 +288,7 @@ describe("SelectField (multiple)", () => {
       />,
     );
     // open via the main trigger (first button); chips also render buttons
-    fireEvent.click(screen.getAllByRole("button")[0]);
+    fireEvent.click(screen.getAllByRole("button")[0] as HTMLElement);
     const apple = await screen.findByRole("option", { name: "Apple" });
     expect(apple.getAttribute("aria-selected")).toBe("true");
     fireEvent.click(apple);
