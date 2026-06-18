@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { useState } from "react";
 import { Calculator, Calendar, CreditCard, Settings, Smile, User } from "lucide-react";
+import { useState } from "react";
 import {
   Command,
   CommandDialog,

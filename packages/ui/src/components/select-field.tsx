@@ -286,12 +286,23 @@ function SearchableSelect({
       {labelNode}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverAnchor asChild>
-          <button
-            type="button"
+          <div
+            role="combobox"
+            tabIndex={disabled ? -1 : 0}
+            aria-expanded={open}
+            aria-haspopup="listbox"
+            aria-controls={`${id}-listbox`}
             onClick={() => !disabled && setOpen((o) => !o)}
+            onKeyDown={(e) => {
+              if (!disabled && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                setOpen((o) => !o);
+              }
+            }}
             className={cn(
               searchableTriggerVariants({ variant }),
               disabled && "cursor-not-allowed opacity-50",
+              "cursor-pointer",
             )}
           >
             <span className="flex flex-1 items-center truncate text-sm">
@@ -314,7 +325,7 @@ function SearchableSelect({
             ) : (
               <ChevronDown className="size-4 shrink-0 opacity-50" />
             )}
-          </button>
+          </div>
         </PopoverAnchor>
         <PopoverContent
           id={`${id}-listbox`}
@@ -498,12 +509,22 @@ function MultiSelect({
       {labelNode}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverAnchor asChild>
-          <button
-            type="button"
+          <div
+            role="combobox"
+            tabIndex={disabled ? -1 : 0}
+            aria-expanded={open}
+            aria-haspopup="listbox"
+            aria-controls={`${id}-listbox`}
             onClick={() => !disabled && setOpen((o) => !o)}
+            onKeyDown={(e) => {
+              if (!disabled && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                setOpen((o) => !o);
+              }
+            }}
             className={cn(
               searchableTriggerVariants({ variant }),
-              "h-auto min-h-9 flex-wrap",
+              "h-auto min-h-9 flex-wrap cursor-pointer",
               disabled && "cursor-not-allowed opacity-50",
             )}
           >
@@ -547,7 +568,7 @@ function MultiSelect({
             ) : (
               <ChevronDown className="size-4 shrink-0 opacity-50" />
             )}
-          </button>
+          </div>
         </PopoverAnchor>
         <PopoverContent
           id={`${id}-listbox`}

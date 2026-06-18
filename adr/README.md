@@ -46,3 +46,9 @@ already covers it. If it does, respect it — or write a new ADR that supersedes
 | [0014](0014-no-orm-supabase-js-data-access.md) | No ORM — `supabase-js` is the data-access layer | Accepted |
 | [0015](0015-conventions-as-templates-not-applied-tables.md) | Conventions delivered as templates, not applied tables | Accepted |
 | [0016](0016-auth-schema-referenced-not-owned.md) | `auth` schema referenced, not owned | Accepted |
+| [0017](0017-manual-deploy-via-github-actions-netlify-cli.md) | Manual deploy via GitHub Actions + Netlify CLI | Accepted |
+| [0018](0018-single-shell-modules-as-packages.md) | Single TanStack Start shell with modules as packages | Accepted |
+| [0019](0019-app-layer-authz-rls-deferred.md) | App-layer authorization; Postgres RLS deferred | Accepted |
+| [0020](0020-test-coverage-scoping-and-gate.md) | Test-coverage scoping and the 90% gate | Accepted |
+| [0021](0021-supabase-core-connection-foundation.md) | Supabase connection foundation split into `supabase-core` + feature packages | Accepted |
+| [0022](0022-tanstack-query-for-client-server-state.md) | TanStack Query for client-side server-state; loaders for SSR | Accepted |

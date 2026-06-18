@@ -1,0 +1,4 @@
+# Root-level integration tests live here (see ADR-0020).
+# Run with: bun run test:integration
+# Currently empty — the pipeline-proof test was retired (vendor-behavior /
+# RLS-isolation proof for a convention deferred under ADR-0019).

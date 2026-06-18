@@ -1,6 +1,6 @@
 import type * as React from "react";
-import { Button, type ButtonProps } from "./button.tsx";
 import { cn } from "../../lib/utils.ts";
+import { Button, type ButtonProps } from "./button.tsx";
 
 type IconButtonSize = "default" | "sm" | "lg";
 

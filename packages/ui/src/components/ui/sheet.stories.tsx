@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { TextInput } from "../text-input.tsx";
 import { Button } from "./button.tsx";
 import {
   Sheet,
@@ -10,7 +11,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "./sheet.tsx";
-import { TextInput } from "../text-input.tsx";
 
 const meta: Meta = {
   title: "Primitives/Sheet",

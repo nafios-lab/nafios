@@ -66,4 +66,4 @@ function Progress({ className, variant, size, value = 0, max = 100, ...props }: 
   );
 }
 
-export { Progress, progressTrackVariants, progressBarVariants };
+export { Progress, progressBarVariants, progressTrackVariants };

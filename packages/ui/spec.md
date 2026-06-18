@@ -1,8 +1,8 @@
 ---
 title: "@nafios/ui"
 status: active
-version: 1.0.0
-updated: 2026-06-09
+version: 1.1.0
+updated: 2026-06-18
 owner: Hanafi
 related_adrs: [0006]
 ---
@@ -29,6 +29,12 @@ components, NafiOS brand theming, and composites built from primitives.
 
 - `useTheme(): { theme, setTheme, resolvedTheme }` — Toggle light/dark/system.
   Persists choice via cookie. SSR-safe.
+- `useScreenLoader(opts?: { renderLoader?: () => ReactNode }): { show, hide }` —
+  Imperatively drive the global `<ScreenLoader>` overlay. `show(renderLoader?)`
+  raises the overlay; `hide()` lowers it. Each call owns one ref-counted slot:
+  the overlay is visible while **any** slot is active, so overlapping consumers
+  never hide each other's loader, and the slot is auto-released on unmount.
+  Loader precedence: `show(fn)` arg → hook's `renderLoader` → root `defaultLoader`.
 
 ### Components (shadcn primitives)
 
@@ -39,6 +45,12 @@ Re-exported from `@nafios/ui/components/ui/*`:
 
 Re-exported from `@nafios/ui/components/*`:
 `ConfirmDialog` — confirmation modal composed from Dialog + Button.
+`ScreenLoader` — global full-screen loading overlay. Portals to `document.body`
+(renders above all app content regardless of JSX location), SSR-safe (renders
+nothing on the server / before client mount), locks body scroll while visible,
+and exposes `role="status"` / `aria-live` / `aria-busy`. Accepts an optional
+`defaultLoader` for the app-wide loader UI. **Mount exactly once** at the app
+root — driven via `useScreenLoader`. A second mount would render a second overlay.
 
 ## Invariants
 

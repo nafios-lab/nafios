@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import type * as React from "react";
 import { useId, useState } from "react";
 import type { DateRange } from "react-day-picker";
-import type * as React from "react";
 import { cn } from "../lib/utils.ts";
 import { Button } from "./ui/button.tsx";
 import { Calendar, type CalendarProps } from "./ui/calendar.tsx";
@@ -92,5 +92,5 @@ function DateRangePicker({
   );
 }
 
-export { DateRangePicker };
 export type { DateRange };
+export { DateRangePicker };

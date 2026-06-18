@@ -31,6 +31,7 @@ export interface TextInputProps
   borderLess?: boolean;
   /** Content rendered inside the input's relative container (e.g. overlays). */
   inputOverlay?: React.ReactNode;
+  ref?: React.Ref<HTMLInputElement>;
 }
 
 function TextInput({
@@ -45,6 +46,7 @@ function TextInput({
   inputOverlay,
   id: idProp,
   type,
+  ref,
   ...props
 }: TextInputProps) {
   const autoId = useId();
@@ -65,6 +67,7 @@ function TextInput({
           </span>
         )}
         <input
+          ref={ref}
           id={id}
           type={type}
           className={cn(

@@ -27,6 +27,23 @@ surface**, so stability is prioritized over novelty there. It depends on
 can be swapped without touching consumers.
 → [ADR-0004](../../adr/0004-vercel-ai-sdk-behind-ai-core.md).
 
+## Single shell architecture
+
+`apps/web` is the **single TanStack Start shell** — there is one deployable web
+app, not one per product. Domain products (Finance, Budgeting, etc.) live as
+packages under `packages/` and are mounted into the shell's route tree as
+modules. The shell owns authentication, navigation chrome, and route groups
+(`(public)/`, `(auth)/`, `(protected)/`).
+→ [ADR-0018](../../adr/0018-single-shell-modules-as-packages.md).
+
+## Authorization model
+
+Authorization is enforced at the **application layer** (server functions and
+middleware). Server functions validate sessions via `@nafios/auth-core` and
+scope queries to the authenticated user. Postgres RLS is deferred to a future
+data-security epic.
+→ [ADR-0019](../../adr/0019-app-layer-authz-rls-deferred.md).
+
 ## High-level flow (abstract)
 
 - **Apps** render UI and call **services**. Services own domain logic + data access.

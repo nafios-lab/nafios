@@ -106,4 +106,4 @@ function MonthSelect({
   );
 }
 
-export { MonthSelect, months, monthShort };
+export { MonthSelect, monthShort, months };
