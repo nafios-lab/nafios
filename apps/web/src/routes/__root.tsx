@@ -1,3 +1,4 @@
+import { ScreenLoader } from "@nafios/ui/components/screen-loader";
 import { useTheme } from "@nafios/ui/hooks/use-theme";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
@@ -26,6 +27,7 @@ function RootDocument() {
       </head>
       <body className="min-h-screen bg-background text-foreground font-body antialiased">
         <Outlet />
+        <ScreenLoader />
         <DevResetButton />
         <Scripts />
         <TanStackDevtools config={{ hideUntilHover: true }} plugins={[formDevtoolsPlugin()]} />

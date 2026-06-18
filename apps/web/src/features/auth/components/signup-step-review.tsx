@@ -2,11 +2,14 @@ import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
 import { Avatar, AvatarFallback, AvatarImage } from "@nafios/ui/components/ui/avatar";
 import { Button } from "@nafios/ui/components/ui/button";
+import { useScreenLoader } from "@nafios/ui/hooks/use-screen-loader";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, Pencil } from "lucide-react";
+import { useEffect } from "react";
 import type { StepIndex } from "../context/signup-wizard";
 import { useAccountCreation } from "../hooks/use-account-creation";
 import { useSignupWizard } from "../hooks/use-signup-wizard";
+import { AccCreationLoader } from "./acc-creation-loader";
 
 const RELATIONSHIP_LABELS: Record<string, string> = {
   spouse: "Spouse",
@@ -19,10 +22,16 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
 export function SignupStepReview() {
   const { data, back, goTo } = useSignupWizard();
   const navigate = useNavigate();
+  const { show: showLoader, hide: hideLoader } = useScreenLoader({
+    renderLoader: () => <AccCreationLoader />,
+  });
   const { createAccount, isLoading, error } = useAccountCreation({
     // Session cookie is set by signup; the root route redirects to the
     // dashboard once it sees a session with completed onboarding.
-    onSuccess: () => navigate({ to: "/" }),
+    onSuccess: () => {
+      navigate({ to: "/" });
+      hideLoader();
+    },
     // System faults are unrecoverable here (the input is already valid) — send
     // the user to the generic error page. User-actionable errors (duplicate
     // email) stay inline below so they can edit and retry.
@@ -39,6 +48,10 @@ export function SignupStepReview() {
       family: data.family,
     });
   }
+
+  useEffect(() => {
+    if (isLoading) showLoader();
+  }, [isLoading, showLoader]);
 
   return (
     <div className="flex flex-col gap-6">
