@@ -2,6 +2,7 @@ import { useTheme } from "@nafios/ui/hooks/use-theme";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { DevResetButton } from "../components/dev-reset-button";
 import "../styles.css";
 
 export const Route = createRootRoute({
@@ -25,6 +26,7 @@ function RootDocument() {
       </head>
       <body className="min-h-screen bg-background text-foreground font-body antialiased">
         <Outlet />
+        <DevResetButton />
         <Scripts />
         <TanStackDevtools config={{ hideUntilHover: true }} plugins={[formDevtoolsPlugin()]} />
       </body>
