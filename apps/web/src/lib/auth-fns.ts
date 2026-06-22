@@ -72,8 +72,13 @@ export const signUpFn = createServerFn({ method: "POST" })
     }
 
     const result = await signUp(client, data);
+
     if (result.error) {
-      return { ok: false, code: result.error.code, message: result.error.message };
+      return {
+        ok: false,
+        code: result.error.code,
+        message: result.error.message,
+      };
     }
     return { ok: true, user: result.data.user };
   });
@@ -101,7 +106,11 @@ export const signInFn = createServerFn({ method: "POST" })
     const client = await getServerAuthClient();
     const result = await signInWithPassword(client, data);
     if (result.error) {
-      return { ok: false, code: result.error.code, message: result.error.message };
+      return {
+        ok: false,
+        code: result.error.code,
+        message: result.error.message,
+      };
     }
     return { ok: true, user: result.data.user };
   });

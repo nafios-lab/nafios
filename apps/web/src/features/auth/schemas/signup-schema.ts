@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// ── Step 1: Account ──────────────────────────────────────────────────
+//@deprecated  ── Step 1: Account ──────────────────────────────────────────────────
 export const accountStepSchema = z.object({
   username: z.string().trim().min(1, "Username is required"),
   email: z.email().trim().min(1, "Email is required").trim(),
@@ -11,6 +11,23 @@ export const accountStepSchema = z.object({
 });
 
 export type AccountStepValues = z.infer<typeof accountStepSchema>;
+
+// ── Account Sign up ──────────────────────────────────────────────────
+export const accountSignupSchema = z
+  .object({
+    email: z.email("Invalid email address").trim().min(1, "Email is required"),
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    error: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export type AccountSignupValues = z.infer<typeof accountSignupSchema>;
 
 // ── Step 2: Security ─────────────────────────────────────────────────
 export const securityStepSchema = z

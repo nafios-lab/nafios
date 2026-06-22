@@ -16,8 +16,10 @@ import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
-import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
-import { Route as ProtectedAppIndexRouteImport } from './routes/_protected/app/index'
+import { Route as ProtectedOnboardingRouteImport } from './routes/_protected/onboarding'
+import { Route as ProtectedAppRouteImport } from './routes/_protected/_app'
+import { Route as ProtectedAppDashboardRouteImport } from './routes/_protected/_app/dashboard'
+import { Route as ProtectedAppAppIndexRouteImport } from './routes/_protected/_app/app/index'
 
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
@@ -53,15 +55,24 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AuthRouteRoute,
 } as any)
-const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const ProtectedOnboardingRoute = ProtectedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ProtectedAppIndexRoute = ProtectedAppIndexRouteImport.update({
+const ProtectedAppRoute = ProtectedAppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedAppDashboardRoute = ProtectedAppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => ProtectedAppRoute,
+} as any)
+const ProtectedAppAppIndexRoute = ProtectedAppAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
-  getParentRoute: () => ProtectedRoute,
+  getParentRoute: () => ProtectedAppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -69,20 +80,22 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteRouteWithChildren
   '/error': typeof ErrorRoute
   '/health': typeof HealthRoute
-  '/dashboard': typeof ProtectedDashboardRoute
+  '/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
-  '/app/': typeof ProtectedAppIndexRoute
+  '/dashboard': typeof ProtectedAppDashboardRoute
+  '/app/': typeof ProtectedAppAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/error': typeof ErrorRoute
   '/health': typeof HealthRoute
-  '/dashboard': typeof ProtectedDashboardRoute
+  '/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
-  '/app': typeof ProtectedAppIndexRoute
+  '/dashboard': typeof ProtectedAppDashboardRoute
+  '/app': typeof ProtectedAppAppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -91,10 +104,12 @@ export interface FileRoutesById {
   '/_protected': typeof ProtectedRouteWithChildren
   '/error': typeof ErrorRoute
   '/health': typeof HealthRoute
-  '/_protected/dashboard': typeof ProtectedDashboardRoute
+  '/_protected/_app': typeof ProtectedAppRouteWithChildren
+  '/_protected/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
-  '/_protected/app/': typeof ProtectedAppIndexRoute
+  '/_protected/_app/dashboard': typeof ProtectedAppDashboardRoute
+  '/_protected/_app/app/': typeof ProtectedAppAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,9 +118,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/error'
     | '/health'
-    | '/dashboard'
+    | '/onboarding'
     | '/auth/login'
     | '/auth/signup'
+    | '/dashboard'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -113,9 +129,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/error'
     | '/health'
-    | '/dashboard'
+    | '/onboarding'
     | '/auth/login'
     | '/auth/signup'
+    | '/dashboard'
     | '/app'
   id:
     | '__root__'
@@ -124,10 +141,12 @@ export interface FileRouteTypes {
     | '/_protected'
     | '/error'
     | '/health'
-    | '/_protected/dashboard'
+    | '/_protected/_app'
+    | '/_protected/onboarding'
     | '/auth/login'
     | '/auth/signup'
-    | '/_protected/app/'
+    | '/_protected/_app/dashboard'
+    | '/_protected/_app/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -189,19 +208,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_protected/dashboard': {
-      id: '/_protected/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof ProtectedDashboardRouteImport
+    '/_protected/onboarding': {
+      id: '/_protected/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof ProtectedOnboardingRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/app/': {
-      id: '/_protected/app/'
+    '/_protected/_app': {
+      id: '/_protected/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ProtectedAppRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/_app/dashboard': {
+      id: '/_protected/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof ProtectedAppDashboardRouteImport
+      parentRoute: typeof ProtectedAppRoute
+    }
+    '/_protected/_app/app/': {
+      id: '/_protected/_app/app/'
       path: '/app'
       fullPath: '/app/'
-      preLoaderRoute: typeof ProtectedAppIndexRouteImport
-      parentRoute: typeof ProtectedRoute
+      preLoaderRoute: typeof ProtectedAppAppIndexRouteImport
+      parentRoute: typeof ProtectedAppRoute
     }
   }
 }
@@ -220,14 +253,28 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
 )
 
+interface ProtectedAppRouteChildren {
+  ProtectedAppDashboardRoute: typeof ProtectedAppDashboardRoute
+  ProtectedAppAppIndexRoute: typeof ProtectedAppAppIndexRoute
+}
+
+const ProtectedAppRouteChildren: ProtectedAppRouteChildren = {
+  ProtectedAppDashboardRoute: ProtectedAppDashboardRoute,
+  ProtectedAppAppIndexRoute: ProtectedAppAppIndexRoute,
+}
+
+const ProtectedAppRouteWithChildren = ProtectedAppRoute._addFileChildren(
+  ProtectedAppRouteChildren,
+)
+
 interface ProtectedRouteChildren {
-  ProtectedDashboardRoute: typeof ProtectedDashboardRoute
-  ProtectedAppIndexRoute: typeof ProtectedAppIndexRoute
+  ProtectedAppRoute: typeof ProtectedAppRouteWithChildren
+  ProtectedOnboardingRoute: typeof ProtectedOnboardingRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
-  ProtectedDashboardRoute: ProtectedDashboardRoute,
-  ProtectedAppIndexRoute: ProtectedAppIndexRoute,
+  ProtectedAppRoute: ProtectedAppRouteWithChildren,
+  ProtectedOnboardingRoute: ProtectedOnboardingRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
