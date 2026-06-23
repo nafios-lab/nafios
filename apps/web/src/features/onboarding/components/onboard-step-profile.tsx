@@ -1,14 +1,20 @@
-"use client";
 import { AvatarUpload } from "@nafios/ui/components/avatar-upload";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
-import { Alert, AlertDescription, AlertTitle } from "@nafios/ui/components/ui/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@nafios/ui/components/ui/alert";
 import { Button } from "@nafios/ui/components/ui/button";
 import { MaskInput } from "@nafios/ui/components/ui/masked-input";
 import { useForm } from "@tanstack/react-form";
 import { AlertCircle, ArrowRight, Phone } from "lucide-react";
 import { type SubmitEvent, useRef, useState } from "react";
-import { type ProfileValues, profileSchema } from "~/features/auth/schemas/onboarding-schema";
+import {
+  type ProfileValues,
+  profileSchema,
+} from "~/features/onboarding/schemas/onboarding-schema";
 import { useOnboardingWizard } from "../context/onboarding-wizard-provider";
 import { useOnboardingProfile } from "../hooks/use-onboarding-profile";
 
@@ -33,7 +39,10 @@ export function OnboardStepProfile() {
 
   // The values just sent to the server, so onSuccess can commit them to wizard
   // state only after the write actually succeeds.
-  const submittedRef = useRef<ProfileValues>({ avatar: saved?.avatar, phone: saved?.phone ?? "" });
+  const submittedRef = useRef<ProfileValues>({
+    avatar: saved?.avatar,
+    phone: saved?.phone ?? "",
+  });
 
   const { saveProfile, isSaving, error } = useOnboardingProfile({
     onSuccess: () => {
@@ -71,7 +80,8 @@ export function OnboardStepProfile() {
       <div className="flex flex-col">
         <Heading>Set up your profile</Heading>
         <Text size="sm" muted>
-          Add a photo and mobile number — both optional. You can skip and do this later.
+          Add a photo and mobile number — both optional. You can skip and do
+          this later.
         </Text>
       </div>
 
@@ -87,7 +97,12 @@ export function OnboardStepProfile() {
         className={`flex flex-col gap-5 ${isSaving ? "pointer-events-none" : ""}`}
         onSubmit={handleSubmit}
       >
-        <AvatarUpload value={avatar} onChange={setAvatar} optional disabled={isSaving} />
+        <AvatarUpload
+          value={avatar}
+          onChange={setAvatar}
+          optional
+          disabled={isSaving}
+        />
 
         <form.Field name="phone">
           {(field) => (
@@ -98,7 +113,11 @@ export function OnboardStepProfile() {
               iconLeft={<Phone />}
               mask="(+65) 9999 9999"
               placeholder="(+65) 9000 0000"
-              error={attemptSubmit ? field.state.meta.errors?.[0]?.message : undefined}
+              error={
+                attemptSubmit
+                  ? field.state.meta.errors?.[0]?.message
+                  : undefined
+              }
               onValueChange={(v) => field.handleChange(v)}
               onBlur={field.handleBlur}
               autoComplete="off"
@@ -108,7 +127,12 @@ export function OnboardStepProfile() {
         </form.Field>
 
         <div className="flex flex-row items-center justify-between gap-3 mt-2">
-          <Button type="button" variant="ghost" onClick={handleSkip} disabled={isSaving}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleSkip}
+            disabled={isSaving}
+          >
             Skip for now
           </Button>
           <Button

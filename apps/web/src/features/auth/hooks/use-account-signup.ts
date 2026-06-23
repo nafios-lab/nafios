@@ -18,7 +18,7 @@ export class AccountSignupError extends Error {
 
   constructor(message: string, kind: AccountSignupErrorKind) {
     super(message);
-    this.name = "AccountSignError";
+    this.name = "AccountSignupError";
     this.kind = kind;
   }
 }

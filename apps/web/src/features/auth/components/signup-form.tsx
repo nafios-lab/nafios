@@ -2,7 +2,11 @@ import { CredentialInput } from "@nafios/ui/components/credential-input";
 import { TextInput } from "@nafios/ui/components/text-input";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
-import { Alert, AlertDescription, AlertTitle } from "@nafios/ui/components/ui/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@nafios/ui/components/ui/alert";
 import { Button } from "@nafios/ui/components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
@@ -34,7 +38,7 @@ export function SignupForm() {
       onChange: accountSignupSchema,
     },
     onSubmit: ({ value }) => {
-      signupUser(value);
+      signupUser({ email: value.email, password: value.password });
     },
   });
 
@@ -71,7 +75,11 @@ export function SignupForm() {
               value={field.state.value}
               placeholder="Email"
               iconLeft={<Mail />}
-              error={attemptSubmit ? field.state.meta.errors?.[0]?.message : undefined}
+              error={
+                attemptSubmit
+                  ? field.state.meta.errors?.[0]?.message
+                  : undefined
+              }
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
             />
@@ -85,7 +93,11 @@ export function SignupForm() {
               autoComplete="new-password"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
-              error={attemptSubmit ? field.state.meta.errors?.[0]?.message : undefined}
+              error={
+                attemptSubmit
+                  ? field.state.meta.errors?.[0]?.message
+                  : undefined
+              }
             />
           )}
         </formObj.Field>
@@ -95,7 +107,11 @@ export function SignupForm() {
               placeholder="Confirm Password"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
-              error={attemptSubmit ? field.state.meta.errors?.[0]?.message : undefined}
+              error={
+                attemptSubmit
+                  ? field.state.meta.errors?.[0]?.message
+                  : undefined
+              }
             />
           )}
         </formObj.Field>

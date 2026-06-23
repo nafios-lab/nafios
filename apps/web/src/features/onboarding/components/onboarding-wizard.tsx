@@ -1,5 +1,5 @@
 import { Stepper } from "@nafios/ui/components/ui/stepper";
-import type { OnboardingWizardData } from "~/features/auth/schemas/onboarding-schema";
+import type { OnboardingWizardData } from "~/features/onboarding/schemas/onboarding-schema";
 import {
   ONBOARDING_STEPS,
   OnboardingWizardProvider,
@@ -9,7 +9,11 @@ import { OnboardStepFamily } from "./onboard-step-family";
 import { OnboardStepProfile } from "./onboard-step-profile";
 import { OnboardStepReview } from "./onboard-step-review";
 
-const STEP_COMPONENTS = [OnboardStepProfile, OnboardStepFamily, OnboardStepReview] as const;
+const STEP_COMPONENTS = [
+  OnboardStepProfile,
+  OnboardStepFamily,
+  OnboardStepReview,
+] as const;
 
 function OnboardingWizardContent() {
   const { activeStep, goTo } = useOnboardingWizard();

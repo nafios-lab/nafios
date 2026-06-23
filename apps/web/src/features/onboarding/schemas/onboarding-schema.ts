@@ -36,7 +36,7 @@ export const familyMemberSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^\(\+65\) [89]\d{3} \d{4}$/, "Invalid Singapore mobile number")
+    .regex(SG_MOBILE_RE, "Invalid Singapore mobile number")
     .optional(),
   dateOfBirth: z.string().optional(),
 });
