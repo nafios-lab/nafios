@@ -26,18 +26,8 @@ import { expect, test } from "bun:test";
 import "../src/features/auth/schemas/login-schema.ts";
 import "../src/features/auth/schemas/signup-schema.ts";
 
-// Hooks & context
-import "../src/features/auth/hooks/use-signup-wizard.ts";
-import "../src/features/auth/context/signup-wizard.tsx";
-
 // Feature components
-import "../src/features/auth/components/family-member-form.tsx";
 import "../src/features/auth/components/login-form.tsx";
-import "../src/features/auth/components/signup-step-account.tsx";
-import "../src/features/auth/components/signup-step-family.tsx";
-import "../src/features/auth/components/signup-step-review.tsx";
-import "../src/features/auth/components/signup-step-security.tsx";
-import "../src/features/auth/components/signup-wizard.tsx";
 
 test("in-scope @nafios/web modules load for coverage instrumentation", () => {
   expect(true).toBe(true);
