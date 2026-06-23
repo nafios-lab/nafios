@@ -1,3 +1,5 @@
+/** @deprecated */
+
 import { useContext } from "react";
 import { SignupWizardContext } from "../context/signup-wizard";
 

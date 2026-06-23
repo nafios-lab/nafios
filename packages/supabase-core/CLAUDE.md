@@ -9,10 +9,12 @@ abstraction on top.
 ## What this package does
 
 - **Client construction:** `createServerClient(cookies)` for SSR / server
-  functions, `createBrowserClient()` for browser-side code. Both return the
-  raw `SupabaseClient` — no wrapping, no schema typing.
-- **Env/config:** reads `SUPABASE_URL` / `SUPABASE_ANON_KEY`; throws
-  synchronously if either is missing.
+  functions, `createBrowserClient()` for browser-side code, and
+  `createServiceRoleClient()` for privileged session-less server work. All
+  return the raw `SupabaseClient` — no wrapping, no schema typing.
+- **Env/config:** reads `SUPABASE_URL` / `SUPABASE_ANON_KEY` (anon clients) or
+  `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (service-role); throws
+  synchronously if a required var is missing.
 - **Connection types:** `CookieAdapter`, `CookieOptions`.
 - **Provider type re-exports:** `SupabaseClient`, `AuthError`, `User` — so
   consumers never import from `@supabase/*` directly.

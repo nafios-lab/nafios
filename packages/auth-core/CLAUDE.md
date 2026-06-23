@@ -14,7 +14,7 @@ not the owner of the SDK dependency. Data access and schema types live in
 - **Client construction:** `createServerClient(cookies)` for SSR / server
   functions, `createBrowserClient()` for browser-side code.
 - **Auth operations:** `signUp`, `signInWithPassword`, `signOut`, `getSession`,
-  `getUser`, `resetPasswordForEmail`, `updatePassword`.
+  `getUser`, `resetPasswordForEmail`, `updatePassword`, `updateUserMetadata`.
 - **Type abstraction:** `AuthClient` is opaque. `AuthUser`, `AuthSession`,
   `AuthError`, `AuthResult` are provider-agnostic.
 

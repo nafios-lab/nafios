@@ -1,6 +1,6 @@
 import { mapError, mapSession, mapUser } from "./internal/mappers";
 import { unwrapClient } from "./internal/unwrap";
-import type { AuthClient, AuthResult, AuthSession, AuthUser } from "./types";
+import type { AuthClient, AuthResult, AuthSession, AuthUser, UserMetadata } from "./types";
 
 /**
  * Registers a new user with email and password.
@@ -117,6 +117,33 @@ export async function updatePassword(
 ): Promise<AuthResult<{ user: AuthUser }>> {
   const { data, error } = await unwrapClient(client).auth.updateUser({
     password: newPassword,
+  });
+
+  if (error) return { data: null, error: mapError(error) };
+
+  return {
+    data: { user: mapUser(data.user) },
+    error: null,
+  };
+}
+
+/**
+ * Merges fields into the authenticated user's `user_metadata`
+ * (`auth.users.raw_user_meta_data`). Supabase merges — only the keys passed are
+ * written; existing metadata is preserved.
+ *
+ * Used by onboarding Step 2 to store the account holder's mobile number with
+ * the auth identity (for future optional SMS 2FA), with **no** SMS verification
+ * — unlike the native `phone` column, which triggers a phone-change OTP flow.
+ * `user_metadata` is descriptive only and must never drive authorization
+ * (ADR-0019).
+ */
+export async function updateUserMetadata(
+  client: AuthClient,
+  metadata: UserMetadata,
+): Promise<AuthResult<{ user: AuthUser }>> {
+  const { data, error } = await unwrapClient(client).auth.updateUser({
+    data: metadata,
   });
 
   if (error) return { data: null, error: mapError(error) };

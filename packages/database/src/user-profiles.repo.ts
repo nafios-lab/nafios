@@ -46,3 +46,39 @@ export async function insertUserProfile(db: Db, input: InsertUserProfileInput): 
 
   if (error) throw new Error(error.message);
 }
+
+/** Input for {@link saveOnboardingProfile}. */
+export interface SaveOnboardingProfileInput {
+  /**
+   * Stored avatar object path (from `@nafios/storage`), e.g.
+   * `avatars/{uid}/avatar.webp`. Omit / null to leave the existing value
+   * unchanged (the RPC `COALESCE`s).
+   */
+  avatarUrl?: string | null;
+}
+
+/**
+ * Onboarding **Step 2 (Profile)** write: idempotently sets the authenticated
+ * user's `profiles.avatar_url` via the `save_onboarding_profile` RPC.
+ *
+ * Deliberately does **not** stamp `onboarding_completed_at` — that is written
+ * only by the final step (Family + Review). The owning `profile_id` is derived
+ * server-side from `auth.uid()`, so it is never trusted from the client.
+ *
+ * The mobile number is **not** written here — it lands in `auth.users`
+ * `user_metadata` via `@nafios/auth-core`'s `updateUserMetadata`, a separate
+ * operation in the calling server function.
+ *
+ * Must run with an authenticated client; the function raises if `auth.uid()` is
+ * null. Throws on any database error.
+ */
+export async function saveOnboardingProfile(
+  db: Db,
+  input: SaveOnboardingProfileInput,
+): Promise<void> {
+  const { error } = await db.rpc("save_onboarding_profile", {
+    p_avatar_url: input.avatarUrl ?? undefined,
+  });
+
+  if (error) throw new Error(error.message);
+}

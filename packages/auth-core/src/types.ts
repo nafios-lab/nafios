@@ -27,6 +27,12 @@ export type AuthUser = {
   email: string | undefined;
   emailConfirmedAt: string | undefined;
   createdAt: string;
+  /**
+   * The mobile number from `user_metadata.mobile` (a formatted display string,
+   * stored without SMS verification — see {@link UserMetadata}). `undefined`
+   * when never set. Read-only mirror of what `updateUserMetadata` writes.
+   */
+  mobile: string | undefined;
 };
 
 export type AuthSession = {
@@ -39,6 +45,15 @@ export type AuthSession = {
 export type AuthError = {
   message: string;
   code?: string;
+};
+
+/**
+ * Editable fields on the auth user's `user_metadata`. Provider-agnostic and
+ * intentionally narrow — only what NafiOS writes. Today: the onboarding mobile
+ * number (a formatted display string, stored without SMS verification).
+ */
+export type UserMetadata = {
+  mobile?: string;
 };
 
 /**

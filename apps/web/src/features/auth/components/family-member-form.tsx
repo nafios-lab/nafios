@@ -1,3 +1,5 @@
+/** @deprecated */
+
 import { AvatarUpload } from "@nafios/ui/components/avatar-upload";
 import { DobInput } from "@nafios/ui/components/dob-input";
 import { SelectField } from "@nafios/ui/components/select-field";

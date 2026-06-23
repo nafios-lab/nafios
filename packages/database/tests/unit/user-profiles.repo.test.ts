@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { insertUserProfile } from "../../src/user-profiles.repo";
+import { insertUserProfile, saveOnboardingProfile } from "../../src/user-profiles.repo";
 
 /**
  * Records the `rpc` call and returns a configurable result. The repo only
@@ -95,5 +95,41 @@ describe("insertUserProfile", () => {
     await expect(
       insertUserProfile(db, { familyMembers: [{ name: "X", relationship: "other" }] }),
     ).rejects.toThrow("violates check constraint");
+  });
+});
+
+describe("saveOnboardingProfile", () => {
+  test("calls the save_onboarding_profile RPC with the mapped avatar path", async () => {
+    const { db, calls, onlyCall } = makeFakeDb({ error: null });
+
+    await saveOnboardingProfile(db, { avatarUrl: "avatars/u1/avatar.webp" });
+
+    expect(calls).toHaveLength(1);
+    expect(onlyCall().fn).toBe("save_onboarding_profile");
+    expect(onlyCall().args).toEqual({ p_avatar_url: "avatars/u1/avatar.webp" });
+  });
+
+  test("passes undefined when no avatar is given (RPC COALESCEs to a no-op)", async () => {
+    const { db, onlyCall } = makeFakeDb({ error: null });
+
+    await saveOnboardingProfile(db, {});
+
+    expect(onlyCall().args).toEqual({ p_avatar_url: undefined });
+  });
+
+  test("treats a null avatar the same as absent", async () => {
+    const { db, onlyCall } = makeFakeDb({ error: null });
+
+    await saveOnboardingProfile(db, { avatarUrl: null });
+
+    expect(onlyCall().args).toEqual({ p_avatar_url: undefined });
+  });
+
+  test("throws with the database error message when the RPC fails", async () => {
+    const { db } = makeFakeDb({ error: { message: "no authenticated user" } });
+
+    await expect(
+      saveOnboardingProfile(db, { avatarUrl: "avatars/u1/avatar.webp" }),
+    ).rejects.toThrow("no authenticated user");
   });
 });

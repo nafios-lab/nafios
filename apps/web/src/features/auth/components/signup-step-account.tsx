@@ -1,3 +1,5 @@
+/** @deprecated */
+
 import { TextInput } from "@nafios/ui/components/text-input";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";

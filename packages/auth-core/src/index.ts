@@ -12,6 +12,7 @@ export {
   signOut,
   signUp,
   updatePassword,
+  updateUserMetadata,
 } from "./auth";
 export { createBrowserClient, createServerClient } from "./client";
 // Public types
@@ -21,4 +22,5 @@ export type {
   AuthResult,
   AuthSession,
   AuthUser,
+  UserMetadata,
 } from "./types";

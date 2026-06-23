@@ -17,4 +17,6 @@ export {
   type FamilyMemberInput,
   type InsertUserProfileInput,
   insertUserProfile,
+  type SaveOnboardingProfileInput,
+  saveOnboardingProfile,
 } from "./user-profiles.repo";

@@ -5,7 +5,12 @@ import type { AuthSession, AuthUser } from "@nafios/auth-core";
 // and auth-core/database are mocked as spies). We import the REAL modules and
 // drive them through those spies.
 import { getSessionFn, getUserFn, signInFn, signOutFn, signUpFn } from "../../src/lib/auth-fns.ts";
-import { getOnboardingStatusFn, insertUserProfileFn } from "../../src/lib/onboarding-fns.ts";
+import {
+  getOnboardingProfileFn,
+  getOnboardingStatusFn,
+  insertUserProfileFn,
+  saveOnboardingProfileFn,
+} from "../../src/lib/onboarding-fns.ts";
 import {
   createServerDb,
   eq,
@@ -15,9 +20,13 @@ import {
   insertUserProfile,
   maybeSingle,
   resetServerFnMocks,
+  saveOnboardingProfile,
+  signAvatarUrl,
   signInWithPassword,
   signOut,
   signUp,
+  updateUserMetadata,
+  uploadAvatar,
 } from "../setup.ts";
 
 // Minimal stand-ins; only the fields the handlers read matter, so we narrow-cast
@@ -171,7 +180,7 @@ describe("getOnboardingStatusFn", () => {
     expect(result).toEqual({ session: null, onboardingCompleted: false });
   });
 
-  test("reports onboardingCompleted=false when the profile has no completion timestamp", async () => {
+  test("reports incomplete when the profile carries no completion timestamp", async () => {
     const session = fakeSession("u1");
     getSession.mockResolvedValue({ error: null, data: { session } });
     maybeSingle.mockResolvedValue({ data: { onboarding_completed_at: null } });
@@ -186,16 +195,14 @@ describe("getOnboardingStatusFn", () => {
   test("reports onboardingCompleted=true when the profile carries a timestamp", async () => {
     const session = fakeSession("u1");
     getSession.mockResolvedValue({ error: null, data: { session } });
-    maybeSingle.mockResolvedValue({
-      data: { onboarding_completed_at: "2026-06-18T00:00:00Z" },
-    });
+    maybeSingle.mockResolvedValue({ data: { onboarding_completed_at: "2026-06-18T00:00:00Z" } });
 
     const result = await getOnboardingStatusFn();
 
     expect(result).toEqual({ session, onboardingCompleted: true });
   });
 
-  test("reports onboardingCompleted=false when no profile row exists", async () => {
+  test("reports incomplete when no profile row exists", async () => {
     const session = fakeSession("u1");
     getSession.mockResolvedValue({ error: null, data: { session } });
     maybeSingle.mockResolvedValue({ data: null });
@@ -203,5 +210,169 @@ describe("getOnboardingStatusFn", () => {
     const result = await getOnboardingStatusFn();
 
     expect(result).toEqual({ session, onboardingCompleted: false });
+  });
+});
+
+describe("saveOnboardingProfileFn", () => {
+  const dataUrl = "data:image/webp;base64,AAAA";
+
+  test("returns no_session and writes nothing when there is no session", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: null } });
+
+    const result = await saveOnboardingProfileFn({
+      data: { avatar: dataUrl, mobile: "(+65) 9123 4567" },
+    });
+
+    expect(result).toEqual({ ok: false, code: "no_session" });
+    expect(uploadAvatar).not.toHaveBeenCalled();
+    expect(saveOnboardingProfile).not.toHaveBeenCalled();
+    expect(updateUserMetadata).not.toHaveBeenCalled();
+  });
+
+  test("uploads the avatar, writes its path, and writes the mobile metadata", async () => {
+    const session = fakeSession("u1");
+    getSession.mockResolvedValue({ error: null, data: { session } });
+    uploadAvatar.mockResolvedValue({ path: "avatars/u1/avatar.webp" });
+
+    const result = await saveOnboardingProfileFn({
+      data: { avatar: dataUrl, mobile: "(+65) 9123 4567" },
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(uploadAvatar).toHaveBeenCalledTimes(1);
+    expect(saveOnboardingProfile).toHaveBeenCalledWith(
+      { from },
+      { avatarUrl: "avatars/u1/avatar.webp" },
+    );
+    expect(updateUserMetadata).toHaveBeenCalledWith(
+      { __authClient: true },
+      { mobile: "(+65) 9123 4567" },
+    );
+  });
+
+  test("skips the avatar ops when only a mobile is provided", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+
+    const result = await saveOnboardingProfileFn({ data: { mobile: "(+65) 9123 4567" } });
+
+    expect(result).toEqual({ ok: true });
+    expect(uploadAvatar).not.toHaveBeenCalled();
+    expect(saveOnboardingProfile).not.toHaveBeenCalled();
+    expect(updateUserMetadata).toHaveBeenCalledTimes(1);
+  });
+
+  test("skips the mobile write when only an avatar is provided", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+
+    const result = await saveOnboardingProfileFn({ data: { avatar: dataUrl } });
+
+    expect(result).toEqual({ ok: true });
+    expect(uploadAvatar).toHaveBeenCalledTimes(1);
+    expect(updateUserMetadata).not.toHaveBeenCalled();
+  });
+
+  test("does nothing but succeeds when both fields are empty (Skip-equivalent)", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+
+    const result = await saveOnboardingProfileFn({ data: {} });
+
+    expect(result).toEqual({ ok: true });
+    expect(uploadAvatar).not.toHaveBeenCalled();
+    expect(updateUserMetadata).not.toHaveBeenCalled();
+  });
+
+  test("does not re-upload an already-stored avatar path", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+
+    const result = await saveOnboardingProfileFn({ data: { avatar: "avatars/u1/avatar.webp" } });
+
+    expect(result).toEqual({ ok: true });
+    expect(uploadAvatar).not.toHaveBeenCalled();
+    expect(saveOnboardingProfile).not.toHaveBeenCalled();
+  });
+
+  test("returns ok:false with the error code when the mobile write fails", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    updateUserMetadata.mockResolvedValue({ error: { code: "weak", message: "nope" }, data: null });
+
+    const result = await saveOnboardingProfileFn({ data: { mobile: "(+65) 9123 4567" } });
+
+    expect(result).toEqual({ ok: false, code: "weak" });
+  });
+
+  test("returns ok:false when the avatar upload throws", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    uploadAvatar.mockRejectedValue(new Error("bucket not found"));
+
+    const result = await saveOnboardingProfileFn({ data: { avatar: dataUrl } });
+
+    expect(result).toEqual({ ok: false, code: "bucket not found" });
+  });
+});
+
+describe("getOnboardingProfileFn", () => {
+  test("returns empty values and reads nothing when there is no verified user", async () => {
+    getUser.mockResolvedValue({ error: { message: "no session" }, data: null });
+
+    const result = await getOnboardingProfileFn();
+
+    expect(result).toEqual({ avatar: null, phone: "" });
+    expect(createServerDb).not.toHaveBeenCalled();
+    expect(signAvatarUrl).not.toHaveBeenCalled();
+  });
+
+  test("signs the stored avatar path and returns the saved mobile", async () => {
+    getUser.mockResolvedValue({
+      error: null,
+      data: { user: fakeUser({ id: "u1", mobile: "(+65) 9123 4567" }) },
+    });
+    maybeSingle.mockResolvedValue({
+      data: { onboarding_completed_at: null, avatar_url: "avatars/u1/avatar.webp" },
+    });
+    signAvatarUrl.mockResolvedValue({ url: "https://signed/u1.webp?token=t" });
+
+    const result = await getOnboardingProfileFn();
+
+    expect(from).toHaveBeenCalledWith("profiles");
+    expect(eq).toHaveBeenCalledWith("id", "u1");
+    expect(signAvatarUrl).toHaveBeenCalledWith({ path: "avatars/u1/avatar.webp" });
+    expect(result).toEqual({ avatar: "https://signed/u1.webp?token=t", phone: "(+65) 9123 4567" });
+  });
+
+  test("returns avatar:null without signing when no avatar is stored", async () => {
+    getUser.mockResolvedValue({
+      error: null,
+      data: { user: fakeUser({ id: "u1", mobile: "(+65) 9123 4567" }) },
+    });
+    maybeSingle.mockResolvedValue({ data: { onboarding_completed_at: null, avatar_url: null } });
+
+    const result = await getOnboardingProfileFn();
+
+    expect(signAvatarUrl).not.toHaveBeenCalled();
+    expect(result).toEqual({ avatar: null, phone: "(+65) 9123 4567" });
+  });
+
+  test("returns empty phone when the user has no mobile in metadata", async () => {
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
+    maybeSingle.mockResolvedValue({ data: null });
+
+    const result = await getOnboardingProfileFn();
+
+    expect(result).toEqual({ avatar: null, phone: "" });
+  });
+
+  test("degrades to avatar:null when signing throws (a broken path must not break load)", async () => {
+    getUser.mockResolvedValue({
+      error: null,
+      data: { user: fakeUser({ id: "u1", mobile: "(+65) 9123 4567" }) },
+    });
+    maybeSingle.mockResolvedValue({
+      data: { onboarding_completed_at: null, avatar_url: "avatars/u1/avatar.webp" },
+    });
+    signAvatarUrl.mockRejectedValue(new Error("object not found"));
+
+    const result = await getOnboardingProfileFn();
+
+    expect(result).toEqual({ avatar: null, phone: "(+65) 9123 4567" });
   });
 });

@@ -1,3 +1,5 @@
+/** @deprecated */
+
 import type { AuthUser } from "@nafios/auth-core";
 import type { FamilyMemberInput } from "@nafios/database";
 import { useCallback, useRef, useState } from "react";

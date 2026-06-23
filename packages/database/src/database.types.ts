@@ -138,6 +138,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      save_onboarding_profile: {
+        Args: { p_avatar_url?: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

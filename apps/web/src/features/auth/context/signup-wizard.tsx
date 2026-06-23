@@ -1,3 +1,5 @@
+/** @deprecated */
+
 import { createContext, useCallback, useMemo, useState } from "react";
 import type { SignupWizardData } from "../schemas/signup-schema";
 

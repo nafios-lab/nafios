@@ -1,17 +1,5 @@
 import { z } from "zod";
 
-//@deprecated  ── Step 1: Account ──────────────────────────────────────────────────
-export const accountStepSchema = z.object({
-  username: z.string().trim().min(1, "Username is required"),
-  email: z.email().trim().min(1, "Email is required").trim(),
-  mobile: z
-    .string()
-    .trim()
-    .regex(/^\(\+65\) [89]\d{3} \d{4}$/, "Invalid Singapore mobile number"),
-});
-
-export type AccountStepValues = z.infer<typeof accountStepSchema>;
-
 // ── Account Sign up ──────────────────────────────────────────────────
 export const accountSignupSchema = z
   .object({
@@ -29,7 +17,22 @@ export const accountSignupSchema = z
 
 export type AccountSignupValues = z.infer<typeof accountSignupSchema>;
 
-// ── Step 2: Security ─────────────────────────────────────────────────
+//   ── Step 1: Account ──────────────────────────────────────────────────
+/** @deprecated */
+export const accountStepSchema = z.object({
+  username: z.string().trim().min(1, "Username is required"),
+  email: z.email().trim().min(1, "Email is required").trim(),
+  mobile: z
+    .string()
+    .trim()
+    .regex(/^\(\+65\) [89]\d{3} \d{4}$/, "Invalid Singapore mobile number"),
+});
+
+/** @deprecated */
+export type AccountStepValues = z.infer<typeof accountStepSchema>;
+
+//  ── Step 2: Sec
+/** @deprecated */
 export const securityStepSchema = z
   .object({
     password: z
@@ -43,9 +46,11 @@ export const securityStepSchema = z
     path: ["confirmPassword"],
   });
 
+/** @deprecated */
 export type SecurityStepValues = z.infer<typeof securityStepSchema>;
 
-// ── Step 3: Family ───────────────────────────────────────────────────
+//  ── Step 3: Family ───────────────────────────────────────────────────
+/** @deprecated */
 export const familyMemberSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   relationship: z.enum(["spouse", "child", "parent", "sibling", "other"]),
@@ -59,10 +64,11 @@ export const familyMemberSchema = z.object({
     .optional(),
   dateOfBirth: z.string().optional(),
 });
-
+/** @deprecated */
 export type FamilyMemberValues = z.infer<typeof familyMemberSchema>;
 
 /** Form-input schema — all required strings so TanStack Form's defaultValues align. */
+/** @deprecated */
 export const familyMemberFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   relationship: z.string().min(1, "Please select a relationship"),
@@ -77,13 +83,15 @@ export const familyMemberFormSchema = z.object({
   dateOfBirth: z.string(),
 });
 
+/** @deprecated */
 export const familyStepSchema = z.object({
   familyMembers: z.array(familyMemberSchema),
 });
-
+/** @deprecated */
 export type FamilyStepValues = z.infer<typeof familyStepSchema>;
 
 // ── Combined wizard data ─────────────────────────────────────────────
+/** @deprecated */
 export interface SignupWizardData {
   account: AccountStepValues;
   security: SecurityStepValues;

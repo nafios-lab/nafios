@@ -55,6 +55,21 @@ function createBrowserClient(): SupabaseClient;
 Both return the **untyped** `SupabaseClient`. Schema typing is applied
 downstream by `@nafios/database` (see Invariant 3).
 
+```ts
+/**
+ * Creates a privileged, SESSION-LESS server client using the service-role key.
+ * Bypasses RLS and carries no user identity — SERVER-ONLY. Uses
+ * `createClient` (not the ssr cookie client): no cookies, no session
+ * persistence, no token refresh. Reads SUPABASE_URL and
+ * SUPABASE_SERVICE_ROLE_KEY.
+ */
+function createServiceRoleClient(): SupabaseClient;
+```
+
+This is the privileged factory consumed by `@nafios/storage` for avatar uploads.
+The calling server function verifies the session and owns the object path; the
+service-role client only performs the privileged write (see Invariant 5).
+
 ### Types
 
 ```ts
@@ -85,16 +100,18 @@ type CookieAdapter = {
 
 ## Error Handling
 
-Client construction throws synchronously if `SUPABASE_URL` or
-`SUPABASE_ANON_KEY` is missing. This is a startup-time failure, not a runtime
-error.
+Client construction throws synchronously if a required env var is missing
+(`SUPABASE_URL` / `SUPABASE_ANON_KEY` for the anon clients;
+`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` for the service-role client). This
+is a startup-time failure, not a runtime error.
 
 ## Environment Variables
 
-| Variable             | Required by        | Description                    |
-|----------------------|--------------------|--------------------------------|
-| `SUPABASE_URL`       | Both clients       | Supabase project API URL       |
-| `SUPABASE_ANON_KEY`  | Both clients       | Supabase anon (public) API key |
+| Variable                     | Required by                  | Description                          |
+|------------------------------|------------------------------|--------------------------------------|
+| `SUPABASE_URL`               | All clients                  | Supabase project API URL             |
+| `SUPABASE_ANON_KEY`          | `createServer/BrowserClient` | Supabase anon (public) API key       |
+| `SUPABASE_SERVICE_ROLE_KEY`  | `createServiceRoleClient`    | Service-role (secret) key — SERVER-ONLY; bypasses RLS, never expose to browser |
 
 ## Invariants
 
@@ -105,11 +122,14 @@ error.
    `@supabase/supabase-js` generic shape, so schema typing is applied by
    `@nafios/database` at its own boundary, not here.
 4. No build step — consumed as TypeScript source (ADR-0006).
+5. **`createServiceRoleClient` is SERVER-ONLY.** It bypasses RLS and holds the
+   secret service-role key, so it must never be imported into code reachable
+   from a browser bundle, and it is never an authorization input (authz is at
+   the app layer, ADR-0019). It is session-less by construction
+   (`persistSession: false`, `autoRefreshToken: false`).
 
 ## Open Questions
 
 - **Browser-side env var access:** consumers using Vite must expose
   `SUPABASE_URL` / `SUPABASE_ANON_KEY` via bundler config. This may motivate
   optional config params in a future revision.
-- **Service-role client:** a privileged server client (service-role key) is not
-  yet provided; add when a server-only workload needs it.

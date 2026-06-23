@@ -1,3 +1,5 @@
+/** @deprecated */
+
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
 import { Avatar, AvatarFallback, AvatarImage } from "@nafios/ui/components/ui/avatar";

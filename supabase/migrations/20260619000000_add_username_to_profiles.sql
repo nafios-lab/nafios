@@ -1,64 +1,24 @@
 -- ----------------------------------------------------------------------------
---  Add public.profiles.username + thread it through insert_user_profile
+--  Add public.profiles.username (deferred field — no flow writes it yet)
 -- ----------------------------------------------------------------------------
+--
+-- A nullable, NON-UNIQUE display-name column. The signup trigger
+-- (on_auth_user_created → handle_new_user) creates a bare profile row with
+-- username NULL; no onboarding step currently captures it (the v2.0.0 Profile
+-- step collects only avatar + mobile — see specs/domain/onboarding-flow.md).
+-- The column is provisioned ahead of a future "choose a username" change.
+--
+-- Uniqueness is intentionally NOT enforced for now — a unique index and the
+-- "username taken" UX it implies are a deliberate follow-up.
+--
+-- NOTE: this migration was previously broken (it attempted a malformed rework of
+-- insert_user_profile that would not apply). It is reduced to the column add only.
+-- The per-step onboarding RPCs are introduced in their own later migration. The
+-- add is idempotent (IF NOT EXISTS) so it is safe whether or not a prior attempt
+-- partially applied against staging.
 
-
--- The onboarding flow now collects a username for the account holder. It is
--- captured AFTER email verification (the onboarding spec's \"no data before
--- verification\" invariant), so the column must be nullable: the signup trigger
--- (on_auth_user_created → handle_new_user) creates a bare profile row up front
--- with username NULL, and insert_user_profile fills it in when the onboarding
--- wizard submits.
-
--- Username is intentionally NOT UNIQUE for now — uniqueness (and the
--- duplicate-username UX it implies) is a deliberate follow-up, out of scope for
--- the email-verification epic.
-
-ALTER TABLE public.profiles ADD COLUMN username TEXT;
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS username text;
 
 COMMENT ON COLUMN public.profiles.username IS
-   "'Account holder'' chosen display name. NULL untill the onboarding wizard submits (collected post-verification). Not unique (uniqueness is a future change).)" ;
-
-
----------------------------------------------------------------------------
--- Re-create insert_user_profile with a p_username parameter.
--- ---------------------------------------------------------------------------
--- Adding a parameter changes the function signature, so CREATE OR REPLACE would
--- create a second overload rather than replace. Drop the old (text, jsonb)
--- function first, then create the (text, text, jsonb) version. supabase-js calls
--- this RPC with named args, so the new parameter is matched by name regardless
--- of position.
-
-DROP FUNCTION public.insert_user_profile(text, jsonb),
-
-
-CREATE OR REPLACE FUNCTION public.insert_user_profile(
-    p_avatar_url   text DEFAULT NULL,
-    p_family_members jsonb DEFAULT '[]':: jsonb
-)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    v_uid uuid := auth.uid();
-BEGIN
-    IF v_uid IS NULL THEN
-        RAISE EXCEPTION 'insert_user_profile: no authenticated user (auth.uid) is null'
-        USING ERRCODE = '28000';
-    END IF
-
-
-
-
- COMMENT ON FUNCTION public.insert_user_profile(text, text, jsonb) IS
-  "'Idempotently completes a user profile (avatar + username + onboarding_completed_at) and replaces their family members. profile_id is taken from auth.uid(). Safe to retry.'",
-  
-GRANT EXECUTE ON FUNCTION public.insert_user_profile(text, text, jsonb) TO authenticated 
-
-
-
-
-
-
-
-  
+  'Account holder''s chosen display name. NULL until a future "choose a username" flow writes it (the v2 onboarding Profile step does not collect it). Not unique (uniqueness is a future change).';

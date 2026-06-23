@@ -1,3 +1,5 @@
+/** @deprecated */
+
 import { Stepper } from "@nafios/ui/components/ui/stepper";
 import { SIGNUP_STEPS, SignupWizardProvider } from "../context/signup-wizard";
 import { useSignupWizard } from "../hooks/use-signup-wizard";

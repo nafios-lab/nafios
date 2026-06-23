@@ -1,3 +1,5 @@
+/** @deprecated */
+
 import { CredentialInput } from "@nafios/ui/components/credential-input";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
