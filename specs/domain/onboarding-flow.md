@@ -2,7 +2,7 @@
 title: Onboarding flow (signup → profile → family → review)
 status: active
 version: 2.0.0
-updated: 2026-06-23
+updated: 2026-06-24
 owner: Hanafi
 related_adrs: [0016, 0018, 0019, 0021]
 ---
@@ -64,7 +64,7 @@ interface FamilyMemberValues {
   relationship: "spouse" | "child" | "parent" | "sibling" | "other";
   avatar?: string;                 // data URL → Storage on final Confirm
   nric?: string;
-  phone?: string;                  // formatted SG mobile
+  mobileNo?: string;               // formatted SG mobile (→ family_members.mobile_no)
   dateOfBirth?: string;            // ISO YYYY-MM-DD
 }
 ```
@@ -233,6 +233,12 @@ otherwise                          → /onboarding @ Profile (Step 2), fields re
 
 With no `username` uniqueness, onboarding introduces **no** user-fixable errors — the
 only user-actionable failure in the whole flow is a duplicate email at signup.
+
+> **Family-form field validation is not an error mode.** The Family step's
+> client-side required-field checks (`name` and `relationship` are mandatory;
+> `avatar`, `nric`, `mobileNo`, `dateOfBirth` are optional) gate the in-form
+> "Add member" action — they are form-entry constraints, not persistence or
+> submission failures, and are out of scope for the failure table below.
 
 | Failure | Surfaced as | Recovery |
 |---|---|---|

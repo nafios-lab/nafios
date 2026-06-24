@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 // The wizard renders the Profile step (which drives the REAL
 // saveOnboardingProfileFn via the tests/setup.ts spies) and switches to the
-// Family stub on advance. We steer the save outcome through `getSession`.
-import { OnboardStepFamily } from "../../src/features/onboarding/components/onboard-step-family.tsx";
+// Family step on advance. We steer the save outcome through `getSession`.
 import { OnboardStepReview } from "../../src/features/onboarding/components/onboard-step-review.tsx";
 import { OnboardingWizard } from "../../src/features/onboarding/components/onboarding-wizard.tsx";
 import { getSession, resetServerFnMocks, updateUserMetadata } from "../setup.ts";
@@ -30,7 +29,7 @@ describe("OnboardingWizard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Skip for now/ }));
 
     await waitFor(() => {
-      expect(screen.getByText("Onboarding Step Family")).toBeDefined();
+      expect(screen.getByText("Add your Family")).toBeDefined();
     });
     expect(updateUserMetadata).not.toHaveBeenCalled();
   });
@@ -41,7 +40,7 @@ describe("OnboardingWizard", () => {
     // Advance to Family so Profile becomes a completed (clickable) step.
     fireEvent.click(screen.getByRole("button", { name: /Skip for now/ }));
     await waitFor(() => {
-      expect(screen.getByText("Onboarding Step Family")).toBeDefined();
+      expect(screen.getByText("Add your Family")).toBeDefined();
     });
 
     // Click the Profile circle (index 0 < activeStep 1) → goTo(0).
@@ -58,7 +57,7 @@ describe("OnboardingWizard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Save and continue/ }));
 
     await waitFor(() => {
-      expect(screen.getByText("Onboarding Step Family")).toBeDefined();
+      expect(screen.getByText("Add your Family")).toBeDefined();
     });
   });
 
@@ -75,7 +74,7 @@ describe("OnboardingWizard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Save and continue/ }));
 
     await waitFor(() => {
-      expect(screen.getByText("Onboarding Step Family")).toBeDefined();
+      expect(screen.getByText("Add your Family")).toBeDefined();
     });
     expect(updateUserMetadata).toHaveBeenCalledWith(
       { __authClient: true },
@@ -104,11 +103,6 @@ describe("OnboardingWizard", () => {
 });
 
 describe("Onboarding step stubs", () => {
-  test("the Family stub renders its placeholder", () => {
-    render(<OnboardStepFamily />);
-    expect(screen.getByText("Onboarding Step Family")).toBeDefined();
-  });
-
   test("the Review stub renders its placeholder", () => {
     render(<OnboardStepReview />);
     expect(screen.getByText("OnboardingStep Review")).toBeDefined();
