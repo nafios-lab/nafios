@@ -30,7 +30,9 @@ function RootDocument() {
         <ScreenLoader />
         <DevResetButton />
         <Scripts />
-        <TanStackDevtools config={{ hideUntilHover: true }} plugins={[formDevtoolsPlugin()]} />
+        {import.meta.env.DEV && (
+          <TanStackDevtools config={{ hideUntilHover: true }} plugins={[formDevtoolsPlugin()]} />
+        )}
       </body>
     </html>
   );
