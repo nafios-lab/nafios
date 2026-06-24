@@ -63,30 +63,58 @@ export const signUp = mock(
   (..._args: unknown[]): Promise<AuthResult> =>
     Promise.resolve({ error: null, data: { user: null } }),
 );
+export const signInWithPassword = mock(
+  (..._args: unknown[]): Promise<AuthResult> =>
+    Promise.resolve({ error: null, data: { user: null, session: null } }),
+);
 export const createServerClient = mock((..._args: unknown[]) => ({ __authClient: true }));
+export const updateUserMetadata = mock(
+  (..._args: unknown[]): Promise<AuthResult> =>
+    Promise.resolve({ error: null, data: { user: null } }),
+);
 
 mock.module("@nafios/auth-core", () => ({
   createServerClient,
   getSession,
   getUser,
+  signInWithPassword,
   signOut,
   signUp,
+  updateUserMetadata,
 }));
 
 // ─── database spies ───────────────────────────────────────────────────────
 // Chainable PostgREST stub: from(...).select(...).eq(...).maybeSingle(). Drive
 // the result via `maybeSingle.mockResolvedValue(...)` per test.
 export const maybeSingle = mock(
-  (): Promise<{ data: { onboarding_completed_at: string | null } | null }> =>
-    Promise.resolve({ data: null }),
+  (): Promise<{
+    data: { onboarding_completed_at: string | null; avatar_url?: string | null } | null;
+  }> => Promise.resolve({ data: null }),
 );
 export const eq = mock(() => ({ maybeSingle }));
 export const select = mock(() => ({ eq }));
 export const from = mock(() => ({ select }));
 export const createServerDb = mock((..._args: unknown[]) => ({ from }));
 export const insertUserProfile = mock((..._args: unknown[]) => Promise.resolve(undefined));
+export const saveOnboardingProfile = mock((..._args: unknown[]) => Promise.resolve(undefined));
 
-mock.module("@nafios/database", () => ({ createServerDb, insertUserProfile }));
+mock.module("@nafios/database", () => ({
+  createServerDb,
+  insertUserProfile,
+  saveOnboardingProfile,
+}));
+
+// ─── storage spies ──────────────────────────────────────────────────────────
+export const uploadAvatar = mock(
+  (..._args: unknown[]): Promise<{ path: string }> =>
+    Promise.resolve({ path: "avatars/u1/avatar.webp" }),
+);
+export const signAvatarUrl = mock(
+  (..._args: unknown[]): Promise<{ url: string }> =>
+    Promise.resolve({ url: "https://signed.example/avatars/u1/avatar.webp?token=t" }),
+);
+
+mock.module("@nafios/storage", () => ({ uploadAvatar, signAvatarUrl }));
 
 // ─── framework request/response cookie primitives ───────────────────────────
 export const setCookie = mock(
@@ -126,8 +154,12 @@ export function resetServerFnMocks(): void {
   signOut.mockResolvedValue({ error: null });
   signUp.mockReset();
   signUp.mockResolvedValue({ error: null, data: { user: null } });
+  signInWithPassword.mockReset();
+  signInWithPassword.mockResolvedValue({ error: null, data: { user: null, session: null } });
   createServerClient.mockReset();
   createServerClient.mockReturnValue({ __authClient: true });
+  updateUserMetadata.mockReset();
+  updateUserMetadata.mockResolvedValue({ error: null, data: { user: null } });
 
   maybeSingle.mockReset();
   maybeSingle.mockResolvedValue({ data: null });
@@ -138,6 +170,12 @@ export function resetServerFnMocks(): void {
   createServerDb.mockReturnValue({ from });
   insertUserProfile.mockReset();
   insertUserProfile.mockResolvedValue(undefined);
+  saveOnboardingProfile.mockReset();
+  saveOnboardingProfile.mockResolvedValue(undefined);
+  uploadAvatar.mockReset();
+  uploadAvatar.mockResolvedValue({ path: "avatars/u1/avatar.webp" });
+  signAvatarUrl.mockReset();
+  signAvatarUrl.mockResolvedValue({ url: "https://signed.example/avatars/u1/avatar.webp?token=t" });
 
   setCookie.mockReset();
   requestCookieHeader = undefined;

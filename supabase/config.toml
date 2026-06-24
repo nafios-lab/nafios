@@ -124,6 +124,19 @@ file_size_limit = "50MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
 # objects_path = "./images"
 
+# Account-holder + family-member avatars (onboarding). Private — reads go through
+# signed URLs at display time. See specs/domain/onboarding-flow.md and
+# issues/nafios-storage-avatars-bucket-setup.md.
+#
+# NOTE: this block only provisions the LOCAL stack (and `supabase seed buckets`).
+# The hosted `nafios-staging` bucket must be created directly against staging
+# (SQL/dashboard) — `supabase db push` does NOT create buckets. Kept here for
+# local parity + as the source of truth for the bucket's limits.
+[storage.buckets.avatars]
+public = false
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/webp", "image/jpeg", "image/png"]
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true

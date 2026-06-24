@@ -14,9 +14,12 @@ is where application data access lives.
   return a `SupabaseClient<Database>` (aliased `Db`) so `.from(...)` / `.rpc(...)`
   are checked against the real schema.
 - **`asDb(client)`** — applies schema typing to a raw client from supabase-core.
-- **Data-access operations:** typed wrappers over queries / RPCs. First one is
-  `insertUserProfile(db, input)` — atomically completes the authenticated user's
+- **Data-access operations:** typed wrappers over queries / RPCs.
+  `insertUserProfile(db, input)` atomically completes the authenticated user's
   profile and inserts their family members via the `insert_user_profile` RPC.
+  `saveOnboardingProfile(db, { avatarUrl })` is the per-step onboarding **Step 2
+  (Profile)** write — sets `profiles.avatar_url` via the `save_onboarding_profile`
+  RPC **without** stamping completion (that is the final step).
 
 ## Public API surface
 

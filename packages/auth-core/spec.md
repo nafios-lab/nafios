@@ -91,6 +91,17 @@ function updatePassword(
   client: AuthClient,
   newPassword: string,
 ): Promise<AuthResult<{ user: AuthUser }>>;
+
+/**
+ * Merges fields into the authenticated user's user_metadata (Supabase merges —
+ * unspecified keys are preserved). Used by onboarding to store the mobile number
+ * with NO SMS verification. user_metadata is descriptive and never an authz
+ * input (ADR-0019).
+ */
+function updateUserMetadata(
+  client: AuthClient,
+  metadata: UserMetadata,
+): Promise<AuthResult<{ user: AuthUser }>>;
 ```
 
 ### Types
@@ -104,6 +115,8 @@ type AuthUser = {
   email: string | undefined;
   emailConfirmedAt: string | undefined;
   createdAt: string;
+  /** Mirror of user_metadata.mobile (read-only; what updateUserMetadata writes). */
+  mobile: string | undefined;
 };
 
 type AuthSession = {
@@ -121,6 +134,11 @@ type AuthError = {
 type AuthResult<T> =
   | { data: T; error: null }
   | { data: null; error: AuthError };
+
+/** Editable user_metadata fields NafiOS writes. Narrow by design. */
+type UserMetadata = {
+  mobile?: string;
+};
 
 type CookieOptions = {
   domain?: string;

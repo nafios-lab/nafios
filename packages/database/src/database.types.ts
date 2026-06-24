@@ -99,6 +99,7 @@ export type Database = {
           onboarding_completed_at: string | null;
           updated_at: string;
           updated_by: string | null;
+          username: string | null;
         };
         Insert: {
           avatar_url?: string | null;
@@ -109,6 +110,7 @@ export type Database = {
           onboarding_completed_at?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          username?: string | null;
         };
         Update: {
           avatar_url?: string | null;
@@ -119,6 +121,7 @@ export type Database = {
           onboarding_completed_at?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          username?: string | null;
         };
         Relationships: [];
       };
@@ -128,7 +131,15 @@ export type Database = {
     };
     Functions: {
       insert_user_profile: {
-        Args: { p_avatar_url?: string; p_family_members?: Json };
+        Args: {
+          p_avatar_url?: string;
+          p_family_members?: Json;
+          p_username?: string;
+        };
+        Returns: undefined;
+      };
+      save_onboarding_profile: {
+        Args: { p_avatar_url?: string };
         Returns: undefined;
       };
     };

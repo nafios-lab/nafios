@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
-import { AccCreationLoader } from "../../src/features/auth/components/acc-creation-loader.tsx";
+import { AccCreationLoader } from "../../src/features/onboarding/components/acc-creation-loader.tsx";
 
 afterEach(cleanup);
 

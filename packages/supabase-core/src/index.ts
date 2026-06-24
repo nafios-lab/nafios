@@ -6,5 +6,8 @@
 // single package that depends on the Supabase SDK.
 export type { AuthError, SupabaseClient, User } from "@supabase/supabase-js";
 export { createBrowserClient, createServerClient } from "./client";
+// Privileged, session-less server client (service-role key). SERVER-ONLY —
+// bypasses RLS. See service-role-client.ts and spec.md.
+export { createServiceRoleClient } from "./service-role-client";
 // Connection types
 export type { CookieAdapter, CookieOptions } from "./types";

@@ -6,6 +6,7 @@ type SupaUser = {
   email?: string;
   email_confirmed_at?: string | null;
   created_at: string;
+  user_metadata?: { mobile?: string } | null;
 };
 
 type SupaSession = {
@@ -21,6 +22,7 @@ export function mapUser(user: SupaUser): AuthUser {
     email: user.email,
     emailConfirmedAt: user.email_confirmed_at ?? undefined,
     createdAt: user.created_at,
+    mobile: user.user_metadata?.mobile,
   };
 }
 

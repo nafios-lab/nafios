@@ -7,6 +7,7 @@ import {
   signOut,
   signUp,
   updatePassword,
+  updateUserMetadata,
 } from "../../src/auth";
 import type { AuthClient } from "../../src/types";
 
@@ -219,6 +220,21 @@ describe("getUser", () => {
     expect(result.error).toBeNull();
     expect(result.data?.user.id).toBe("user-123");
     expect(result.data?.user.createdAt).toBe("2026-01-01T00:00:00Z");
+    // No user_metadata on the mock → mobile is undefined.
+    expect(result.data?.user.mobile).toBeUndefined();
+  });
+
+  test("surfaces user_metadata.mobile on the mapped user", async () => {
+    const client = fakeClient({
+      getUser: async () => ({
+        data: { user: { ...MOCK_SUPA_USER, user_metadata: { mobile: "(+65) 9123 4567" } } },
+        error: null,
+      }),
+    });
+
+    const result = await getUser(client);
+
+    expect(result.data?.user.mobile).toBe("(+65) 9123 4567");
   });
 
   test("maps error when no session", async () => {
@@ -291,6 +307,39 @@ describe("updatePassword", () => {
     });
 
     const result = await updatePassword(client, "weak");
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toBe("Something went wrong");
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  updateUserMetadata                                                */
+/* ------------------------------------------------------------------ */
+
+describe("updateUserMetadata", () => {
+  test("passes the metadata under `data` and maps the user", async () => {
+    let received: unknown;
+    const client = fakeClient({
+      updateUser: async (args: unknown) => {
+        received = args;
+        return { data: { user: MOCK_SUPA_USER }, error: null };
+      },
+    });
+
+    const result = await updateUserMetadata(client, { mobile: "(+65) 9123 4567" });
+
+    expect(received).toEqual({ data: { mobile: "(+65) 9123 4567" } });
+    expect(result.error).toBeNull();
+    expect(result.data?.user.id).toBe("user-123");
+  });
+
+  test("maps error", async () => {
+    const client = fakeClient({
+      updateUser: async () => ({ data: { user: null }, error: MOCK_AUTH_ERROR }),
+    });
+
+    const result = await updateUserMetadata(client, { mobile: "(+65) 9123 4567" });
 
     expect(result.data).toBeNull();
     expect(result.error?.message).toBe("Something went wrong");

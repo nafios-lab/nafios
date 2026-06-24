@@ -42,10 +42,24 @@ You'll see a **"Run workflow"** dropdown button on the right side. Click it.
 
 | Input | What to enter | Default |
 |-------|--------------|---------|
-| **Branch** | Select the branch the workflow file lives on (usually `main`) | `main` |
-| **Git ref to deploy** | The branch, tag, or SHA you want to deploy | `main` |
+| **Branch** | The branch the workflow runs from — **this also controls which commit gets tagged** (it sets `GITHUB_SHA`) | `main` |
+| **Git ref to deploy** | The branch, tag, or SHA you want to build and deploy | `main` |
 
 For a standard staging deploy after merging a PR, leave both as `main`.
+
+> ⚠️ **These two fields do different jobs — keep them in sync for a tagged release.**
+>
+> - **Branch** decides which commit the `v0.1.<run#>` tag lands on.
+> - **Git ref to deploy** decides which commit is built and shipped to Netlify.
+>
+> A tag is only created when **Git ref to deploy** is `main`. So the one trap is:
+> setting **Git ref to deploy** = `main` (which triggers the tag) while **Branch**
+> points somewhere else — you'd **deploy `main` but stamp the tag on the wrong commit.**
+>
+> ✅ **The rule that matters:** whenever **Git ref to deploy** is `main`, **Branch must
+> also be `main`.** For a standard tagged release, just leave both on their `main`
+> default. (Feature-branch deploys never cut a tag, so the **Branch** field is harmless
+> there — see [Deploying a feature branch](#deploying-a-feature-branch-uat-before-merge).)
 
 ### 5. Click the green "Run workflow" button
 

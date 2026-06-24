@@ -1,36 +1,34 @@
-import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
-import * as ReactRouter from "@tanstack/react-router";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+// react-router (useNavigate + Link) and @nafios/auth-core are stubbed
+// process-wide in tests/setup.ts. The form drives the REAL signInFn, which calls
+// the shared `signInWithPassword` spy; navigation lands on the shared `navigate`
+// spy. We steer both from here.
+import { LoginForm } from "../../src/features/auth/components/login-form.tsx";
+import { navigate, resetServerFnMocks, signInWithPassword } from "../setup.ts";
 
-// LoginForm imports `Link` from @tanstack/react-router, which needs a live
-// router context to render. Stub just `Link` with a plain anchor and spread the
-// module's real exports back: bun's `mock.module` is process-global, so
-// preserving the other exports keeps this stub from breaking sibling test files.
-mock.module("@tanstack/react-router", () => ({
-  ...ReactRouter,
-  Link: ({ children, to, ...props }: { children: React.ReactNode; to?: string }) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
-}));
-
-const { LoginForm } = await import("../../src/features/auth/components/login-form.tsx");
-
+beforeEach(resetServerFnMocks);
 afterEach(cleanup);
 
-function usernameInput(): HTMLInputElement {
-  return screen.getByPlaceholderText("username") as HTMLInputElement;
+function emailInput(): HTMLInputElement {
+  return screen.getByPlaceholderText("Email address") as HTMLInputElement;
 }
 function passwordInput(): HTMLInputElement {
   return screen.getByPlaceholderText("password") as HTMLInputElement;
+}
+function submitForm(): void {
+  fireEvent.submit(document.getElementById("login-form") as HTMLFormElement);
+}
+function fillValid(): void {
+  fireEvent.change(emailInput(), { target: { value: "user@nafios.local" } });
+  fireEvent.change(passwordInput(), { target: { value: "password123" } });
 }
 
 describe("LoginForm — rendering", () => {
   test("renders the heading, fields, and primary actions", () => {
     render(<LoginForm />);
     expect(screen.getByText("Welcome back.")).toBeDefined();
-    expect(usernameInput()).toBeDefined();
+    expect(emailInput()).toBeDefined();
     expect(passwordInput()).toBeDefined();
     expect(screen.getByText("Remember Me")).toBeDefined();
     expect(screen.getByText("Forgot Password ?")).toBeDefined();
@@ -45,107 +43,112 @@ describe("LoginForm — rendering", () => {
   });
 });
 
-describe("LoginForm — validation (onBlur, submit-gated)", () => {
-  test("surfaces required errors after blurring empty fields", async () => {
+describe("LoginForm — validation (submit-gated)", () => {
+  test("stays quiet until the first submit", () => {
     render(<LoginForm />);
 
-    fireEvent.blur(usernameInput());
+    fireEvent.blur(emailInput());
     fireEvent.blur(passwordInput());
 
+    // Errors are gated behind a submit attempt — blurring alone shows nothing.
+    expect(screen.queryByText("Enter a valid email address")).toBeNull();
+    expect(screen.queryByText("Password is required")).toBeNull();
+  });
+
+  test("surfaces email and password errors after an empty submit", async () => {
+    render(<LoginForm />);
+
+    submitForm();
+
     await waitFor(() => {
-      expect(screen.getByText("Username is required")).toBeDefined();
+      expect(screen.getByText("Enter a valid email address")).toBeDefined();
       expect(screen.getByText("Password is required")).toBeDefined();
     });
+    expect(signInWithPassword).not.toHaveBeenCalled();
   });
 
-  test("surfaces min-length errors for too-short values", async () => {
+  test("clears the email error in real time once it becomes valid", async () => {
     render(<LoginForm />);
 
-    fireEvent.change(usernameInput(), { target: { value: "ab" } });
-    fireEvent.blur(usernameInput());
-    fireEvent.change(passwordInput(), { target: { value: "12345" } });
-    fireEvent.blur(passwordInput());
-
+    submitForm();
     await waitFor(() => {
-      expect(screen.getByText("Username must be at least 3 characters")).toBeDefined();
-      expect(screen.getByText("Password must be at least 6 characters")).toBeDefined();
-    });
-  });
-
-  test("clears the error in real time once the field becomes valid", async () => {
-    render(<LoginForm />);
-
-    fireEvent.change(usernameInput(), { target: { value: "ab" } });
-    fireEvent.blur(usernameInput());
-    await waitFor(() => {
-      expect(screen.getByText("Username must be at least 3 characters")).toBeDefined();
+      expect(screen.getByText("Enter a valid email address")).toBeDefined();
     });
 
-    // Correcting the field re-validates (onBlur revalidation) and drops the error.
-    fireEvent.change(usernameInput(), { target: { value: "hanafi" } });
-    fireEvent.blur(usernameInput());
+    fireEvent.change(emailInput(), { target: { value: "user@nafios.local" } });
     await waitFor(() => {
-      expect(screen.queryByText("Username must be at least 3 characters")).toBeNull();
+      expect(screen.queryByText("Enter a valid email address")).toBeNull();
     });
   });
 });
 
 describe("LoginForm — submission", () => {
-  let logSpy: ReturnType<typeof spyOn>;
-
-  beforeEach(() => {
-    logSpy = spyOn(console, "log").mockImplementation(() => {});
-  });
-  afterEach(() => {
-    logSpy.mockRestore();
-  });
-
-  test("does not submit while values are invalid", async () => {
+  test("signs in with the typed credentials and navigates home on success", async () => {
     render(<LoginForm />);
+    fillValid();
 
-    fireEvent.submit(document.getElementById("login-form") as HTMLFormElement);
+    submitForm();
 
     await waitFor(() => {
-      expect(screen.getByText("Username is required")).toBeDefined();
+      expect(navigate).toHaveBeenCalledWith({ to: "/" });
     });
-    expect(logSpy).not.toHaveBeenCalled();
+    expect(signInWithPassword).toHaveBeenCalledWith(
+      { __authClient: true },
+      { email: "user@nafios.local", password: "password123" },
+    );
   });
 
-  test("submits the typed credentials and remember-me flag when valid", async () => {
-    render(<LoginForm />);
+  test("navigates to the redirectTo target when provided", async () => {
+    render(<LoginForm redirectTo="/dashboard" />);
+    fillValid();
 
-    fireEvent.change(usernameInput(), { target: { value: "hanafi" } });
-    fireEvent.change(passwordInput(), { target: { value: "password123" } });
-
-    // The Remember Me checkbox toggles the boolean field.
-    fireEvent.click(screen.getByText("Remember Me"));
-
-    fireEvent.submit(document.getElementById("login-form") as HTMLFormElement);
+    submitForm();
 
     await waitFor(() => {
-      expect(logSpy).toHaveBeenCalledWith("login submit", {
-        username: "hanafi",
-        password: "password123",
-        rememberMe: true,
-      });
+      expect(navigate).toHaveBeenCalledWith({ to: "/dashboard" });
     });
   });
 
-  test("submits with remember-me false when the box is left unchecked", async () => {
+  test("shows an anti-enumeration message and does not navigate on wrong credentials", async () => {
+    signInWithPassword.mockResolvedValue({
+      error: { code: "invalid_credentials", message: "Invalid login credentials" },
+    });
     render(<LoginForm />);
+    fillValid();
 
-    fireEvent.change(usernameInput(), { target: { value: "hanafi" } });
-    fireEvent.change(passwordInput(), { target: { value: "password123" } });
+    submitForm();
 
-    fireEvent.submit(document.getElementById("login-form") as HTMLFormElement);
+    // The submit error is surfaced inside an Alert, not plain text.
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toContain("Incorrect email or password.");
+    });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  test("shows a generic retry message on a system fault", async () => {
+    signInWithPassword.mockResolvedValue({
+      error: { code: "over_request_rate_limit", message: "Too many requests" },
+    });
+    render(<LoginForm />);
+    fillValid();
+
+    submitForm();
 
     await waitFor(() => {
-      expect(logSpy).toHaveBeenCalledWith("login submit", {
-        username: "hanafi",
-        password: "password123",
-        rememberMe: false,
-      });
+      expect(screen.getByText("Something went wrong. Please try again.")).toBeDefined();
     });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  test("does not call the auth server fn while values are invalid", async () => {
+    render(<LoginForm />);
+
+    submitForm();
+
+    await waitFor(() => {
+      expect(screen.getByText("Password is required")).toBeDefined();
+    });
+    expect(signInWithPassword).not.toHaveBeenCalled();
   });
 });
 
