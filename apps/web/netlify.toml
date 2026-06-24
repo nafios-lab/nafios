@@ -1,6 +1,13 @@
 # netlify.toml — CLI-deploy-only; Netlify never builds this site.
 # The app is built in CI (S4) and deployed via `netlify deploy` (S5).
 
+[build.environment]
+  # Pin the Node.js runtime for the SSR Netlify Function (server.mjs).
+  # The app is BUILT on Bun in CI, but Netlify RUNS the SSR function on Node.
+  # Netlify reads this to select the Lambda runtime (nodejs22.x). AWS manages
+  # the exact patch within the 22.x line; this declares our intended baseline.
+  NODE_VERSION = "22.16.0"
+
 [build]
   # Static client assets emitted by TanStack Start / Nitro.
   publish = ".output/public"
