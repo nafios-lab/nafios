@@ -9,11 +9,7 @@ import { OnboardStepFamily } from "./onboard-step-family";
 import { OnboardStepProfile } from "./onboard-step-profile";
 import { OnboardStepReview } from "./onboard-step-review";
 
-const STEP_COMPONENTS = [
-  OnboardStepProfile,
-  OnboardStepFamily,
-  OnboardStepReview,
-] as const;
+const STEP_COMPONENTS = [OnboardStepProfile, OnboardStepFamily, OnboardStepReview] as const;
 
 function OnboardingWizardContent() {
   const { activeStep, goTo } = useOnboardingWizard();

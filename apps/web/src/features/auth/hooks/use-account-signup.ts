@@ -69,8 +69,8 @@ export function useAccountSignup(options: UseAccountSignupOptions) {
 
       optionsRef.current.onSuccess?.({ user: signupResp.user });
     } catch (cause) {
-      // AccountCreationError is already classified; anything else (network,
-      // exhausted retries, unexpected throw) is an unrecoverable system fault.
+      // AccountSignupError is already classified; anything else (network,
+      // unexpected throw) is an unrecoverable system fault.
       const normalized =
         cause instanceof AccountSignupError
           ? cause

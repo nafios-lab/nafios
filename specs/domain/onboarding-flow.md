@@ -276,5 +276,3 @@ await saveOnboardingProfileFn({ mobile: "(+65) 9123 4567" });
   always opens at Profile with fields rehydrated (see D6); no step pointer.
 - **Step 3 final write** — `complete_onboarding` RPC + `completeOnboardingFn` land with
   the Family/Review implementation pass.
-</content>
-</invoke>

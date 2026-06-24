@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-// ----- Step 1 Profile ---------------------------------//
+// ----- Step 2 — Profile -------------------------------//
+// (Canonical numbering per specs/domain/onboarding-flow.md: Step 1 is signup.)
 /** SG mobile in the formatted display shape, e.g. "(+65) 9123 4567". */
 const SG_MOBILE_RE = /^\(\+65\) [89]\d{3} \d{4}$/;
 
@@ -23,9 +24,9 @@ export const profileSchema = z.object({
 
 export type ProfileValues = z.infer<typeof profileSchema>;
 
-// ----- Step 2 Family ---------------------------------//
+// ----- Step 3 — Family (+ Review) ---------------------//
 /**
- * @NOTE step 3 do not need form schema, as it is only a review (read-only)
+ * @NOTE the Review screen needs no form schema — it is read-only.
  */
 export const familyMemberSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -33,11 +34,7 @@ export const familyMemberSchema = z.object({
   /** Processed avatar as a data URL, held in-memory until signup persists it. */
   avatar: z.string().optional(),
   nric: z.string().optional(),
-  phone: z
-    .string()
-    .trim()
-    .regex(SG_MOBILE_RE, "Invalid Singapore mobile number")
-    .optional(),
+  phone: z.string().trim().regex(SG_MOBILE_RE, "Invalid Singapore mobile number").optional(),
   dateOfBirth: z.string().optional(),
 });
 

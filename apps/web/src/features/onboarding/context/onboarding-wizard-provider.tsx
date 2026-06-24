@@ -1,11 +1,5 @@
 import type React from "react";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { OnboardingWizardData } from "~/features/onboarding/schemas/onboarding-schema";
 
 export const ONBOARDING_STEPS = [
@@ -21,23 +15,17 @@ const DEFAULT_ONBOARDING_DATA: Partial<OnboardingWizardData> = {};
 export interface OnboardingWizardContextValue {
   /** Zero-based active step */
   activeStep: StepIndex;
-  /** Adanced to the next step */
+  /** Advance to the next step */
   next: () => void;
   /** Jump back to specific completed step or simply back */
   back: () => void;
   /** Jump to a specific completed step (for review editing). */
   goTo: (step: StepIndex) => void;
-  setData: <K extends keyof OnboardingWizardData>(
-    key: K,
-    values: OnboardingWizardData[K],
-  ) => void;
-  getData: <K extends keyof OnboardingWizardData>(
-    key: K,
-  ) => OnboardingWizardData[K] | undefined;
+  setData: <K extends keyof OnboardingWizardData>(key: K, values: OnboardingWizardData[K]) => void;
+  getData: <K extends keyof OnboardingWizardData>(key: K) => OnboardingWizardData[K] | undefined;
 }
 
-export const OnboardingWizardContext =
-  createContext<OnboardingWizardContextValue | null>(null);
+export const OnboardingWizardContext = createContext<OnboardingWizardContextValue | null>(null);
 
 export interface OnboardingWizardProviderProps {
   children: React.ReactNode;
@@ -53,16 +41,13 @@ export function OnboardingWizardProvider({
   children,
   initialData = DEFAULT_ONBOARDING_DATA,
 }: OnboardingWizardProviderProps) {
-  const [onboardingData, setOnboardingData] =
-    useState<Partial<OnboardingWizardData>>(initialData);
+  const [onboardingData, setOnboardingData] = useState<Partial<OnboardingWizardData>>(initialData);
 
   const [activeStep, setActiveStep] = useState<StepIndex>(0);
 
   const next = useCallback(() => {
     // Three steps → valid indices are 0..2; never advance past the last.
-    setActiveStep(
-      (s) => Math.min(s + 1, ONBOARDING_STEPS.length - 1) as StepIndex,
-    );
+    setActiveStep((s) => Math.min(s + 1, ONBOARDING_STEPS.length - 1) as StepIndex);
   }, []);
 
   const back = useCallback(() => {
@@ -74,10 +59,7 @@ export function OnboardingWizardProvider({
   }, []);
 
   const setData = useCallback(
-    <K extends keyof OnboardingWizardData>(
-      key: K,
-      values: OnboardingWizardData[K],
-    ) => {
+    <K extends keyof OnboardingWizardData>(key: K, values: OnboardingWizardData[K]) => {
       setOnboardingData((prev) => ({ ...prev, [key]: values }));
     },
     [],
@@ -103,9 +85,7 @@ export function OnboardingWizardProvider({
   );
 
   return (
-    <OnboardingWizardContext.Provider value={values}>
-      {children}
-    </OnboardingWizardContext.Provider>
+    <OnboardingWizardContext.Provider value={values}>{children}</OnboardingWizardContext.Provider>
   );
 }
 
@@ -116,9 +96,7 @@ export function OnboardingWizardProvider({
 export function useOnboardingWizard() {
   const ctx = useContext(OnboardingWizardContext);
   if (!ctx) {
-    throw new Error(
-      "useSignupWizard must be used within <OnboardingWizardProvider>",
-    );
+    throw new Error("useOnboardingWizard must be used within <OnboardingWizardProvider>");
   }
   return ctx;
 }
