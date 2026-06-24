@@ -6,9 +6,10 @@ import type { AuthSession, AuthUser } from "@nafios/auth-core";
 // drive them through those spies.
 import { getSessionFn, getUserFn, signInFn, signOutFn, signUpFn } from "../../src/lib/auth-fns.ts";
 import {
+  type CompleteOnboardingMember,
+  completeOnboardingFn,
   getOnboardingProfileFn,
   getOnboardingStatusFn,
-  insertUserProfileFn,
   saveOnboardingProfileFn,
 } from "../../src/lib/onboarding-fns.ts";
 import {
@@ -150,15 +151,96 @@ describe("signInFn", () => {
   });
 });
 
-describe("insertUserProfileFn", () => {
-  test("forwards validated input to insertUserProfile and reports success", async () => {
-    const data = { avatarUrl: null, familyMembers: [] };
+describe("completeOnboardingFn", () => {
+  const member = (over: Partial<CompleteOnboardingMember> = {}): CompleteOnboardingMember => ({
+    name: "Aisha",
+    relationship: "spouse",
+    ...over,
+  });
 
-    const result = await insertUserProfileFn({ data });
+  test("returns no_session and writes nothing when there is no session", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: null } });
 
-    expect(result).toEqual({ success: true });
-    expect(insertUserProfile).toHaveBeenCalledTimes(1);
-    expect(insertUserProfile).toHaveBeenCalledWith({ from }, data);
+    const result = await completeOnboardingFn({ data: { familyMembers: [member()] } });
+
+    expect(result).toEqual({ ok: false, code: "no_session" });
+    expect(uploadAvatar).not.toHaveBeenCalled();
+    expect(insertUserProfile).not.toHaveBeenCalled();
+  });
+
+  test("stamps completion with an empty family list (Skip & finish)", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+
+    const result = await completeOnboardingFn({ data: { familyMembers: [] } });
+
+    expect(result).toEqual({ ok: true });
+    expect(uploadAvatar).not.toHaveBeenCalled();
+    expect(insertUserProfile).toHaveBeenCalledWith({ from }, { familyMembers: [] });
+  });
+
+  test("uploads each family avatar (data URL) and maps avatar→avatarUrl", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    uploadAvatar.mockResolvedValue({ path: "avatars/u1/family/k.webp" });
+
+    const result = await completeOnboardingFn({
+      data: {
+        familyMembers: [member({ avatar: "data:image/webp;base64,AAAA", nric: "S1234567A" })],
+      },
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(uploadAvatar).toHaveBeenCalledTimes(1);
+    expect(uploadAvatar).toHaveBeenCalledWith(
+      expect.objectContaining({ uid: "u1", scope: "family", contentType: "image/webp" }),
+    );
+    expect(insertUserProfile).toHaveBeenCalledWith(
+      { from },
+      {
+        familyMembers: [
+          {
+            name: "Aisha",
+            relationship: "spouse",
+            avatarUrl: "avatars/u1/family/k.webp",
+            nric: "S1234567A",
+            mobileNo: undefined,
+            dateOfBirth: undefined,
+          },
+        ],
+      },
+    );
+  });
+
+  test("does not upload for a member without an avatar (avatarUrl stays undefined)", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+
+    const result = await completeOnboardingFn({ data: { familyMembers: [member()] } });
+
+    expect(result).toEqual({ ok: true });
+    expect(uploadAvatar).not.toHaveBeenCalled();
+    expect(insertUserProfile).toHaveBeenCalledWith(
+      { from },
+      {
+        familyMembers: [
+          {
+            name: "Aisha",
+            relationship: "spouse",
+            avatarUrl: undefined,
+            nric: undefined,
+            mobileNo: undefined,
+            dateOfBirth: undefined,
+          },
+        ],
+      },
+    );
+  });
+
+  test("returns ok:false with the error message when the completion write throws", async () => {
+    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    insertUserProfile.mockRejectedValue(new Error("rpc boom"));
+
+    const result = await completeOnboardingFn({ data: { familyMembers: [] } });
+
+    expect(result).toEqual({ ok: false, code: "rpc boom" });
   });
 });
 

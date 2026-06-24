@@ -1,12 +1,17 @@
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
+import { Alert, AlertDescription, AlertTitle } from "@nafios/ui/components/ui/alert";
 import { Button } from "@nafios/ui/components/ui/button";
 import { Card } from "@nafios/ui/components/ui/card";
-import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
+import { useScreenLoader } from "@nafios/ui/hooks/use-screen-loader";
+import { useNavigate } from "@tanstack/react-router";
+import { AlertCircle, ArrowLeft, Check, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useOnboardingWizard } from "../context/onboarding-wizard-provider";
+import { useCompleteOnboarding } from "../hooks/use-complete-onboarding";
 import { type FamilyListEntry, stripClientKey } from "../lib/family-helpers";
 import { type FamilyMemberValues, MAX_FAMILY_MEMBERS } from "../schemas/onboarding-schema";
+import { AccCreationLoader } from "./acc-creation-loader";
 import { FamilyMemberForm } from "./family-member-form";
 import { FamilyMemberListItem } from "./family-member-list-item";
 
@@ -14,19 +19,29 @@ import { FamilyMemberListItem } from "./family-member-list-item";
 type FormState = { mode: "closed" } | { mode: "add" } | { mode: "edit"; clientKey: string };
 
 /**
- * Onboarding Step 3, screen 1 — **Family**. Collects 0–10 family members into
- * the wizard's in-session `family` state with **no DB write** (the commit point
- * is the later Review → Confirm). The list lives in local state keyed by a
- * session-only `clientKey`; every mutation mirrors the spec-shaped members
- * (clientKey stripped) into wizard state via `setData`.
+ * Onboarding Step 3 — **Family**, the final wizard screen and the completion
+ * commit point. Collects 0–10 family members into the wizard's in-session
+ * `family` state with **no DB write** until Finish. The list lives in local state
+ * keyed by a session-only `clientKey`; every mutation mirrors the spec-shaped
+ * members (clientKey stripped) into wizard state via `setData`.
  *
- * - **Skip for now** (0 members) / **Continue** (≥1) → Review.
+ * - **Skip & finish** (0 members) / **Finish setup** (≥1) → `completeOnboardingFn`
+ *   (uploads family avatars, writes the rows, stamps `onboarding_completed_at`),
+ *   then a full-screen loader rides the redirect to `/dashboard`.
  * - **Back** → Profile.
- * - The footer primary is disabled while the inline form is open, so
- *   in-progress input is never silently dropped.
+ * - The footer primary is disabled while the inline form is open (so in-progress
+ *   input is never silently dropped) and while the final write is running.
  */
 export function OnboardStepFamily() {
-  const { getData, setData, next, back } = useOnboardingWizard();
+  const { getData, setData, back } = useOnboardingWizard();
+  const navigate = useNavigate();
+
+  // The full-screen brand loader covers the complete → redirect transition.
+  const { show, hide } = useScreenLoader({ renderLoader: () => <AccCreationLoader /> });
+  const { complete, isCompleting, error } = useCompleteOnboarding({
+    onSuccess: () => navigate({ to: "/dashboard" }),
+    onError: hide, // a failed write drops the loader; success keeps it up through nav
+  });
 
   // Seed local list from wizard state, giving each member a fresh session-only
   // clientKey. Lazy init runs once per mount; on back-navigation the step
@@ -73,6 +88,14 @@ export function OnboardStepFamily() {
   const editingKey = formState.mode === "edit" ? formState.clientKey : undefined;
   const editing = editingKey ? entries.find((entry) => entry.clientKey === editingKey) : undefined;
 
+  // Final step: persist the collected members (avatars + rows + completion stamp)
+  // and ride the loader into the dashboard. Disabled while the inline form is open.
+  const handleFinish = () => {
+    if (formOpen || isCompleting) return;
+    show();
+    complete({ familyMembers: entries.map(stripClientKey) });
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col">
@@ -81,6 +104,14 @@ export function OnboardStepFamily() {
           Link the people you manage with — partners, parents, kids. You can do it later too.
         </Text>
       </div>
+
+      {error && (
+        <Alert variant="error">
+          <AlertCircle />
+          <AlertTitle>Couldn't finish setup</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {isEmpty ? (
         <Card className="flex flex-col items-center gap-1 border-dashed p-8 text-center">
@@ -137,17 +168,25 @@ export function OnboardStepFamily() {
       )}
 
       <div className="mt-2 flex flex-row items-center justify-between gap-3">
-        <Button type="button" variant="outline" iconLeft={<ArrowLeft />} onClick={back}>
+        <Button
+          type="button"
+          variant="outline"
+          iconLeft={<ArrowLeft />}
+          onClick={back}
+          disabled={isCompleting}
+        >
           Back
         </Button>
         <Button
           type="button"
           variant="brand"
-          iconRight={<ArrowRight />}
-          onClick={next}
-          disabled={formOpen}
+          iconRight={<Check />}
+          onClick={handleFinish}
+          disabled={formOpen || isCompleting}
+          showLoader={isCompleting}
+          textOnLoading="Finishing…"
         >
-          {isEmpty ? "Skip for now" : "Continue"}
+          {isEmpty ? "Skip & finish" : "Finish setup"}
         </Button>
       </div>
     </div>

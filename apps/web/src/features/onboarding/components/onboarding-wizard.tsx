@@ -7,9 +7,8 @@ import {
 } from "../context/onboarding-wizard-provider";
 import { OnboardStepFamily } from "./onboard-step-family";
 import { OnboardStepProfile } from "./onboard-step-profile";
-import { OnboardStepReview } from "./onboard-step-review";
 
-const STEP_COMPONENTS = [OnboardStepProfile, OnboardStepFamily, OnboardStepReview] as const;
+const STEP_COMPONENTS = [OnboardStepProfile, OnboardStepFamily] as const;
 
 function OnboardingWizardContent() {
   const { activeStep, goTo } = useOnboardingWizard();
@@ -22,7 +21,7 @@ function OnboardingWizardContent() {
         activeStep={activeStep}
         onStepClick={(index) => {
           if (index < activeStep) {
-            goTo(index as 0 | 1 | 2);
+            goTo(index as 0 | 1);
           }
         }}
         size="sm"

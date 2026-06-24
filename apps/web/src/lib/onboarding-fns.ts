@@ -7,32 +7,13 @@ import {
 } from "@nafios/auth-core";
 import {
   createServerDb,
-  type InsertUserProfileInput,
+  type FamilyMemberInput,
   insertUserProfile,
   saveOnboardingProfile,
 } from "@nafios/database";
 import { signAvatarUrl, uploadAvatar } from "@nafios/storage";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestCookieAdapter } from "./server-cookies";
-
-/**
- * Persists the user's profile and family members after signup, as a single
- * atomic unit (see `@nafios/database` `insertUserProfile`). Must run after
- * `signUpFn` has set the session cookie — it relies on that authenticated
- * session so the DB derives the profile owner from `auth.uid()`.
- *
- * @deprecated The v1 single-submit-at-the-end write. The v2.0.0 flow persists
- * per step: Step 2 uses {@link saveOnboardingProfileFn}; the final step (Family
- * + Review) gets its own `completeOnboardingFn`. Kept until that final-step
- * write lands; do not wire into new code.
- */
-export const insertUserProfileFn = createServerFn({ method: "POST" })
-  .validator((input: InsertUserProfileInput) => input)
-  .handler(async ({ data }): Promise<{ success: true }> => {
-    const db = createServerDb(await getRequestCookieAdapter());
-    await insertUserProfile(db, data);
-    return { success: true };
-  });
 
 /** Input for {@link saveOnboardingProfileFn}. Both fields optional (Skip = neither). */
 export interface SaveOnboardingProfileInput {
@@ -110,6 +91,96 @@ export const saveOnboardingProfileFn = createServerFn({ method: "POST" })
       return {
         ok: false,
         code: error instanceof Error ? error.message : "save_profile_failed",
+      };
+    }
+  });
+
+/** One family member as collected by the wizard (the spec `FamilyMemberValues`). */
+export interface CompleteOnboardingMember {
+  name: string;
+  relationship: "spouse" | "child" | "parent" | "sibling" | "other";
+  /** In-memory avatar data URL (`data:…`); uploaded here on Finish. */
+  avatar?: string;
+  nric?: string;
+  mobileNo?: string;
+  /** ISO `YYYY-MM-DD`. */
+  dateOfBirth?: string;
+}
+
+/** Input for {@link completeOnboardingFn} — the wizard's collected family members. */
+export interface CompleteOnboardingInput {
+  familyMembers: CompleteOnboardingMember[];
+}
+
+/** Errors-as-data result so the calling hook can retry `system` faults. */
+export type CompleteOnboardingResult = { ok: true } | { ok: false; code: string };
+
+/**
+ * Onboarding **Step 3 (Family) — Finish**: the completion commit point. Runs with
+ * the active session from Phase A. For each family member:
+ *
+ *   1. **Avatar** (if a `data:` URL) → upload bytes to `avatars/{uid}/family/
+ *      {clientKey}.webp` and keep the returned object path. `clientKey` is minted
+ *      server-side per upload (the wizard's session-only key never crosses the
+ *      wire); the family rows are replaced wholesale below, so a stable key is
+ *      unnecessary. An already-stored path is passed through unchanged.
+ *
+ * Then the mapped members (avatar → `avatarUrl`) are handed to the idempotent
+ * `insert_user_profile` RPC via {@link insertUserProfile}, which **replaces** the
+ * profile's family rows and stamps `onboarding_completed_at` in one transaction.
+ * The account avatar is **not** passed — it was written in Step 2 and the RPC
+ * `COALESCE`s, so omitting it preserves the existing value.
+ *
+ * Returns errors as data; the caller retries `system` faults. Completing with
+ * **zero** family members is valid — the RPC clears any rows and stamps done.
+ */
+export const completeOnboardingFn = createServerFn({ method: "POST" })
+  .validator((input: CompleteOnboardingInput) => input)
+  .handler(async ({ data }): Promise<CompleteOnboardingResult> => {
+    const cookies = await getRequestCookieAdapter();
+
+    const authClient = createServerClient(cookies);
+    const sessionResult = await getSession(authClient);
+    const session = sessionResult.error ? null : sessionResult.data.session;
+    if (!session) return { ok: false, code: "no_session" };
+
+    try {
+      const uid = session.user.id;
+
+      const familyMembers: FamilyMemberInput[] = [];
+      for (const member of data.familyMembers) {
+        let avatarUrl: string | undefined;
+        if (member.avatar?.startsWith("data:")) {
+          const { contentType, bytes } = decodeDataUrl(member.avatar);
+          const { path } = await uploadAvatar({
+            uid,
+            scope: "family",
+            clientKey: crypto.randomUUID(),
+            bytes,
+            contentType,
+          });
+          avatarUrl = path;
+        } else if (member.avatar) {
+          // Defensive: already a stored object path (no re-upload).
+          avatarUrl = member.avatar;
+        }
+
+        familyMembers.push({
+          name: member.name,
+          relationship: member.relationship,
+          avatarUrl,
+          nric: member.nric,
+          mobileNo: member.mobileNo,
+          dateOfBirth: member.dateOfBirth,
+        });
+      }
+
+      await insertUserProfile(createServerDb(cookies), { familyMembers });
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        code: error instanceof Error ? error.message : "complete_onboarding_failed",
       };
     }
   });

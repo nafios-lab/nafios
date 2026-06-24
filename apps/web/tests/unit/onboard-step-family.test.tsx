@@ -4,7 +4,12 @@ import { OnboardStepFamily } from "../../src/features/onboarding/components/onbo
 import { OnboardingWizard } from "../../src/features/onboarding/components/onboarding-wizard.tsx";
 import { OnboardingWizardProvider } from "../../src/features/onboarding/context/onboarding-wizard-provider.tsx";
 import type { FamilyMemberValues } from "../../src/features/onboarding/schemas/onboarding-schema.ts";
-import { resetServerFnMocks } from "../setup.ts";
+import { from, getSession, insertUserProfile, navigate, resetServerFnMocks } from "../setup.ts";
+
+/** Steer the completion write to succeed by giving it a session. */
+function withSession(): void {
+  getSession.mockResolvedValue({ error: null, data: { session: { user: { id: "u1" } } } });
+}
 
 afterEach(cleanup);
 
@@ -35,7 +40,7 @@ describe("OnboardStepFamily — empty state", () => {
     expect(screen.getByText("No family members yet")).toBeDefined();
     expect(screen.getByText("Add up to 10 people to manage")).toBeDefined();
     expect(screen.getByRole("button", { name: "Add a family member" })).toBeDefined();
-    expect(screen.getByRole("button", { name: /Skip for now/ })).toBeDefined();
+    expect(screen.getByRole("button", { name: /Skip & finish/ })).toBeDefined();
   });
 });
 
@@ -51,17 +56,17 @@ describe("OnboardStepFamily — add", () => {
     await waitFor(() => {
       expect(screen.getByText("Aisha Rahman")).toBeDefined();
     });
-    // Form closed, empty state replaced, footer flips to Continue.
+    // Form closed, empty state replaced, footer flips to Finish setup.
     expect(screen.queryByText("Add family member")).toBeNull();
     expect(screen.queryByText("No family members yet")).toBeNull();
-    expect(screen.getByRole("button", { name: /Continue/ })).toBeDefined();
+    expect(screen.getByRole("button", { name: /Finish setup/ })).toBeDefined();
   });
 
   test("the footer primary is disabled while the form is open", () => {
     renderStep();
     openAddForm();
     expect(
-      (screen.getByRole("button", { name: /Skip for now/ }) as HTMLButtonElement).disabled,
+      (screen.getByRole("button", { name: /Skip & finish/ }) as HTMLButtonElement).disabled,
     ).toBe(true);
   });
 
@@ -75,14 +80,14 @@ describe("OnboardStepFamily — add", () => {
 });
 
 describe("OnboardStepFamily — seeded list", () => {
-  test("restores members from wizard state with a Continue footer", () => {
+  test("restores members from wizard state with a Finish footer", () => {
     renderStep([
       { name: "Aisha Rahman", relationship: "spouse" },
       { name: "Omar Rahman", relationship: "child" },
     ]);
     expect(screen.getByText("Aisha Rahman")).toBeDefined();
     expect(screen.getByText("Omar Rahman")).toBeDefined();
-    expect(screen.getByRole("button", { name: /Continue/ })).toBeDefined();
+    expect(screen.getByRole("button", { name: /Finish setup/ })).toBeDefined();
   });
 
   test("edits a member in place", async () => {
@@ -141,7 +146,7 @@ describe("OnboardStepFamily — seeded list", () => {
 
     expect(screen.queryByRole("button", { name: "Add a family member" })).toBeNull();
     expect(screen.getByText("You can add up to 10 people.")).toBeDefined();
-    expect(screen.getByRole("button", { name: /Continue/ })).toBeDefined();
+    expect(screen.getByRole("button", { name: /Finish setup/ })).toBeDefined();
   });
 });
 
@@ -154,14 +159,44 @@ describe("OnboardStepFamily — navigation (full wizard)", () => {
     });
   }
 
-  test("Skip for now advances to the Review step", async () => {
+  test("Skip & finish completes onboarding and redirects to the dashboard", async () => {
     resetServerFnMocks();
+    withSession();
     await skipToFamily();
 
-    fireEvent.click(screen.getByRole("button", { name: /Skip for now/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Skip & finish/ }));
+
     await waitFor(() => {
-      expect(screen.getByText("OnboardingStep Review")).toBeDefined();
+      expect(navigate).toHaveBeenCalledWith({ to: "/dashboard" });
     });
+    // No members were added → completion writes an empty family list.
+    expect(insertUserProfile).toHaveBeenCalledWith({ from }, { familyMembers: [] });
+  });
+
+  test("surfaces an error and stays on Family when completion is not retryable", async () => {
+    resetServerFnMocks(); // default getSession = no session → completeOnboardingFn → no_session
+    await skipToFamily();
+
+    fireEvent.click(screen.getByRole("button", { name: /Skip & finish/ }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toContain("Couldn't finish setup");
+    });
+    expect(navigate).not.toHaveBeenCalled();
+    expect(screen.getByText("Add your Family")).toBeDefined();
+  });
+
+  test("retries then surfaces an error when the completion write throws", async () => {
+    resetServerFnMocks();
+    getSession.mockRejectedValue(new Error("network down"));
+    await skipToFamily();
+
+    fireEvent.click(screen.getByRole("button", { name: /Skip & finish/ }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toContain("Couldn't finish setup");
+    });
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   test("Back returns to the Profile step", async () => {

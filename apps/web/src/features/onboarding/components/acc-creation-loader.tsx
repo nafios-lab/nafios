@@ -2,12 +2,13 @@ import { Logo } from "@nafios/ui/components/logo";
 import { Text } from "@nafios/ui/components/typography/text";
 
 /**
- * Full-screen loader shown while the account is being created. Designed to read
+ * Full-screen loader shown while the account is being finalized. Designed to read
  * as a NafiOS "boot" moment: the brand mark breathes inside a soft brand glow
  * while a brand→accent gradient arc orbits it like a progress satellite.
  *
- * Rendered centered inside the global {@link ScreenLoader} overlay (see
- * `signup-step-review`). All motion is gated behind `motion-safe:` so users with
+ * Rendered centered inside the global `ScreenLoader` overlay — driven by the
+ * onboarding Family step's **Finish** while it completes onboarding and routes to
+ * the dashboard. All motion is gated behind `motion-safe:` so users with
  * `prefers-reduced-motion` get a calm, static — but still on-brand — state.
  *
  * The animation tokens (`animate-breathe`, `animate-orbit`) and their keyframes

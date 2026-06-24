@@ -1,7 +1,7 @@
 ---
-title: Onboarding flow (signup → profile → family → review)
+title: Onboarding flow (signup → profile → family)
 status: active
-version: 2.0.0
+version: 2.1.0
 updated: 2026-06-24
 owner: Hanafi
 related_adrs: [0016, 0018, 0019, 0021]
@@ -13,22 +13,25 @@ related_adrs: [0016, 0018, 0019, 0021]
 
 Defines how a new NafiOS account goes from "no user" to "ready to use the app":
 a minimal **signup** phase that creates the auth credential, followed by an
-authenticated **onboarding wizard** (Profile → Family → Review) that enriches the
-account and, at the very end, stamps it complete. Persistence is **per step** —
-each step writes its own data when the user submits it, and the completion stamp
-is written last.
+authenticated **onboarding wizard** (Profile → Family) that enriches the
+account and, on the Family step's final CTA, stamps it complete and routes the
+user to the dashboard. Persistence is **per step** — each step writes its own
+data when the user submits it, and the completion stamp is written last.
 
-> **v2.0.0 supersedes v1** (the single combined 4-step wizard on `/auth/signup`).
-> The design proposal and full refactor history live in
-> [`issues/nafios-onboarding-flow.md`](../../issues/nafios-onboarding-flow.md).
+> **v2.1.0 drops the Review step** (a never-implemented stub). The Family step is
+> now the last screen and its CTA is the completion commit point — see
+> [D7](#no-review-step-d7). **v2.0.0 superseded v1** (the single combined 4-step
+> wizard on `/auth/signup`). The design proposal and full refactor history live
+> in [`issues/nafios-onboarding-flow.md`](../../issues/nafios-onboarding-flow.md).
 > **This file is the authoritative contract.**
 
 ## Scope
 
-**In:** the phase split (signup vs. onboarding), the three-step wizard model, the
-per-step persistence contract, where each field lands, route guards, re-entry /
-resume behavior, and **reading saved Step-2 data back to hydrate the wizard on
-reload** (avatar via a signed URL, mobile via `user_metadata`).
+**In:** the phase split (signup vs. onboarding), the two-step wizard model, the
+per-step persistence contract, where each field lands, the Family step's
+completion commit (+ dashboard redirect), route guards, re-entry / resume
+behavior, and **reading saved Step-2 data back to hydrate the wizard on reload**
+(avatar via a signed URL, mobile via `user_metadata`).
 
 **Out:** email confirmation (deferred — `enable_confirmations = false`), general
 profile-display / avatar rendering **outside** onboarding (Settings, navbar — a
@@ -37,13 +40,14 @@ uniqueness, and the module-mount machinery behind the dashboard.
 
 ## The step model (canonical numbering)
 
-Three logical steps; the last spans two wizard screens.
+Three logical steps across **two** onboarding screens (Profile, Family); the
+Family step's CTA is the completion commit point.
 
 | Step | What | Persists to DB? | Where |
 |---|---|---|---|
 | **Step 1 — Signup** | `email` + `password` → create the auth user | ✅ `auth.users` (credential) | Phase A, standalone form at `/auth/signup` |
 | **Step 2 — Profile** | `avatar` + `mobile` — **both optional, skippable** | ✅ on **Save** (skipped → nothing) | onboarding wizard, screen 1 |
-| **Step 3 — Family + Review** | enter 0–10 family members, then review everything | ✅ on **Confirm** (family rows + completion stamp) | onboarding wizard, screens 2 & 3 |
+| **Step 3 — Family** | enter 0–10 family members, then **Finish** | ✅ on **Finish** (family rows + completion stamp) | onboarding wizard, screen 2 (final) |
 
 > **No `username`.** v2.0.0 collects only `avatar` and `mobile` in the Profile
 > step. The `profiles.username` column exists (nullable, non-unique) but is **not
@@ -77,7 +81,7 @@ interface FamilyMemberValues {
 | account `avatar` | Step 2 | `public.profiles.avatar_url` | uploaded to Storage; column holds the **object path** `avatars/{uid}/avatar.webp`, not a data URL |
 | `mobile` | Step 2 | `auth.users` **`user_metadata.mobile`** | written via `auth.updateUser({ data })`; **no** SMS verification; kept with the auth identity for future optional SMS 2FA |
 | family members (0–10) | Step 3 | `public.family_members.*` | avatars → Storage `avatars/{uid}/family/{clientKey}.webp` |
-| `onboarding_completed_at` | Step 3 (Confirm) | `public.profiles` | the completion stamp — written **last** |
+| `onboarding_completed_at` | Step 3 (Finish) | `public.profiles` | the completion stamp — written **last** |
 
 > **Why `user_metadata.mobile`, not the native `auth.users.phone` column:** the
 > field is a human-formatted display string `(+65) 9123 4567`, not E.164, and the
@@ -133,16 +137,23 @@ STEP 2 — Profile       [Skip] → no writes; advance to Family
                                 └─ if mobile: updateUserMetadata({ mobile }) → user_metadata
                                 (each idempotent; does NOT stamp onboarding_completed_at)
 
-STEP 3 — Family+Review Family screen → collect members in wizard state (NO write)
-                       Review → [Confirm] → completeOnboardingFn({ familyMembers })
-                                └─ family rows + UPDATE profiles SET onboarding_completed_at = now()  ← COMMIT POINT
+STEP 3 — Family        Family screen → collect members in wizard state (NO write)
+                       [Finish] → completeOnboardingFn({ familyMembers })
+                                ├─ upload each family avatar → Storage
+                                └─ insert_user_profile RPC: family rows (DELETE+INSERT)
+                                   + UPDATE profiles SET onboarding_completed_at = now()  ← COMMIT POINT
+                                → on success: navigate → /dashboard
 ```
 
 **Why it's safe:** every step writes only its own data on an explicit
-submit/confirm; `onboarding_completed_at` is stamped only by the final step, so any
-interruption leaves the account *incomplete* and the guards resume it; every write
-is idempotent (deterministic avatar path, `COALESCE` profile update, identical
-metadata, family `DELETE`+`INSERT`).
+submit/finish; `onboarding_completed_at` is stamped only by the final step
+(Family → **Finish**), so any interruption leaves the account *incomplete* and the
+guards resume it; every write is idempotent (deterministic avatar path, `COALESCE`
+profile update, identical metadata, family `DELETE`+`INSERT`). The final write
+reuses the existing idempotent **`insert_user_profile`** RPC: it replaces the
+profile's family rows and stamps completion in one transaction, and — because it
+`COALESCE`s the avatar — leaving `p_avatar_url` null preserves the account avatar
+already written in Step 2. No dedicated `complete_onboarding` RPC is needed.
 
 ## Invariants
 
@@ -164,7 +175,9 @@ metadata, family `DELETE`+`INSERT`).
 // apps/web/src/lib/onboarding-fns.ts (TanStack server functions)
 saveOnboardingProfileFn(input: { avatar?: string; mobile?: string })
   : Promise<{ ok: true } | { ok: false; code: string }>
-completeOnboardingFn(input: { familyMembers: FamilyMemberInput[] })  // Step 3 (pending)
+completeOnboardingFn(input: { familyMembers: FamilyMemberValues[] })  // Step 3 (Finish)
+  // uploads each family avatar (data URL → Storage), maps avatar→avatarUrl, then
+  // calls insert_user_profile (family rows + onboarding_completed_at) — see below.
   : Promise<{ ok: true } | { ok: false; code: string }>
 getOnboardingStatusFn(): Promise<{
   session: AuthSession | null;
@@ -177,6 +190,9 @@ getOnboardingProfileFn(): Promise<{
 
 // @nafios/database
 saveOnboardingProfile(db, { avatarUrl?: string }): Promise<void>   // → save_onboarding_profile RPC
+insertUserProfile(db, { avatarUrl?, familyMembers }): Promise<void> // → insert_user_profile RPC
+  // the Step-3 completion write: replaces family rows + stamps onboarding_completed_at,
+  // COALESCEs avatar (Step 3 omits it). Idempotent — safe to retry.
 
 // @nafios/auth-core
 updateUserMetadata(client, metadata: { mobile?: string }): Promise<AuthResult<{ user: AuthUser }>>
@@ -211,6 +227,11 @@ gate) hosts the wizard. The single source of truth for "ready" is
 | `/onboarding` | → `/auth/login` | render the wizard | (guard may send to `/dashboard`) |
 | `/_protected/_app/*` | → `/auth/login` | → `/onboarding` | render the app |
 
+On a successful **Finish**, the Family step also issues a client `navigate({ to:
+"/dashboard" })` (a full-screen loader covers the transition). The guards above
+are the backstop — they enforce the same destination on any subsequent visit —
+but the happy-path redirect comes from the wizard, not a guard.
+
 ### Re-entry / resume (D6)
 
 Resume keys off a single bit — `onboarding_completed_at` — and **always opens the
@@ -228,6 +249,20 @@ otherwise                          → /onboarding @ Profile (Step 2), fields re
 > final: Step 2 is one-click skippable, so re-landing there costs a returning user
 > nothing, and it avoids a step-pointer column and the "skipped vs. never-reached"
 > ambiguity entirely. (Furthest-step resume was considered and dropped.)
+
+### No Review step (D7)
+
+> **Decision (v2.1.0):** there is **no** Review screen. The Family step is the
+> final screen and its CTA (**Skip & finish** at 0 members / **Finish setup** at
+> ≥1) is the completion commit point. A dedicated review was dropped because the
+> onboarding data is small, all-optional, and low-stakes, and the Family screen is
+> *already* a live review surface — it lists every member with inline edit/delete,
+> and the Stepper still lets a user click back to Profile to amend it. A separate
+> read-only summary would only duplicate that list and add a screen of friction.
+> Profile fields (avatar/mobile) are not re-shown before commit; this is an
+> accepted trade-off (one step back, editable later). The `OnboardStepReview`
+> stub and the three-step model are removed. (Furthest-step resume — D6 — is
+> unaffected: re-entry still opens at Profile.)
 
 ## Error modes
 
@@ -280,5 +315,8 @@ await saveOnboardingProfileFn({ mobile: "(+65) 9123 4567" });
   if/when queried, deduplicated, or used for SMS 2FA.
 - ~~**Furthest-step resume / `onboarding_step` pointer**~~ — **dropped.** Re-entry
   always opens at Profile with fields rehydrated (see D6); no step pointer.
-- **Step 3 final write** — `complete_onboarding` RPC + `completeOnboardingFn` land with
-  the Family/Review implementation pass.
+- ~~**Review step**~~ — **dropped** (v2.1.0, see [D7](#no-review-step-d7)). Family is
+  the final screen; its CTA commits.
+- ~~**Step 3 final write**~~ — **done.** `completeOnboardingFn` uploads family
+  avatars and reuses the idempotent **`insert_user_profile`** RPC (family rows +
+  `onboarding_completed_at`); no separate `complete_onboarding` RPC was needed.

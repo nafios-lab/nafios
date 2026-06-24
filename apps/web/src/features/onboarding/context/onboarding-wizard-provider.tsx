@@ -2,13 +2,9 @@ import type React from "react";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { OnboardingWizardData } from "~/features/onboarding/schemas/onboarding-schema";
 
-export const ONBOARDING_STEPS = [
-  { label: "Profile" },
-  { label: "Family" },
-  { label: "Review" },
-] as const;
+export const ONBOARDING_STEPS = [{ label: "Profile" }, { label: "Family" }] as const;
 
-export type StepIndex = 0 | 1 | 2;
+export type StepIndex = 0 | 1;
 
 const DEFAULT_ONBOARDING_DATA: Partial<OnboardingWizardData> = {};
 

@@ -23,20 +23,17 @@ describe("useOnboardingWizard / OnboardingWizardProvider", () => {
     expect(result.current.activeStep).toBe(0);
     act(() => result.current.next());
     expect(result.current.activeStep).toBe(1);
-    act(() => result.current.next());
-    expect(result.current.activeStep).toBe(2);
-    act(() => result.current.next()); // already last → clamps
-    expect(result.current.activeStep).toBe(2);
+    act(() => result.current.next()); // already last (Family) → clamps
+    expect(result.current.activeStep).toBe(1);
   });
 
   test("back() retreats and clamps at the first step", () => {
     const { result } = renderHook(() => useOnboardingWizard(), { wrapper });
 
-    act(() => result.current.goTo(2));
-    expect(result.current.activeStep).toBe(2);
-    act(() => result.current.back());
+    act(() => result.current.goTo(1));
     expect(result.current.activeStep).toBe(1);
     act(() => result.current.back());
+    expect(result.current.activeStep).toBe(0);
     act(() => result.current.back()); // already first → clamps
     expect(result.current.activeStep).toBe(0);
   });

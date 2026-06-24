@@ -1,14 +1,17 @@
 /**
- * TEMP / DEV-ONLY. Floating button to wipe the browser session so the onboarding
- * flow can be retried repeatedly without getting stuck at the post-success entry
- * point. Not part of the product — safe to delete once the flow is stable.
+ * Floating button to wipe the browser session so the onboarding flow can be
+ * retried repeatedly without getting stuck at the post-success entry point.
+ * Not part of the product — a session-reset tool for testing.
  *
- * Only renders in dev (`import.meta.env.DEV`), so it never ships to staging/prod.
+ * Gated on the `VITE_RESET_SESSION_TOOL` env flag (must be the string "true").
+ * When unset/false it renders nothing, so it never ships unless explicitly
+ * enabled for a given run or build. The `VITE_` prefix is required for Vite to
+ * expose the var to client code via `import.meta.env`.
  */
 import { signOutFn } from "../lib/auth-fns";
 
 export function DevResetButton() {
-  if (!import.meta.env.DEV) return null;
+  if (import.meta.env.VITE_RESET_SESSION_TOOL !== "true") return null;
 
   async function handleReset() {
     try {

@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 // The wizard renders the Profile step (which drives the REAL
 // saveOnboardingProfileFn via the tests/setup.ts spies) and switches to the
 // Family step on advance. We steer the save outcome through `getSession`.
-import { OnboardStepReview } from "../../src/features/onboarding/components/onboard-step-review.tsx";
 import { OnboardingWizard } from "../../src/features/onboarding/components/onboarding-wizard.tsx";
 import { getSession, resetServerFnMocks, updateUserMetadata } from "../setup.ts";
 
@@ -15,12 +14,12 @@ beforeEach(resetServerFnMocks);
 afterEach(cleanup);
 
 describe("OnboardingWizard", () => {
-  test("opens on the Profile step with every step label in the stepper", () => {
+  test("opens on the Profile step with both step labels in the stepper", () => {
     render(<OnboardingWizard />);
     expect(screen.getByText("Set up your profile")).toBeDefined();
     expect(screen.getByText("Profile")).toBeDefined();
     expect(screen.getByText("Family")).toBeDefined();
-    expect(screen.getByText("Review")).toBeDefined();
+    expect(screen.queryByText("Review")).toBeNull();
   });
 
   test("Skip advances to the Family step without writing anything", async () => {
@@ -99,12 +98,5 @@ describe("OnboardingWizard", () => {
 
     const phone = screen.getByPlaceholderText("(+65) 9000 0000") as HTMLInputElement;
     expect(phone.value).toContain("9123");
-  });
-});
-
-describe("Onboarding step stubs", () => {
-  test("the Review stub renders its placeholder", () => {
-    render(<OnboardStepReview />);
-    expect(screen.getByText("OnboardingStep Review")).toBeDefined();
   });
 });

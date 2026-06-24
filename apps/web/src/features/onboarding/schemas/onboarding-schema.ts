@@ -25,7 +25,7 @@ export const profileSchema = z.object({
 
 export type ProfileValues = z.infer<typeof profileSchema>;
 
-// ----- Step 3 — Family (+ Review) ---------------------//
+// ----- Step 3 — Family (final step) -------------------//
 /** Hard cap on family members collected in onboarding (spec + UI both enforce). */
 export const MAX_FAMILY_MEMBERS = 10;
 
@@ -36,16 +36,14 @@ export const familyRelationships = ["spouse", "child", "parent", "sibling", "oth
 /**
  * Canonical stored shape for one family member — identical to the spec's
  * `FamilyMemberValues` entity and to `@nafios/database`'s `FamilyMemberInput`
- * (modulo `avatar`→`avatarUrl`, mapped in the later persistence pass). The
+ * (modulo `avatar`→`avatarUrl`, mapped on Finish by `completeOnboardingFn`). The
  * session-only `clientKey` (React key / edit target) is deliberately **not**
  * part of this schema — see `lib/family-helpers.ts`.
- *
- * @NOTE the Review screen needs no form schema — it is read-only.
  */
 export const familyMemberSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   relationship: z.enum(familyRelationships),
-  /** Processed avatar as a data URL, held in-memory until the final Confirm persists it. */
+  /** Processed avatar as a data URL, held in-memory until Finish persists it. */
   avatar: z.string().optional(),
   nric: z.string().optional(),
   mobileNo: z.string().trim().regex(SG_MOBILE_RE, "Invalid Singapore mobile number").optional(),

@@ -31,17 +31,18 @@ import "../src/features/onboarding/schemas/onboarding-schema.ts";
 import "../src/features/auth/hooks/use-account-signup.ts";
 import "../src/features/auth/hooks/use-sign-in.ts";
 import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";
+import "../src/features/onboarding/hooks/use-complete-onboarding.ts";
 import "../src/features/onboarding/hooks/use-onboarding-profile.ts";
 import "../src/features/onboarding/lib/family-helpers.ts";
 
 // Feature components
 import "../src/features/auth/components/login-form.tsx";
 import "../src/features/auth/components/signup-form.tsx";
+import "../src/features/onboarding/components/acc-creation-loader.tsx";
 import "../src/features/onboarding/components/family-member-form.tsx";
 import "../src/features/onboarding/components/family-member-list-item.tsx";
 import "../src/features/onboarding/components/onboard-step-family.tsx";
 import "../src/features/onboarding/components/onboard-step-profile.tsx";
-import "../src/features/onboarding/components/onboard-step-review.tsx";
 import "../src/features/onboarding/components/onboarding-wizard.tsx";
 
 test("in-scope @nafios/web modules load for coverage instrumentation", () => {
