@@ -1,6 +1,10 @@
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
-import { Alert, AlertDescription, AlertTitle } from "@nafios/ui/components/ui/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@nafios/ui/components/ui/alert";
 import { Button } from "@nafios/ui/components/ui/button";
 import { Card } from "@nafios/ui/components/ui/card";
 import { useScreenLoader } from "@nafios/ui/hooks/use-screen-loader";
@@ -10,13 +14,19 @@ import { useCallback, useState } from "react";
 import { useOnboardingWizard } from "../context/onboarding-wizard-provider";
 import { useCompleteOnboarding } from "../hooks/use-complete-onboarding";
 import { type FamilyListEntry, stripClientKey } from "../lib/family-helpers";
-import { type FamilyMemberValues, MAX_FAMILY_MEMBERS } from "../schemas/onboarding-schema";
+import {
+  type FamilyMemberValues,
+  MAX_FAMILY_MEMBERS,
+} from "../schemas/onboarding-schema";
 import { AccCreationLoader } from "./acc-creation-loader";
 import { FamilyMemberForm } from "./family-member-form";
 import { FamilyMemberListItem } from "./family-member-list-item";
 
 /** The inline form is either closed, adding a new member, or editing one by key. */
-type FormState = { mode: "closed" } | { mode: "add" } | { mode: "edit"; clientKey: string };
+type FormState =
+  | { mode: "closed" }
+  | { mode: "add" }
+  | { mode: "edit"; clientKey: string };
 
 /**
  * Onboarding Step 3 — **Family**, the final wizard screen and the completion
@@ -27,7 +37,7 @@ type FormState = { mode: "closed" } | { mode: "add" } | { mode: "edit"; clientKe
  *
  * - **Skip & finish** (0 members) / **Finish setup** (≥1) → `completeOnboardingFn`
  *   (uploads family avatars, writes the rows, stamps `onboarding_completed_at`),
- *   then a full-screen loader rides the redirect to `/dashboard`.
+ *   then a full-screen loader rides the redirect to `/welcome`.
  * - **Back** → Profile.
  * - The footer primary is disabled while the inline form is open (so in-progress
  *   input is never silently dropped) and while the final write is running.
@@ -37,9 +47,11 @@ export function OnboardStepFamily() {
   const navigate = useNavigate();
 
   // The full-screen brand loader covers the complete → redirect transition.
-  const { show, hide } = useScreenLoader({ renderLoader: () => <AccCreationLoader /> });
+  const { show, hide } = useScreenLoader({
+    renderLoader: () => <AccCreationLoader />,
+  });
   const { complete, isCompleting, error } = useCompleteOnboarding({
-    onSuccess: () => navigate({ to: "/dashboard" }),
+    onSuccess: () => navigate({ to: "/welcome" }),
     onError: hide, // a failed write drops the loader; success keeps it up through nav
   });
 
@@ -73,7 +85,9 @@ export function OnboardStepFamily() {
 
   const handleSave = (clientKey: string, member: FamilyMemberValues) => {
     commit(
-      entries.map((entry) => (entry.clientKey === clientKey ? { clientKey, ...member } : entry)),
+      entries.map((entry) =>
+        entry.clientKey === clientKey ? { clientKey, ...member } : entry,
+      ),
     );
     closeForm();
   };
@@ -85,8 +99,11 @@ export function OnboardStepFamily() {
   const isEmpty = entries.length === 0;
   const atCap = entries.length >= MAX_FAMILY_MEMBERS;
   const formOpen = formState.mode !== "closed";
-  const editingKey = formState.mode === "edit" ? formState.clientKey : undefined;
-  const editing = editingKey ? entries.find((entry) => entry.clientKey === editingKey) : undefined;
+  const editingKey =
+    formState.mode === "edit" ? formState.clientKey : undefined;
+  const editing = editingKey
+    ? entries.find((entry) => entry.clientKey === editingKey)
+    : undefined;
 
   // Final step: persist the collected members (avatars + rows + completion stamp)
   // and ride the loader into the dashboard. Disabled while the inline form is open.
@@ -101,7 +118,8 @@ export function OnboardStepFamily() {
       <div className="flex flex-col">
         <Heading>Add your Family</Heading>
         <Text size="sm" muted>
-          Link the people you manage with — partners, parents, kids. You can do it later too.
+          Link the people you manage with — partners, parents, kids. You can do
+          it later too.
         </Text>
       </div>
 
@@ -131,7 +149,9 @@ export function OnboardStepFamily() {
                 key={entry.clientKey}
                 member={entry}
                 disabled={formOpen}
-                onEdit={() => setFormState({ mode: "edit", clientKey: entry.clientKey })}
+                onEdit={() =>
+                  setFormState({ mode: "edit", clientKey: entry.clientKey })
+                }
                 onDelete={() => handleDelete(entry.clientKey)}
               />
             ))}
@@ -162,7 +182,9 @@ export function OnboardStepFamily() {
           initialValue={editing}
           onCancel={closeForm}
           onSubmit={(member) =>
-            formState.mode === "edit" ? handleSave(formState.clientKey, member) : handleAdd(member)
+            formState.mode === "edit"
+              ? handleSave(formState.clientKey, member)
+              : handleAdd(member)
           }
         />
       )}

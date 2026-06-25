@@ -18,7 +18,7 @@ import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as ProtectedOnboardingRouteImport } from './routes/_protected/onboarding'
 import { Route as ProtectedAppRouteImport } from './routes/_protected/_app'
-import { Route as ProtectedAppDashboardRouteImport } from './routes/_protected/_app/dashboard'
+import { Route as ProtectedAppWelcomeRouteImport } from './routes/_protected/_app/welcome'
 import { Route as ProtectedAppAppIndexRouteImport } from './routes/_protected/_app/app/index'
 
 const HealthRoute = HealthRouteImport.update({
@@ -64,9 +64,9 @@ const ProtectedAppRoute = ProtectedAppRouteImport.update({
   id: '/_app',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ProtectedAppDashboardRoute = ProtectedAppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const ProtectedAppWelcomeRoute = ProtectedAppWelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => ProtectedAppRoute,
 } as any)
 const ProtectedAppAppIndexRoute = ProtectedAppAppIndexRouteImport.update({
@@ -83,7 +83,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
-  '/dashboard': typeof ProtectedAppDashboardRoute
+  '/welcome': typeof ProtectedAppWelcomeRoute
   '/app/': typeof ProtectedAppAppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -94,7 +94,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
-  '/dashboard': typeof ProtectedAppDashboardRoute
+  '/welcome': typeof ProtectedAppWelcomeRoute
   '/app': typeof ProtectedAppAppIndexRoute
 }
 export interface FileRoutesById {
@@ -108,7 +108,7 @@ export interface FileRoutesById {
   '/_protected/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
-  '/_protected/_app/dashboard': typeof ProtectedAppDashboardRoute
+  '/_protected/_app/welcome': typeof ProtectedAppWelcomeRoute
   '/_protected/_app/app/': typeof ProtectedAppAppIndexRoute
 }
 export interface FileRouteTypes {
@@ -121,7 +121,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/login'
     | '/auth/signup'
-    | '/dashboard'
+    | '/welcome'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,7 +132,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/login'
     | '/auth/signup'
-    | '/dashboard'
+    | '/welcome'
     | '/app'
   id:
     | '__root__'
@@ -145,7 +145,7 @@ export interface FileRouteTypes {
     | '/_protected/onboarding'
     | '/auth/login'
     | '/auth/signup'
-    | '/_protected/_app/dashboard'
+    | '/_protected/_app/welcome'
     | '/_protected/_app/app/'
   fileRoutesById: FileRoutesById
 }
@@ -222,11 +222,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAppRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/_app/dashboard': {
-      id: '/_protected/_app/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof ProtectedAppDashboardRouteImport
+    '/_protected/_app/welcome': {
+      id: '/_protected/_app/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof ProtectedAppWelcomeRouteImport
       parentRoute: typeof ProtectedAppRoute
     }
     '/_protected/_app/app/': {
@@ -254,12 +254,12 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 )
 
 interface ProtectedAppRouteChildren {
-  ProtectedAppDashboardRoute: typeof ProtectedAppDashboardRoute
+  ProtectedAppWelcomeRoute: typeof ProtectedAppWelcomeRoute
   ProtectedAppAppIndexRoute: typeof ProtectedAppAppIndexRoute
 }
 
 const ProtectedAppRouteChildren: ProtectedAppRouteChildren = {
-  ProtectedAppDashboardRoute: ProtectedAppDashboardRoute,
+  ProtectedAppWelcomeRoute: ProtectedAppWelcomeRoute,
   ProtectedAppAppIndexRoute: ProtectedAppAppIndexRoute,
 }
 

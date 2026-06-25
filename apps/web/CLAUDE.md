@@ -32,12 +32,12 @@ bun run test      # placeholder — no tests yet
 There are no public-facing pages — every route requires an active session.
 If no session exists, the user lands on `/auth/login`.
 
-| Group | Directory | URL | Session behavior |
-|-------|-----------|-----|------------------|
-| Root | `src/routes/index.tsx` | `/` | Redirects: session → `/dashboard`, no session → `/auth/login` |
-| Health | `src/routes/health.tsx` | `/health` | Infrastructure endpoint, no session check |
-| Auth | `src/routes/auth/` | `/auth/*` | Redirects to `/dashboard` if already signed in |
-| Protected | `src/routes/_protected/` | Pathless layout — children have their own URLs | Redirects to `/auth/login` if not signed in |
+| Group     | Directory                | URL                                            | Session behavior                                            |
+| --------- | ------------------------ | ---------------------------------------------- | ----------------------------------------------------------- |
+| Root      | `src/routes/index.tsx`   | `/`                                            | Redirects: session → `/welcome`, no session → `/auth/login` |
+| Health    | `src/routes/health.tsx`  | `/health`                                      | Infrastructure endpoint, no session check                   |
+| Auth      | `src/routes/auth/`       | `/auth/*`                                      | Redirects to `/welcome` if already signed in                |
+| Protected | `src/routes/_protected/` | Pathless layout — children have their own URLs | Redirects to `/auth/login` if not signed in                 |
 
 Session checking uses `@nafios/auth-core` via server functions in `src/lib/auth-fns.ts`.
 The protected layout renders a navbar with app name, user email, and logout button.
@@ -93,6 +93,7 @@ features/<name>/
 Not every feature needs all three folders — create them as needed.
 
 Current features:
+
 - `features/auth/` — login form, signup form, password reset form components
 
 ### `lib/` — server functions and app infrastructure
@@ -102,6 +103,7 @@ Server-side code that is not frontend UI: TanStack server functions
 infrastructure that routes and features call into.
 
 Current files:
+
 - `lib/auth-fns.ts` — session and sign-out server functions (wraps `@nafios/auth-core`)
 
 ### `components/` — shell-wide shared UI
@@ -146,6 +148,7 @@ else is a package.
 ## Build output
 
 After `bun run build`:
+
 - Client assets: `.output/public/` (served as static files)
 - Server bundle: `.output/server/index.mjs` (Node SSR server)
 - Netlify SSR function: `.netlify/v1/functions/server.mjs` (auto-emitted by plugin)
@@ -175,11 +178,11 @@ Full CLI runbook: [supabase/README.md](../../supabase/README.md). Spec:
 
 ### Connection
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| API (PostgREST) | `https://ohkyujzctlukaifigmon.supabase.co` | Supabase API endpoint |
+| Service            | URL                                                           | Purpose                        |
+| ------------------ | ------------------------------------------------------------- | ------------------------------ |
+| API (PostgREST)    | `https://ohkyujzctlukaifigmon.supabase.co`                    | Supabase API endpoint          |
 | Studio (Dashboard) | `https://supabase.com/dashboard/project/ohkyujzctlukaifigmon` | Schema, auth, logs, SQL editor |
-| Postgres | from `DATABASE_URL` (Project Settings → Database) | Direct DB access |
+| Postgres           | from `DATABASE_URL` (Project Settings → Database)             | Direct DB access               |
 
 Email testing now uses the project's configured SMTP / the Auth → Users flow in
 the dashboard rather than a local Mailpit inbox.
@@ -208,6 +211,7 @@ RLS is intentionally disabled — authorization is handled at the application
 layer (ADR-0019).
 
 Migrations:
+
 - `supabase/migrations/20260613000000_create_profiles_table.sql`
 - `supabase/migrations/20260613000001_create_family_members_table.sql`
 - `supabase/migrations/20260618000000_create_insert_user_profile_rpc.sql`

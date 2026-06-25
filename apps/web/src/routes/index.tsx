@@ -9,6 +9,6 @@ export const Route = createFileRoute("/")({
       throw redirect({ to: "/auth/login" });
     }
     // Signed in: unfinished onboarding resumes at /onboarding; otherwise the app.
-    throw redirect({ to: onboardingCompleted ? "/dashboard" : "/onboarding" });
+    throw redirect({ to: onboardingCompleted ? "/welcome" : "/onboarding" });
   },
 });
