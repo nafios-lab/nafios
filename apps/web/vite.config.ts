@@ -18,6 +18,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "~": path.resolve(import.meta.dirname, "src"),
+      // Force tslib to its pure-ESM build. tslib's `default` export condition
+      // resolves to the CJS `tslib.js` (which sets `__esModule` but has no real
+      // `default`). When Nitro's SSR rollup bundles a default-style tslib import,
+      // it emits `__toESM(tslib).default` — undefined at runtime — and the SSR
+      // function crashes on init with "Cannot destructure property '__extends'".
+      // The ESM build exposes real named exports, so no CJS interop is generated.
+      tslib: "tslib/tslib.es6.mjs",
     },
   },
   server: {
