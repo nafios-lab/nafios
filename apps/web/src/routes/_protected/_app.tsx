@@ -1,7 +1,7 @@
 import { SidebarInset, SidebarProvider } from "@nafios/ui/components/ui/sidebar";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
-import { Navbar } from "../../components/navbar";
+import { Navbar, NavbarProvider } from "../../components/navbar";
 import { Sidebar } from "../../components/sidebar";
 
 export const Route = createFileRoute("/_protected/_app")({
@@ -16,7 +16,6 @@ export const Route = createFileRoute("/_protected/_app")({
 });
 
 function AppLayout() {
-  const { session } = Route.useRouteContext();
   return (
     // The rail is pinned to the collapsed (icon-only) state: `open={false}` with
     // a no-op `onOpenChange` makes it non-expandable. `--sidebar-width-icon`
@@ -26,13 +25,15 @@ function AppLayout() {
       onOpenChange={() => {}}
       style={{ "--sidebar-width-icon": "4rem" } as CSSProperties}
     >
-      <Sidebar />
-      <SidebarInset>
-        <Navbar email={session.user.email} />
-        <div className="flex-1 overflow-auto p-6">
-          <Outlet />
-        </div>
-      </SidebarInset>
+      <NavbarProvider>
+        <Sidebar />
+        <SidebarInset>
+          <Navbar />
+          <div className="flex-1 overflow-auto p-6">
+            <Outlet />
+          </div>
+        </SidebarInset>
+      </NavbarProvider>
     </SidebarProvider>
   );
 }

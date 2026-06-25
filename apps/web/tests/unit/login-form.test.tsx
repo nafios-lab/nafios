@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 // react-router (useNavigate + Link) and @nafios/auth-core are stubbed
 // process-wide in tests/setup.ts. The form drives the REAL signInFn, which calls
 // the shared `signInWithPassword` spy; navigation lands on the shared `navigate`
@@ -129,9 +123,7 @@ describe("LoginForm — submission", () => {
 
     // The submit error is surfaced inside an Alert, not plain text.
     await waitFor(() => {
-      expect(screen.getByRole("alert").textContent).toContain(
-        "Incorrect email or password.",
-      );
+      expect(screen.getByRole("alert").textContent).toContain("Incorrect email or password.");
     });
     expect(navigate).not.toHaveBeenCalled();
   });
@@ -146,9 +138,7 @@ describe("LoginForm — submission", () => {
     submitForm();
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Something went wrong. Please try again."),
-      ).toBeDefined();
+      expect(screen.getByText("Something went wrong. Please try again.")).toBeDefined();
     });
     expect(navigate).not.toHaveBeenCalled();
   });
