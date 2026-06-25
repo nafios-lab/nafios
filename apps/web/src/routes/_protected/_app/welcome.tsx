@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { UserMenu, useNavbar } from "../../../components/navbar";
+import { IconButton } from "@nafios/ui/components/ui/icon-button";
+import { LayoutGrid, Search } from "lucide-react";
+import { TextInput } from "@nafios/ui/components/text-input";
 
 export const Route = createFileRoute("/_protected/_app/welcome")({
   component: Welcome,
@@ -11,6 +14,20 @@ function Welcome() {
   // The root page composes its own bar: just search on the left, the user menu
   // on the right. No module title.
   useNavbar({
+    leftAside: (
+      <>
+        <IconButton
+          variant={"ghost"}
+          aria-label="module-menus"
+          icon={<LayoutGrid />}
+        />
+        <TextInput
+          className="min-w-[500px]"
+          placeholder="Search..."
+          iconRight={<Search />}
+        />
+      </>
+    ),
     rightAside: <UserMenu email={session.user.email} />,
   });
 
