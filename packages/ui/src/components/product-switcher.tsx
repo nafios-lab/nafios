@@ -88,7 +88,7 @@ function ProductSwitcher({
                     "group-focus-visible:-translate-y-0.5 group-focus-visible:bg-brand/15 group-focus-visible:ring-brand group-focus-visible:shadow-[0_6px_16px_-6px_hsl(var(--brand)/0.45)]",
                   )}
                 >
-                  <Icon className="size-5 group-hover:text-brand" />
+                  <Icon className="size-5" />
                 </span>
                 <Text as="span" variant="label" size="sm" className="leading-tight">
                   {item.label}
