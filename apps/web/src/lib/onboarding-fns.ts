@@ -186,8 +186,9 @@ export const completeOnboardingFn = createServerFn({ method: "POST" })
   });
 
 /**
- * The onboarding gate's view of the current request: is there a session, and has
- * that user finished onboarding (`profiles.onboarding_completed_at` set)?
+ * The onboarding gate's view of the current request: is there a session, has
+ * that user finished onboarding (`profiles.onboarding_completed_at` set), and
+ * what avatar should the shell show?
  *
  * Route guards use `onboardingCompleted` to keep a signed-in-but-incomplete user
  * out of the app (bounced to `/onboarding`). The wizard always reopens at the
@@ -195,28 +196,46 @@ export const completeOnboardingFn = createServerFn({ method: "POST" })
  * there is **no** furthest-step resume and no "how far did they get" signal is
  * needed here. Completion is an explicit timestamp, not a proxy — a user may
  * legitimately finish with zero family members.
+ *
+ * `avatarUrl` rides along on the *same* profile read the gate already performs,
+ * so the shell's account menu gets the account avatar with no extra round-trip.
+ * The `avatars` bucket is private, so the stored object path is not directly
+ * displayable — we mint a short-lived **signed** URL, or `null` when none is
+ * saved or signing fails (a broken/expired object must never break a protected
+ * navigation; the menu simply falls back to initials).
  */
 export const getOnboardingStatusFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<{
     session: AuthSession | null;
     onboardingCompleted: boolean;
+    avatarUrl: string | null;
   }> => {
     const cookies = await getRequestCookieAdapter();
 
     const sessionResult = await getSession(createServerClient(cookies));
     const session = sessionResult.error ? null : sessionResult.data.session;
-    if (!session) return { session: null, onboardingCompleted: false };
+    if (!session) return { session: null, onboardingCompleted: false, avatarUrl: null };
 
     const db = createServerDb(cookies);
     const { data } = await db
       .from("profiles")
-      .select("onboarding_completed_at")
+      .select("onboarding_completed_at, avatar_url")
       .eq("id", session.user.id)
       .maybeSingle();
+
+    let avatarUrl: string | null = null;
+    if (data?.avatar_url) {
+      try {
+        avatarUrl = (await signAvatarUrl({ path: data.avatar_url })).url;
+      } catch {
+        avatarUrl = null;
+      }
+    }
 
     return {
       session,
       onboardingCompleted: Boolean(data?.onboarding_completed_at),
+      avatarUrl,
     };
   },
 );

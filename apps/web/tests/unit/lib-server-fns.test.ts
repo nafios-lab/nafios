@@ -250,8 +250,9 @@ describe("getOnboardingStatusFn", () => {
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session: null, onboardingCompleted: false });
+    expect(result).toEqual({ session: null, onboardingCompleted: false, avatarUrl: null });
     expect(createServerDb).not.toHaveBeenCalled();
+    expect(signAvatarUrl).not.toHaveBeenCalled();
   });
 
   test("treats an errored session probe as no session", async () => {
@@ -259,7 +260,7 @@ describe("getOnboardingStatusFn", () => {
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session: null, onboardingCompleted: false });
+    expect(result).toEqual({ session: null, onboardingCompleted: false, avatarUrl: null });
   });
 
   test("reports incomplete when the profile carries no completion timestamp", async () => {
@@ -269,7 +270,7 @@ describe("getOnboardingStatusFn", () => {
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session, onboardingCompleted: false });
+    expect(result).toEqual({ session, onboardingCompleted: false, avatarUrl: null });
     expect(from).toHaveBeenCalledWith("profiles");
     expect(eq).toHaveBeenCalledWith("id", "u1");
   });
@@ -281,7 +282,7 @@ describe("getOnboardingStatusFn", () => {
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session, onboardingCompleted: true });
+    expect(result).toEqual({ session, onboardingCompleted: true, avatarUrl: null });
   });
 
   test("reports incomplete when no profile row exists", async () => {
@@ -291,7 +292,42 @@ describe("getOnboardingStatusFn", () => {
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session, onboardingCompleted: false });
+    expect(result).toEqual({ session, onboardingCompleted: false, avatarUrl: null });
+    expect(signAvatarUrl).not.toHaveBeenCalled();
+  });
+
+  test("signs the stored account avatar for the shell on the same profile read", async () => {
+    const session = fakeSession("u1");
+    getSession.mockResolvedValue({ error: null, data: { session } });
+    maybeSingle.mockResolvedValue({
+      data: {
+        onboarding_completed_at: "2026-06-18T00:00:00Z",
+        avatar_url: "avatars/u1/avatar.webp",
+      },
+    });
+    signAvatarUrl.mockResolvedValue({ url: "https://signed/u1.webp?token=t" });
+
+    const result = await getOnboardingStatusFn();
+
+    expect(signAvatarUrl).toHaveBeenCalledWith({ path: "avatars/u1/avatar.webp" });
+    expect(result).toEqual({
+      session,
+      onboardingCompleted: true,
+      avatarUrl: "https://signed/u1.webp?token=t",
+    });
+  });
+
+  test("degrades to avatarUrl:null when signing throws (a broken path must not block navigation)", async () => {
+    const session = fakeSession("u1");
+    getSession.mockResolvedValue({ error: null, data: { session } });
+    maybeSingle.mockResolvedValue({
+      data: { onboarding_completed_at: null, avatar_url: "avatars/u1/avatar.webp" },
+    });
+    signAvatarUrl.mockRejectedValue(new Error("object not found"));
+
+    const result = await getOnboardingStatusFn();
+
+    expect(result).toEqual({ session, onboardingCompleted: false, avatarUrl: null });
   });
 });
 

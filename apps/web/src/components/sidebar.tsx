@@ -10,7 +10,9 @@ import {
   SidebarMenuItem,
   Sidebar as SidebarRoot,
 } from "@nafios/ui/components/ui/sidebar";
-import { type LucideIcon, Settings } from "lucide-react";
+import { UserMenu, type UserMenuUser } from "@nafios/ui/components/user-menu";
+import { useNavigate } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import {
   createContext,
   type ReactNode,
@@ -19,6 +21,7 @@ import {
   useLayoutEffect,
   useState,
 } from "react";
+import { signOutFn } from "../lib/auth-fns";
 
 /**
  * NafiOS shell navigation rail — a presentational *skeleton* shared by every
@@ -28,7 +31,7 @@ import {
  * `useSidebarNav()`.
  *
  * The skeleton owns only the constant chrome — the logo header and the global
- * footer (AI Assistant, Settings) that every module shares. The middle item
+ * footer (the user account menu) that every module shares. The middle item
  * listing is filled per route, so welcome, finance, calendar, … each surface
  * their own menu.
  *
@@ -88,14 +91,30 @@ export function useSidebarNav(items: SidebarNavItem[]) {
   }, [setItems, items]);
 }
 
+export interface SidebarProps {
+  /**
+   * The signed-in user shown in the footer account menu. The shell maps the
+   * active session onto {@link UserMenuUser} before passing it in, keeping the
+   * rail decoupled from any auth provider.
+   */
+  user: UserMenuUser;
+}
+
 /**
  * The shell navigation rail skeleton. Render exactly once, inside both the
  * shadcn `<SidebarProvider>` (open-state) and a `<SidebarNavProvider>` (item
- * slot). It draws the logo header and the global footer, and drops each route's
- * declared items into the middle.
+ * slot). It draws the logo header and the global footer (the account menu),
+ * and drops each route's declared items into the middle.
  */
-export function Sidebar() {
+export function Sidebar({ user }: SidebarProps) {
   const items = useContext(SidebarNavContext);
+  const navigate = useNavigate();
+
+  // Mirrors the navbar logout: clear the server session, then bounce to login.
+  async function handleLogout() {
+    await signOutFn();
+    navigate({ to: "/auth/login" });
+  }
 
   return (
     // `dark` pins the rail to the dark palette regardless of the app theme,
@@ -123,35 +142,10 @@ export function Sidebar() {
       </SidebarContent>
 
       <SidebarFooter className="items-center py-3">
-        <SidebarMenu className="items-center gap-1">
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="AI Assistant">
-              <AssistantOrb />
-              <span>AI Assistant</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Settings">
-              <Settings />
-              <span>Settings</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {/* In the collapsed rail the trigger is just the avatar; open the menu
+            to the right so it clears the rail, anchored to its bottom edge. */}
+        <UserMenu user={user} side="right" align="end" onLogout={handleLogout} />
       </SidebarFooter>
     </SidebarRoot>
-  );
-}
-
-/** Iridescent AI-assistant glyph (display only). */
-function AssistantOrb() {
-  return (
-    <span
-      aria-hidden
-      className="size-5 shrink-0 rounded-full shadow-inner ring-1 ring-white/20"
-      style={{
-        backgroundImage:
-          "conic-gradient(from 210deg at 50% 50%, #4cc9f0, #8b7cf6, #f472b6, #ff8a5b, #4cc9f0)",
-      }}
-    />
   );
 }

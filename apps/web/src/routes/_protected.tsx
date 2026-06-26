@@ -3,7 +3,7 @@ import { getOnboardingStatusFn } from "../lib/onboarding-fns";
 
 export const Route = createFileRoute("/_protected")({
   beforeLoad: async ({ location }) => {
-    const { session, onboardingCompleted } = await getOnboardingStatusFn();
+    const { session, onboardingCompleted, avatarUrl } = await getOnboardingStatusFn();
 
     // Session gate for everything protected. No session → bounce to login,
     // remembering where they were headed. The onboarding-completion gate lives
@@ -14,7 +14,8 @@ export const Route = createFileRoute("/_protected")({
     }
 
     // Hand the status down so `_app` can gate on completion without refetching.
-    return { session, onboardingCompleted };
+    // `avatarUrl` rides along for the shell's account menu (same profile read).
+    return { session, onboardingCompleted, avatarUrl };
   },
   // No component: this is a pure gate. TanStack renders <Outlet/> by default,
   // so children (onboarding, the `_app` shell) own their own layout.
