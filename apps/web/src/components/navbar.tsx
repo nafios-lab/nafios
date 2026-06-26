@@ -42,26 +42,21 @@ const EMPTY: NavbarContent = {};
 // read only the (stable) setter. That split means a route calling useNavbar()
 // updates the bar without re-rendering itself — so there's no update loop.
 const NavbarContentContext = createContext<NavbarContent>(EMPTY);
-const NavbarSetContext = createContext<(content: NavbarContent) => void>(
-  () => {},
-);
+const NavbarSetContext = createContext<(content: NavbarContent) => void>(() => {});
 
 /** Wrap the shell so `<Navbar />` and the module routes share one navbar slot. */
 export function NavbarProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<NavbarContent>(EMPTY);
   return (
     <NavbarSetContext.Provider value={setContent}>
-      <NavbarContentContext.Provider value={content}>
-        {children}
-      </NavbarContentContext.Provider>
+      <NavbarContentContext.Provider value={content}>{children}</NavbarContentContext.Provider>
     </NavbarSetContext.Provider>
   );
 }
 
 // useLayoutEffect on the client (no flash when navigating between modules),
 // useEffect on the server to avoid React's SSR useLayoutEffect warning.
-const useIsomorphicLayoutEffect =
-  typeof window === "undefined" ? useEffect : useLayoutEffect;
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /**
  * Declare this route's navbar content. Applied on mount and cleared on unmount,
@@ -84,9 +79,7 @@ export function useNavbar({ leftAside, rightAside }: NavbarContent) {
 
 /** Consistent module heading, sized to sit beside the search bar. */
 export function NavbarTitle({ children }: { children: ReactNode }) {
-  return (
-    <span className="text-lg font-semibold tracking-tight">{children}</span>
-  );
+  return <span className="text-lg font-semibold tracking-tight">{children}</span>;
 }
 
 /**
