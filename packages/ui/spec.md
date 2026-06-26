@@ -45,6 +45,12 @@ Re-exported from `@nafios/ui/components/ui/*`:
 
 Re-exported from `@nafios/ui/components/*`:
 `ConfirmDialog` — confirmation modal composed from Dialog + Button.
+`UserMenu` — account dropdown anchored to the user's avatar, composed from
+DropdownMenu + Avatar. Takes a presentation-focused `user`
+(`{ name?, email?, avatarUrl? }`) and optional `onProfile` / `onSettings` /
+`onLogout` callbacks; each action is a no-op when its callback is omitted. The
+avatar falls back to derived initials, then a generic icon, when no image is
+supplied.
 `ScreenLoader` — global full-screen loading overlay. Portals to `document.body`
 (renders above all app content regardless of JSX location), SSR-safe (renders
 nothing on the server / before client mount), locks body scroll while visible,

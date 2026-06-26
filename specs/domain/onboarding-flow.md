@@ -43,11 +43,11 @@ uniqueness, and the module-mount machinery behind the dashboard.
 Three logical steps across **two** onboarding screens (Profile, Family); the
 Family step's CTA is the completion commit point.
 
-| Step | What | Persists to DB? | Where |
-|---|---|---|---|
-| **Step 1 — Signup** | `email` + `password` → create the auth user | ✅ `auth.users` (credential) | Phase A, standalone form at `/auth/signup` |
-| **Step 2 — Profile** | `avatar` + `mobile` — **both optional, skippable** | ✅ on **Save** (skipped → nothing) | onboarding wizard, screen 1 |
-| **Step 3 — Family** | enter 0–10 family members, then **Finish** | ✅ on **Finish** (family rows + completion stamp) | onboarding wizard, screen 2 (final) |
+| Step                 | What                                               | Persists to DB?                                   | Where                                      |
+| -------------------- | -------------------------------------------------- | ------------------------------------------------- | ------------------------------------------ |
+| **Step 1 — Signup**  | `email` + `password` → create the auth user        | ✅ `auth.users` (credential)                      | Phase A, standalone form at `/auth/signup` |
+| **Step 2 — Profile** | `avatar` + `mobile` — **both optional, skippable** | ✅ on **Save** (skipped → nothing)                | onboarding wizard, screen 1                |
+| **Step 3 — Family**  | enter 0–10 family members, then **Finish**         | ✅ on **Finish** (family rows + completion stamp) | onboarding wizard, screen 2 (final)        |
 
 > **No `username`.** v2.0.0 collects only `avatar` and `mobile` in the Profile
 > step. The `profiles.username` column exists (nullable, non-unique) but is **not
@@ -58,30 +58,30 @@ Family step's CTA is the completion commit point.
 ```ts
 // Profile step (apps/web — features/auth/schemas/onboarding-schema.ts)
 interface ProfileValues {
-  avatar?: string;   // in-memory data URL while editing; uploaded to Storage on Save
-  phone?: string;    // formatted SG mobile, e.g. "(+65) 9123 4567"
+  avatar?: string; // in-memory data URL while editing; uploaded to Storage on Save
+  phone?: string; // formatted SG mobile, e.g. "(+65) 9123 4567"
 }
 
 // Family step (one or more)
 interface FamilyMemberValues {
-  name: string;                    // required
+  name: string; // required
   relationship: "spouse" | "child" | "parent" | "sibling" | "other";
-  avatar?: string;                 // data URL → Storage on final Confirm
+  avatar?: string; // data URL → Storage on final Confirm
   nric?: string;
-  mobileNo?: string;               // formatted SG mobile (→ family_members.mobile_no)
-  dateOfBirth?: string;            // ISO YYYY-MM-DD
+  mobileNo?: string; // formatted SG mobile (→ family_members.mobile_no)
+  dateOfBirth?: string; // ISO YYYY-MM-DD
 }
 ```
 
 ### Where every field lands
 
-| Field | Step | Persisted to | Notes |
-|---|---|---|---|
-| `email` / `password` | Step 1 | `auth.users` (credential) | created by `signUp` |
-| account `avatar` | Step 2 | `public.profiles.avatar_url` | uploaded to Storage; column holds the **object path** `avatars/{uid}/avatar.webp`, not a data URL |
-| `mobile` | Step 2 | `auth.users` **`user_metadata.mobile`** | written via `auth.updateUser({ data })`; **no** SMS verification; kept with the auth identity for future optional SMS 2FA |
-| family members (0–10) | Step 3 | `public.family_members.*` | avatars → Storage `avatars/{uid}/family/{clientKey}.webp` |
-| `onboarding_completed_at` | Step 3 (Finish) | `public.profiles` | the completion stamp — written **last** |
+| Field                     | Step            | Persisted to                            | Notes                                                                                                                     |
+| ------------------------- | --------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `email` / `password`      | Step 1          | `auth.users` (credential)               | created by `signUp`                                                                                                       |
+| account `avatar`          | Step 2          | `public.profiles.avatar_url`            | uploaded to Storage; column holds the **object path** `avatars/{uid}/avatar.webp`, not a data URL                         |
+| `mobile`                  | Step 2          | `auth.users` **`user_metadata.mobile`** | written via `auth.updateUser({ data })`; **no** SMS verification; kept with the auth identity for future optional SMS 2FA |
+| family members (0–10)     | Step 3          | `public.family_members.*`               | avatars → Storage `avatars/{uid}/family/{clientKey}.webp`                                                                 |
+| `onboarding_completed_at` | Step 3 (Finish) | `public.profiles`                       | the completion stamp — written **last**                                                                                   |
 
 > **Why `user_metadata.mobile`, not the native `auth.users.phone` column:** the
 > field is a human-formatted display string `(+65) 9123 4567`, not E.164, and the
@@ -95,12 +95,12 @@ the whole step; either way the wizard advances to Family.
 
 **On Save** — two independent, each-optional operations run server-side, in order:
 
-1. **Avatar upload** — *only if an avatar was provided.* Decode the in-memory data
+1. **Avatar upload** — _only if an avatar was provided._ Decode the in-memory data
    URL → bytes; upload to `avatars/{uid}/avatar.webp` (upsert, deterministic path);
    write the returned object path into `profiles.avatar_url` via the
    `save_onboarding_profile` RPC.
-2. **Mobile write** — *only if a mobile was provided.* `auth.updateUser({ data: {
-   mobile } })` → `user_metadata.mobile`.
+2. **Mobile write** — _only if a mobile was provided._ `auth.updateUser({ data: {
+mobile } })` → `user_metadata.mobile`.
 
 Empty fields are not processed (no upload, no metadata write). After both succeed,
 the submitted values are kept in wizard state and the wizard advances to Family.
@@ -142,12 +142,12 @@ STEP 3 — Family        Family screen → collect members in wizard state (NO w
                                 ├─ upload each family avatar → Storage
                                 └─ insert_user_profile RPC: family rows (DELETE+INSERT)
                                    + UPDATE profiles SET onboarding_completed_at = now()  ← COMMIT POINT
-                                → on success: navigate → /dashboard
+                                → on success: navigate → /welcome
 ```
 
 **Why it's safe:** every step writes only its own data on an explicit
 submit/finish; `onboarding_completed_at` is stamped only by the final step
-(Family → **Finish**), so any interruption leaves the account *incomplete* and the
+(Family → **Finish**), so any interruption leaves the account _incomplete_ and the
 guards resume it; every write is idempotent (deterministic avatar path, `COALESCE`
 profile update, identical metadata, family `DELETE`+`INSERT`). The final write
 reuses the existing idempotent **`insert_user_profile`** RPC: it replaces the
@@ -220,15 +220,15 @@ are signed at display time via `@nafios/storage`'s `signAvatarUrl` (used by
 gate) hosts the wizard. The single source of truth for "ready" is
 `onboarding_completed_at`.
 
-| Route | No session | Session, **incomplete** | Session, **complete** |
-|---|---|---|---|
-| `/` | → `/auth/login` | → `/onboarding` | → `/dashboard` |
-| `/auth/*` | stay | → `/` (→ onboarding) | → `/` (→ dashboard) |
-| `/onboarding` | → `/auth/login` | render the wizard | (guard may send to `/dashboard`) |
-| `/_protected/_app/*` | → `/auth/login` | → `/onboarding` | render the app |
+| Route                | No session      | Session, **incomplete** | Session, **complete**          |
+| -------------------- | --------------- | ----------------------- | ------------------------------ |
+| `/`                  | → `/auth/login` | → `/onboarding`         | → `/welcome`                   |
+| `/auth/*`            | stay            | → `/` (→ onboarding)    | → `/` (→ dashboard)            |
+| `/onboarding`        | → `/auth/login` | render the wizard       | (guard may send to `/welcome`) |
+| `/_protected/_app/*` | → `/auth/login` | → `/onboarding`         | render the app                 |
 
 On a successful **Finish**, the Family step also issues a client `navigate({ to:
-"/dashboard" })` (a full-screen loader covers the transition). The guards above
+"/welcome" })` (a full-screen loader covers the transition). The guards above
 are the backstop — they enforce the same destination on any subsequent visit —
 but the happy-path redirect comes from the wizard, not a guard.
 
@@ -238,7 +238,7 @@ Resume keys off a single bit — `onboarding_completed_at` — and **always open
 wizard at the Profile step** (no per-step pointer, no furthest-step routing):
 
 ```
-onboarding_completed_at set        → /dashboard
+onboarding_completed_at set        → /welcome
 otherwise                          → /onboarding @ Profile (Step 2), fields rehydrated
 ```
 
@@ -256,7 +256,7 @@ otherwise                          → /onboarding @ Profile (Step 2), fields re
 > final screen and its CTA (**Skip & finish** at 0 members / **Finish setup** at
 > ≥1) is the completion commit point. A dedicated review was dropped because the
 > onboarding data is small, all-optional, and low-stakes, and the Family screen is
-> *already* a live review surface — it lists every member with inline edit/delete,
+> _already_ a live review surface — it lists every member with inline edit/delete,
 > and the Stepper still lets a user click back to Profile to amend it. A separate
 > read-only summary would only duplicate that list and add a screen of friction.
 > Profile fields (avatar/mobile) are not re-shown before commit; this is an
@@ -275,13 +275,13 @@ only user-actionable failure in the whole flow is a duplicate email at signup.
 > "Add member" action — they are form-entry constraints, not persistence or
 > submission failures, and are out of scope for the failure table below.
 
-| Failure | Surfaced as | Recovery |
-|---|---|---|
-| Duplicate email (Step 1) | inline, user-actionable | edit email / sign in |
-| Avatar upload / profile write (Step 2) | `system` | retried ≤3×; on exhaustion → held on Step 2 / generic error |
-| `updateUser` mobile write (Step 2) | `system` | retried ≤3×; on exhaustion → held on Step 2 |
-| Family + completion write (Step 3) | `system` | retried ≤3×; stamp not written → account stays incomplete, reopens at Profile |
-| Prior partial attempt | resume | reopens at Profile with fields rehydrated; idempotent ops prevent duplication |
+| Failure                                | Surfaced as             | Recovery                                                                      |
+| -------------------------------------- | ----------------------- | ----------------------------------------------------------------------------- |
+| Duplicate email (Step 1)               | inline, user-actionable | edit email / sign in                                                          |
+| Avatar upload / profile write (Step 2) | `system`                | retried ≤3×; on exhaustion → held on Step 2 / generic error                   |
+| `updateUser` mobile write (Step 2)     | `system`                | retried ≤3×; on exhaustion → held on Step 2                                   |
+| Family + completion write (Step 3)     | `system`                | retried ≤3×; stamp not written → account stays incomplete, reopens at Profile |
+| Prior partial attempt                  | resume                  | reopens at Profile with fields rehydrated; idempotent ops prevent duplication |
 
 Server functions return **errors as data** (`{ ok: false, code }`); the calling hook
 retries up to `MAX_PROFILE_ATTEMPTS` (3) on `system` faults.
@@ -290,7 +290,10 @@ retries up to `MAX_PROFILE_ATTEMPTS` (3) on `system` faults.
 
 ```ts
 // Step 2 — user set both fields, then Save
-await saveOnboardingProfileFn({ avatar: "data:image/webp;base64,…", mobile: "(+65) 9123 4567" });
+await saveOnboardingProfileFn({
+  avatar: "data:image/webp;base64,…",
+  mobile: "(+65) 9123 4567",
+});
 // → uploads avatars/{uid}/avatar.webp, save_onboarding_profile(p_avatar_url),
 //   updateUserMetadata({ mobile }); wizard advances to Family.
 

@@ -99,19 +99,22 @@ describe("LoginForm — submission", () => {
   });
 
   test("navigates to the redirectTo target when provided", async () => {
-    render(<LoginForm redirectTo="/dashboard" />);
+    render(<LoginForm redirectTo="/welcome" />);
     fillValid();
 
     submitForm();
 
     await waitFor(() => {
-      expect(navigate).toHaveBeenCalledWith({ to: "/dashboard" });
+      expect(navigate).toHaveBeenCalledWith({ to: "/welcome" });
     });
   });
 
   test("shows an anti-enumeration message and does not navigate on wrong credentials", async () => {
     signInWithPassword.mockResolvedValue({
-      error: { code: "invalid_credentials", message: "Invalid login credentials" },
+      error: {
+        code: "invalid_credentials",
+        message: "Invalid login credentials",
+      },
     });
     render(<LoginForm />);
     fillValid();

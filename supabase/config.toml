@@ -126,7 +126,7 @@ file_size_limit = "50MiB"
 
 # Account-holder + family-member avatars (onboarding). Private — reads go through
 # signed URLs at display time. See specs/domain/onboarding-flow.md and
-# issues/nafios-storage-avatars-bucket-setup.md.
+# specs/data/avatars-storage-bucket.md.
 #
 # NOTE: this block only provisions the LOCAL stack (and `supabase seed buckets`).
 # The hosted `nafios-staging` bucket must be created directly against staging

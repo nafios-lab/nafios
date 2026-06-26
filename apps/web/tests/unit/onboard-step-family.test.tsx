@@ -8,7 +8,10 @@ import { from, getSession, insertUserProfile, navigate, resetServerFnMocks } fro
 
 /** Steer the completion write to succeed by giving it a session. */
 function withSession(): void {
-  getSession.mockResolvedValue({ error: null, data: { session: { user: { id: "u1" } } } });
+  getSession.mockResolvedValue({
+    error: null,
+    data: { session: { user: { id: "u1" } } },
+  });
 }
 
 afterEach(cleanup);
@@ -66,7 +69,11 @@ describe("OnboardStepFamily — add", () => {
     renderStep();
     openAddForm();
     expect(
-      (screen.getByRole("button", { name: /Skip & finish/ }) as HTMLButtonElement).disabled,
+      (
+        screen.getByRole("button", {
+          name: /Skip & finish/,
+        }) as HTMLButtonElement
+      ).disabled,
     ).toBe(true);
   });
 
@@ -96,7 +103,9 @@ describe("OnboardStepFamily — seeded list", () => {
     fireEvent.click(screen.getByRole("button", { name: "Edit Aisha Rahman" }));
     expect(screen.getByText("Edit family member")).toBeDefined();
 
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Aisha Khan" } });
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Aisha Khan" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => {
@@ -167,7 +176,7 @@ describe("OnboardStepFamily — navigation (full wizard)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Skip & finish/ }));
 
     await waitFor(() => {
-      expect(navigate).toHaveBeenCalledWith({ to: "/dashboard" });
+      expect(navigate).toHaveBeenCalledWith({ to: "/welcome" });
     });
     // No members were added → completion writes an empty family list.
     expect(insertUserProfile).toHaveBeenCalledWith({ from }, { familyMembers: [] });

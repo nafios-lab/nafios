@@ -27,7 +27,7 @@ type FormState = { mode: "closed" } | { mode: "add" } | { mode: "edit"; clientKe
  *
  * - **Skip & finish** (0 members) / **Finish setup** (≥1) → `completeOnboardingFn`
  *   (uploads family avatars, writes the rows, stamps `onboarding_completed_at`),
- *   then a full-screen loader rides the redirect to `/dashboard`.
+ *   then a full-screen loader rides the redirect to `/welcome`.
  * - **Back** → Profile.
  * - The footer primary is disabled while the inline form is open (so in-progress
  *   input is never silently dropped) and while the final write is running.
@@ -37,9 +37,11 @@ export function OnboardStepFamily() {
   const navigate = useNavigate();
 
   // The full-screen brand loader covers the complete → redirect transition.
-  const { show, hide } = useScreenLoader({ renderLoader: () => <AccCreationLoader /> });
+  const { show, hide } = useScreenLoader({
+    renderLoader: () => <AccCreationLoader />,
+  });
   const { complete, isCompleting, error } = useCompleteOnboarding({
-    onSuccess: () => navigate({ to: "/dashboard" }),
+    onSuccess: () => navigate({ to: "/welcome" }),
     onError: hide, // a failed write drops the loader; success keeps it up through nav
   });
 

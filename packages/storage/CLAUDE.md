@@ -46,7 +46,7 @@ All public exports live in `src/index.ts` (the barrel):
 
 - **The `avatars` bucket must exist on staging before this works.** `supabase db
   push` does not create buckets — it is provisioned via SQL/dashboard against
-  hosted staging. See `issues/nafios-storage-avatars-bucket-setup.md`.
+  hosted staging. See [`specs/data/avatars-storage-bucket.md`](../../specs/data/avatars-storage-bucket.md).
 - **`SUPABASE_SERVICE_ROLE_KEY` must be set** (server env). The service-role
   client throws synchronously if it is missing.
 - **The `.webp` extension is fixed** for a deterministic path; the real encoding

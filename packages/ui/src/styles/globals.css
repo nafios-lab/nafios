@@ -42,6 +42,8 @@
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
   --color-sidebar-background: hsl(var(--sidebar-background));
+  /* Bare `sidebar` alias for shadcn's <Sidebar /> primitive (bg-sidebar). */
+  --color-sidebar: hsl(var(--sidebar-background));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-primary: hsl(var(--sidebar-primary));
   --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
@@ -211,7 +213,8 @@
   --chart-3: 36 60% 58%;
   --chart-4: 270 40% 70%;
   --chart-5: 0 50% 65%;
-  --sidebar-background: 240 6% 10%;
+  /* --sidebar-background: 240 6% 10%; */
+  --sidebar-background: 240 8% 7%;
   --sidebar-foreground: 0 0% 91%;
   --sidebar-primary: 120 22% 61%;
   --sidebar-primary-foreground: 240 8% 7%;

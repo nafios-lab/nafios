@@ -1,4 +1,6 @@
+import { ChevronRight } from "lucide-react";
 import type * as React from "react";
+import { useState } from "react";
 import { cn } from "../lib/utils.ts";
 import { Text } from "./typography/text.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
@@ -19,7 +21,7 @@ export interface ProductItem {
 }
 
 export interface ProductSwitcherProps {
-  /** Products to display in the grid. */
+  /** Products to display in the list. */
   items: ProductItem[];
   /**
    * Render-prop for the trigger element.
@@ -27,8 +29,6 @@ export interface ProductSwitcherProps {
    * The returned element must accept a `ref` (use `forwardRef` or a native element).
    */
   renderTrigger: (props: { open: boolean }) => React.ReactNode;
-  /** Number of columns in the grid. @default 4 */
-  columns?: number;
   /** Horizontal alignment relative to the trigger. @default "center" */
   align?: "start" | "center" | "end";
   /** Which side of the trigger to open on. @default "bottom" */
@@ -46,7 +46,6 @@ export interface ProductSwitcherProps {
 function ProductSwitcher({
   items,
   renderTrigger,
-  columns = 4,
   align = "center",
   side = "bottom",
   sideOffset = 8,
@@ -54,32 +53,64 @@ function ProductSwitcher({
   open: controlledOpen,
   onOpenChange,
 }: ProductSwitcherProps) {
+  // Controllable open state: when `open` is supplied the parent drives it,
+  // otherwise we track it internally. Either way `renderTrigger` receives the
+  // *real* open state — so an uncontrolled trigger can still style itself by it.
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+
+  function handleOpenChange(next: boolean) {
+    if (controlledOpen === undefined) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  }
+
   return (
-    <Popover open={controlledOpen} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>{renderTrigger({ open: controlledOpen ?? false })}</PopoverTrigger>
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>{renderTrigger({ open })}</PopoverTrigger>
       <PopoverContent
         align={align}
         side={side}
         sideOffset={sideOffset}
-        className={cn("w-auto p-2", contentClassName)}
+        className={cn("w-56 p-1.5", contentClassName)}
       >
-        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+        <div className="flex flex-col gap-0.5">
           {items.map((item) => {
             const Icon = item.icon;
             const inner = (
               <>
-                <Icon className="size-8" />
-                <Text as="span" variant="label" size="xs" className="leading-tight">
+                {/* App-icon tile: shaded rounded square framing the base logo SVG.
+                    On row hover/focus it lifts, brightens, and gains a brand ring + glow. */}
+                <span
+                  className={cn(
+                    "flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand/10",
+                    "shadow-sm ring-1 ring-transparent transition-all duration-200 ease-out",
+                    "group-hover:bg-brand/15 group-hover:ring-brand group-hover:shadow-[0_6px_16px_-6px_hsl(var(--brand)/0.45)]",
+                    "group-focus-visible:-translate-y-0.5 group-focus-visible:bg-brand/15 group-focus-visible:ring-brand group-focus-visible:shadow-[0_6px_16px_-6px_hsl(var(--brand)/0.45)]",
+                  )}
+                >
+                  <Icon className="size-5" />
+                </span>
+                <Text as="span" variant="label" size="sm" className="leading-tight">
                   {item.label}
                 </Text>
+                {/* "Open" affordance — slides + fades in on row hover/focus. */}
+                <ChevronRight
+                  aria-hidden="true"
+                  className={cn(
+                    "ml-auto size-4 shrink-0 -translate-x-1 text-foreground opacity-0 transition-all duration-200 ease-out",
+                    "group-hover:translate-x-0 group-hover:opacity-100",
+                    "group-focus-visible:translate-x-0 group-focus-visible:opacity-100",
+                  )}
+                />
               </>
             );
 
+            // Neutral `muted` for hover/active/focus — never the (blue) accent.
             const sharedClassName = cn(
-              "flex flex-col items-center justify-center gap-1.5 rounded-lg p-3 text-muted-foreground transition-colors",
-              "hover:bg-accent hover:text-accent-foreground",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-              item.active && "bg-accent/50 text-accent-foreground",
+              "group flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-muted-foreground transition-colors",
+              "hover:bg-muted hover:text-foreground",
+              "focus-visible:bg-muted focus-visible:text-foreground focus-visible:outline-none",
+              item.active && "bg-muted font-medium text-foreground",
             );
 
             if (item.href) {

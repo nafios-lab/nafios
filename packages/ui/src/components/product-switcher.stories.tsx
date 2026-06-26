@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Grid3X3 } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import {
   BudgetingLogo,
   CalendarLogo,
@@ -38,7 +38,7 @@ export const Default: Story = {
     items: products,
     renderTrigger: ({ open }) => (
       <Button variant={open ? "outline" : "ghost"} size="icon">
-        <Grid3X3 />
+        <LayoutGrid />
       </Button>
     ),
   },
@@ -52,19 +52,7 @@ export const WithActiveProduct: Story = {
     })),
     renderTrigger: ({ open }) => (
       <Button variant={open ? "outline" : "ghost"} size="icon">
-        <Grid3X3 />
-      </Button>
-    ),
-  },
-};
-
-export const ThreeColumns: Story = {
-  args: {
-    items: products,
-    columns: 3,
-    renderTrigger: ({ open }) => (
-      <Button variant={open ? "outline" : "ghost"} size="icon">
-        <Grid3X3 />
+        <LayoutGrid />
       </Button>
     ),
   },
@@ -75,7 +63,7 @@ export const WithLinks: Story = {
     items: products.map((p) => ({ ...p, href: `/${p.id}` })),
     renderTrigger: ({ open }) => (
       <Button variant={open ? "outline" : "ghost"} size="icon">
-        <Grid3X3 />
+        <LayoutGrid />
       </Button>
     ),
   },
@@ -87,9 +75,9 @@ export const CustomTrigger: Story = {
     renderTrigger: ({ open }) => (
       <button
         type="button"
-        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${open ? "border-brand bg-brand/10" : "border-input hover:bg-accent"}`}
+        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${open ? "border-brand bg-brand/10" : "border-input hover:bg-muted"}`}
       >
-        <Grid3X3 className="size-4" />
+        <LayoutGrid className="size-4" />
         Apps
       </button>
     ),
