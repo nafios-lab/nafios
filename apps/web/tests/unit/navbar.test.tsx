@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, setSystemTime, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   Navbar,
+  NavbarClock,
   type NavbarContent,
   NavbarProvider,
   NavbarTitle,
@@ -62,6 +63,23 @@ describe("NavbarTitle building block", () => {
   test("renders its children as the heading", () => {
     render(<NavbarTitle>Finance</NavbarTitle>);
     expect(screen.getByText("Finance")).toBeDefined();
+  });
+});
+
+describe("NavbarClock building block", () => {
+  // Pin the system clock so the rendered value is deterministic; restore the
+  // real clock afterwards so other suites see the true time.
+  afterEach(() => setSystemTime());
+
+  test("renders today's date and the current time, e.g. THU · 15 MAY · 09:42AM", async () => {
+    // Thu 15 May 2025, 09:42 local time — built in local time so the assertion
+    // holds regardless of the machine's timezone.
+    setSystemTime(new Date(2025, 4, 15, 9, 42, 0));
+
+    render(<NavbarClock />);
+
+    // The clock fills in on mount (it starts empty to avoid an SSR mismatch).
+    expect(await screen.findByText("THU · 15 MAY · 09:42AM")).toBeDefined();
   });
 });
 

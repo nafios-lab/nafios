@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { format } from "date-fns";
 import { Search } from "lucide-react";
 import {
   createContext,
@@ -79,6 +80,41 @@ export function useNavbar({ leftAside, rightAside }: NavbarContent) {
 /** Consistent module heading, sized to sit beside the search bar. */
 export function NavbarTitle({ children }: { children: ReactNode }) {
   return <span className="text-lg font-semibold tracking-tight">{children}</span>;
+}
+
+/**
+ * The current time on the client, re-read at the top of each minute. Returns
+ * `null` until mounted: the server has no clock that matches the browser's, so
+ * deferring the first value past hydration avoids a mismatch.
+ */
+function useNow(): Date | null {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    // Re-read the clock, then reschedule for the next minute boundary — the
+    // display has minute precision, so this flips the minute on time without
+    // re-rendering once a second.
+    function tick() {
+      setNow(new Date());
+      timeoutId = setTimeout(tick, 60_000 - (Date.now() % 60_000));
+    }
+    tick();
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  return now;
+}
+
+/** Live date + time building block, e.g. `THU · 15 MAY · 09:42AM`. */
+export function NavbarClock() {
+  const now = useNow();
+
+  return (
+    <span className="text-sm font-medium tabular-nums tracking-wide text-muted-foreground">
+      {now && format(now, "EEE · d MMM · hh:mma").toUpperCase()}
+    </span>
+  );
 }
 
 /** Global search building block (display-only prototype). */
