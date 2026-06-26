@@ -45,6 +45,22 @@ describe("ProductSwitcher", () => {
     expect(renderTrigger).toHaveBeenCalledWith({ open: false });
   });
 
+  test("reports the real open state to renderTrigger when uncontrolled", async () => {
+    const user = userEvent.setup();
+    const renderTrigger = ({ open }: { open: boolean }) => (
+      <button type="button" data-testid="trigger">
+        {open ? "Open" : "Closed"}
+      </button>
+    );
+    render(<ProductSwitcher items={items()} renderTrigger={renderTrigger} />);
+
+    // Uncontrolled: closed initially, then opening must flip the reported state
+    // so the trigger can style itself by it (regression — previously stuck false).
+    expect(screen.getByText("Closed")).toBeDefined();
+    await user.click(screen.getByTestId("trigger"));
+    await waitFor(() => expect(screen.getByText("Open")).toBeDefined());
+  });
+
   test("reflects controlled open prop into renderTrigger", () => {
     const renderTrigger = ({ open }: { open: boolean }) => (
       <button type="button" data-testid="trigger">
@@ -152,20 +168,37 @@ describe("ProductSwitcher", () => {
     });
 
     const activeEl = screen.getByText("Finance").closest("button");
-    expect(activeEl?.className).toContain("bg-accent/50");
+    expect(activeEl?.className).toContain("bg-muted");
+    expect(activeEl?.className).toContain("font-medium");
 
     // A non-active item does not carry the active highlight class.
     const inactiveEl = screen.getByText("Calendar").closest("button");
-    expect(inactiveEl?.className).not.toContain("bg-accent/50");
+    expect(inactiveEl?.className).not.toContain("font-medium");
   });
 
-  test("applies custom column count, alignment, and content className", async () => {
+  test("never styles items with the accent color", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProductSwitcher items={items([{ active: true }, {}, {}])} renderTrigger={() => trigger()} />,
+    );
+
+    await user.click(screen.getByTestId("trigger"));
+    await waitFor(() => {
+      expect(screen.getByText("Finance")).toBeDefined();
+    });
+
+    for (const label of ["Finance", "Calendar", "Drive"]) {
+      const className = screen.getByText(label).closest("button")?.className ?? "";
+      expect(className).not.toContain("accent");
+    }
+  });
+
+  test("applies custom alignment and content className", async () => {
     const user = userEvent.setup();
     render(
       <ProductSwitcher
         items={items()}
         renderTrigger={() => trigger()}
-        columns={2}
         align="start"
         side="right"
         sideOffset={12}
@@ -177,10 +210,6 @@ describe("ProductSwitcher", () => {
     await waitFor(() => {
       expect(screen.getByText("Finance")).toBeDefined();
     });
-
-    // The grid uses the requested column count.
-    const grid = screen.getByText("Finance").closest("div.grid") as HTMLElement;
-    expect(grid.style.gridTemplateColumns).toBe("repeat(2, 1fr)");
 
     // The custom class is applied to the content panel.
     expect(document.querySelector(".custom-panel")).not.toBeNull();

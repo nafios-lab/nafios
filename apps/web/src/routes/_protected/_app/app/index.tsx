@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LayoutGrid, ListChecks, Plus } from "lucide-react";
 import { NavbarTitle, SearchBar, UserMenu, useNavbar } from "../../../../components/navbar";
+import { useSidebarNav } from "../../../../components/sidebar";
 
 export const Route = createFileRoute("/_protected/_app/app/")({
   component: AppPlaceholder,
@@ -7,6 +9,14 @@ export const Route = createFileRoute("/_protected/_app/app/")({
 
 function AppPlaceholder() {
   const { session } = Route.useRouteContext();
+
+  // The modules surface declares its own rail: the module catalog plus the
+  // mounted modules.
+  useSidebarNav([
+    { id: "all-modules", label: "All modules", icon: LayoutGrid, active: true },
+    { id: "smart-todo", label: "SmartTodo", icon: ListChecks },
+    { id: "new-module", label: "New module", icon: Plus },
+  ]);
 
   // A module composes its own navbar from the shared building blocks: search +
   // a title on the left, its action + the user menu on the right.
