@@ -33,6 +33,36 @@ export type Database = {
   };
   public: {
     Tables: {
+      category: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          display_order: number;
+          id: string;
+          name: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          display_order?: number;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          display_order?: number;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       family_members: {
         Row: {
           avatar_url: string | null;
