@@ -89,6 +89,39 @@ export type Database = {
           },
         ];
       };
+      monthly_ledger: {
+        Row: {
+          created_at: string;
+          id: string;
+          max_capped: number;
+          month: string;
+          opening_balance: number;
+          settled_at: string | null;
+          status: Database["public"]["Enums"]["ledger_status"];
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          max_capped: number;
+          month: string;
+          opening_balance: number;
+          settled_at?: string | null;
+          status?: Database["public"]["Enums"]["ledger_status"];
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          max_capped?: number;
+          month?: string;
+          opening_balance?: number;
+          settled_at?: string | null;
+          status?: Database["public"]["Enums"]["ledger_status"];
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -144,7 +177,7 @@ export type Database = {
       };
     };
     Enums: {
-      [_ in never]: never;
+      ledger_status: "ongoing" | "reconciling" | "settled";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -272,6 +305,8 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      ledger_status: ["ongoing", "reconciling", "settled"],
+    },
   },
 } as const;
