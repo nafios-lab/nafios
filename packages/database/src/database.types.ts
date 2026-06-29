@@ -33,6 +33,33 @@ export type Database = {
   };
   public: {
     Tables: {
+      account: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          type: Database["public"]["Enums"]["account_type"];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          type: Database["public"]["Enums"]["account_type"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          type?: Database["public"]["Enums"]["account_type"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       category: {
         Row: {
           color: string | null;
@@ -207,6 +234,7 @@ export type Database = {
       };
     };
     Enums: {
+      account_type: "bank" | "cash" | "other";
       ledger_status: "ongoing" | "reconciling" | "settled";
     };
     CompositeTypes: {
@@ -336,6 +364,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      account_type: ["bank", "cash", "other"],
       ledger_status: ["ongoing", "reconciling", "settled"],
     },
   },
