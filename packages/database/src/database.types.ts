@@ -90,6 +90,101 @@ export type Database = {
         };
         Relationships: [];
       };
+      envelope: {
+        Row: {
+          amount: number;
+          carried_from_envelope_id: string | null;
+          carry_over_reason: string | null;
+          category_id: string;
+          created_at: string;
+          id: string;
+          item: string;
+          ledger_id: string;
+          linked_member_id: string | null;
+          obligation_kind: Database["public"]["Enums"]["obligation_kind"] | null;
+          original_amount: number | null;
+          paid_at: string | null;
+          payment_source_id: string | null;
+          remark: string | null;
+          sort_order: number;
+          status: Database["public"]["Enums"]["envelope_status"];
+          template_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          carried_from_envelope_id?: string | null;
+          carry_over_reason?: string | null;
+          category_id: string;
+          created_at?: string;
+          id?: string;
+          item: string;
+          ledger_id: string;
+          linked_member_id?: string | null;
+          obligation_kind?: Database["public"]["Enums"]["obligation_kind"] | null;
+          original_amount?: number | null;
+          paid_at?: string | null;
+          payment_source_id?: string | null;
+          remark?: string | null;
+          sort_order?: number;
+          status?: Database["public"]["Enums"]["envelope_status"];
+          template_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          amount?: number;
+          carried_from_envelope_id?: string | null;
+          carry_over_reason?: string | null;
+          category_id?: string;
+          created_at?: string;
+          id?: string;
+          item?: string;
+          ledger_id?: string;
+          linked_member_id?: string | null;
+          obligation_kind?: Database["public"]["Enums"]["obligation_kind"] | null;
+          original_amount?: number | null;
+          paid_at?: string | null;
+          payment_source_id?: string | null;
+          remark?: string | null;
+          sort_order?: number;
+          status?: Database["public"]["Enums"]["envelope_status"];
+          template_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "envelope_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "category";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "envelope_ledger_id_fkey";
+            columns: ["ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "monthly_ledger";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "envelope_linked_member_id_fkey";
+            columns: ["linked_member_id"];
+            isOneToOne: false;
+            referencedRelation: "family_members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "envelope_payment_source_id_fkey";
+            columns: ["payment_source_id"];
+            isOneToOne: false;
+            referencedRelation: "account";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       family_members: {
         Row: {
           avatar_url: string | null;
@@ -323,7 +418,17 @@ export type Database = {
     };
     Enums: {
       account_type: "bank" | "cash" | "other";
+      envelope_status: "pending" | "paid" | "skipped" | "carried_over";
       ledger_status: "ongoing" | "reconciling" | "settled";
+      obligation_kind:
+        | "debt_repayment"
+        | "recurring_service"
+        | "tax_installment"
+        | "utility"
+        | "set_aside"
+        | "family_support"
+        | "insurance_premium"
+        | "discretionary";
       recurring_template_status: "active" | "pending_reconciliation" | "completed" | "terminated";
       template_type: "recurring" | "adhoc";
     };
@@ -455,7 +560,18 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["bank", "cash", "other"],
+      envelope_status: ["pending", "paid", "skipped", "carried_over"],
       ledger_status: ["ongoing", "reconciling", "settled"],
+      obligation_kind: [
+        "debt_repayment",
+        "recurring_service",
+        "tax_installment",
+        "utility",
+        "set_aside",
+        "family_support",
+        "insurance_premium",
+        "discretionary",
+      ],
       recurring_template_status: ["active", "pending_reconciliation", "completed", "terminated"],
       template_type: ["recurring", "adhoc"],
     },
