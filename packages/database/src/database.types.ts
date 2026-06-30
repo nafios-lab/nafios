@@ -215,6 +215,94 @@ export type Database = {
         };
         Relationships: [];
       };
+      template: {
+        Row: {
+          archived: boolean | null;
+          category_id: string;
+          created_at: string;
+          default_amount: number;
+          default_linked_member_id: string | null;
+          default_payment_source_id: string | null;
+          default_remark: string | null;
+          end_month: string | null;
+          id: string;
+          item: string;
+          last_used_month: string | null;
+          next_due_month: string | null;
+          sort_order: number | null;
+          status: Database["public"]["Enums"]["recurring_template_status"] | null;
+          termination_reason: string | null;
+          type: Database["public"]["Enums"]["template_type"];
+          updated_at: string;
+          usage_count: number | null;
+          user_id: string;
+        };
+        Insert: {
+          archived?: boolean | null;
+          category_id: string;
+          created_at?: string;
+          default_amount: number;
+          default_linked_member_id?: string | null;
+          default_payment_source_id?: string | null;
+          default_remark?: string | null;
+          end_month?: string | null;
+          id?: string;
+          item: string;
+          last_used_month?: string | null;
+          next_due_month?: string | null;
+          sort_order?: number | null;
+          status?: Database["public"]["Enums"]["recurring_template_status"] | null;
+          termination_reason?: string | null;
+          type: Database["public"]["Enums"]["template_type"];
+          updated_at?: string;
+          usage_count?: number | null;
+          user_id?: string;
+        };
+        Update: {
+          archived?: boolean | null;
+          category_id?: string;
+          created_at?: string;
+          default_amount?: number;
+          default_linked_member_id?: string | null;
+          default_payment_source_id?: string | null;
+          default_remark?: string | null;
+          end_month?: string | null;
+          id?: string;
+          item?: string;
+          last_used_month?: string | null;
+          next_due_month?: string | null;
+          sort_order?: number | null;
+          status?: Database["public"]["Enums"]["recurring_template_status"] | null;
+          termination_reason?: string | null;
+          type?: Database["public"]["Enums"]["template_type"];
+          updated_at?: string;
+          usage_count?: number | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "template_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "category";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "template_default_linked_member_id_fkey";
+            columns: ["default_linked_member_id"];
+            isOneToOne: false;
+            referencedRelation: "family_members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "template_default_payment_source_id_fkey";
+            columns: ["default_payment_source_id"];
+            isOneToOne: false;
+            referencedRelation: "account";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -236,6 +324,8 @@ export type Database = {
     Enums: {
       account_type: "bank" | "cash" | "other";
       ledger_status: "ongoing" | "reconciling" | "settled";
+      recurring_template_status: "active" | "pending_reconciliation" | "completed" | "terminated";
+      template_type: "recurring" | "adhoc";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -366,6 +456,8 @@ export const Constants = {
     Enums: {
       account_type: ["bank", "cash", "other"],
       ledger_status: ["ongoing", "reconciling", "settled"],
+      recurring_template_status: ["active", "pending_reconciliation", "completed", "terminated"],
+      template_type: ["recurring", "adhoc"],
     },
   },
 } as const;
