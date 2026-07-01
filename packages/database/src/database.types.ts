@@ -60,6 +60,64 @@ export type Database = {
         };
         Relationships: [];
       };
+      carry_over: {
+        Row: {
+          added_envelope_id: string | null;
+          created_at: string;
+          id: string;
+          kill_reason: string | null;
+          resolved_at: string | null;
+          source_envelope_id: string;
+          status: Database["public"]["Enums"]["carry_over_status"];
+          template_id: string;
+          user_id: string;
+        };
+        Insert: {
+          added_envelope_id?: string | null;
+          created_at?: string;
+          id?: string;
+          kill_reason?: string | null;
+          resolved_at?: string | null;
+          source_envelope_id: string;
+          status?: Database["public"]["Enums"]["carry_over_status"];
+          template_id: string;
+          user_id?: string;
+        };
+        Update: {
+          added_envelope_id?: string | null;
+          created_at?: string;
+          id?: string;
+          kill_reason?: string | null;
+          resolved_at?: string | null;
+          source_envelope_id?: string;
+          status?: Database["public"]["Enums"]["carry_over_status"];
+          template_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "carry_over_added_envelope_id_fkey";
+            columns: ["added_envelope_id"];
+            isOneToOne: false;
+            referencedRelation: "envelope";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carry_over_source_envelope_id_fkey";
+            columns: ["source_envelope_id"];
+            isOneToOne: true;
+            referencedRelation: "envelope";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carry_over_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "template";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       category: {
         Row: {
           color: string | null;
@@ -241,6 +299,95 @@ export type Database = {
           },
         ];
       };
+      finance_settings: {
+        Row: {
+          created_at: string;
+          default_opening_balance: number | null;
+          id: string;
+          lead_days: number;
+          max_capped_behavior: Database["public"]["Enums"]["max_capped_behavior"];
+          max_capped_mode: Database["public"]["Enums"]["max_capped_mode"];
+          max_capped_value: number | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          default_opening_balance?: number | null;
+          id?: string;
+          lead_days?: number;
+          max_capped_behavior?: Database["public"]["Enums"]["max_capped_behavior"];
+          max_capped_mode?: Database["public"]["Enums"]["max_capped_mode"];
+          max_capped_value?: number | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          default_opening_balance?: number | null;
+          id?: string;
+          lead_days?: number;
+          max_capped_behavior?: Database["public"]["Enums"]["max_capped_behavior"];
+          max_capped_mode?: Database["public"]["Enums"]["max_capped_mode"];
+          max_capped_value?: number | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      ledger_settlement_summary: {
+        Row: {
+          asm_contribution: number;
+          carried_over_count: number;
+          col: number;
+          health_margin: number;
+          ledger_id: string;
+          max_capped: number;
+          opening_balance: number;
+          paid_count: number;
+          settled_at: string;
+          skipped_count: number;
+          total_envelopes: number;
+          user_id: string;
+        };
+        Insert: {
+          asm_contribution: number;
+          carried_over_count: number;
+          col: number;
+          health_margin: number;
+          ledger_id: string;
+          max_capped: number;
+          opening_balance: number;
+          paid_count: number;
+          settled_at: string;
+          skipped_count: number;
+          total_envelopes: number;
+          user_id?: string;
+        };
+        Update: {
+          asm_contribution?: number;
+          carried_over_count?: number;
+          col?: number;
+          health_margin?: number;
+          ledger_id?: string;
+          max_capped?: number;
+          opening_balance?: number;
+          paid_count?: number;
+          settled_at?: string;
+          skipped_count?: number;
+          total_envelopes?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ledger_settlement_summary_ledger_id_fkey";
+            columns: ["ledger_id"];
+            isOneToOne: true;
+            referencedRelation: "monthly_ledger";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       monthly_ledger: {
         Row: {
           created_at: string;
@@ -273,6 +420,44 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [];
+      };
+      opening_balance_adjustment: {
+        Row: {
+          adjusted_at: string;
+          id: string;
+          ledger_id: string;
+          new_value: number;
+          previous_value: number;
+          reason: string | null;
+          user_id: string;
+        };
+        Insert: {
+          adjusted_at?: string;
+          id?: string;
+          ledger_id: string;
+          new_value: number;
+          previous_value: number;
+          reason?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          adjusted_at?: string;
+          id?: string;
+          ledger_id?: string;
+          new_value?: number;
+          previous_value?: number;
+          reason?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "opening_balance_adjustment_ledger_id_fkey";
+            columns: ["ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "monthly_ledger";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {
@@ -418,8 +603,11 @@ export type Database = {
     };
     Enums: {
       account_type: "bank" | "cash" | "other";
+      carry_over_status: "outstanding" | "added" | "killed";
       envelope_status: "pending" | "paid" | "skipped" | "carried_over";
       ledger_status: "ongoing" | "reconciling" | "settled";
+      max_capped_behavior: "warn_only" | "block_add";
+      max_capped_mode: "hard_amount" | "percentage_of_opening";
       obligation_kind:
         | "debt_repayment"
         | "recurring_service"
@@ -560,8 +748,11 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["bank", "cash", "other"],
+      carry_over_status: ["outstanding", "added", "killed"],
       envelope_status: ["pending", "paid", "skipped", "carried_over"],
       ledger_status: ["ongoing", "reconciling", "settled"],
+      max_capped_behavior: ["warn_only", "block_add"],
+      max_capped_mode: ["hard_amount", "percentage_of_opening"],
       obligation_kind: [
         "debt_repayment",
         "recurring_service",
