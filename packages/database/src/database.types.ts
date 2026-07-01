@@ -96,25 +96,25 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "carry_over_added_envelope_id_fkey";
-            columns: ["added_envelope_id"];
+            foreignKeyName: "fk_carryover_added_envelope";
+            columns: ["added_envelope_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "envelope";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
-            foreignKeyName: "carry_over_source_envelope_id_fkey";
-            columns: ["source_envelope_id"];
-            isOneToOne: true;
+            foreignKeyName: "fk_carryover_source_envelope";
+            columns: ["source_envelope_id", "user_id"];
+            isOneToOne: false;
             referencedRelation: "envelope";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
-            foreignKeyName: "carry_over_template_id_fkey";
-            columns: ["template_id"];
+            foreignKeyName: "fk_carryover_template";
+            columns: ["template_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "template";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -214,20 +214,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "envelope_category_id_fkey";
-            columns: ["category_id"];
-            isOneToOne: false;
-            referencedRelation: "category";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "envelope_ledger_id_fkey";
-            columns: ["ledger_id"];
-            isOneToOne: false;
-            referencedRelation: "monthly_ledger";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "envelope_linked_member_id_fkey";
             columns: ["linked_member_id"];
             isOneToOne: false;
@@ -235,11 +221,25 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "envelope_payment_source_id_fkey";
-            columns: ["payment_source_id"];
+            foreignKeyName: "fk_envelope_account";
+            columns: ["payment_source_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "account";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "fk_envelope_category";
+            columns: ["category_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "category";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "fk_envelope_ledger";
+            columns: ["ledger_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "monthly_ledger";
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -380,11 +380,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "ledger_settlement_summary_ledger_id_fkey";
-            columns: ["ledger_id"];
-            isOneToOne: true;
+            foreignKeyName: "fk_settlement_ledger";
+            columns: ["ledger_id", "user_id"];
+            isOneToOne: false;
             referencedRelation: "monthly_ledger";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -451,11 +451,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "opening_balance_adjustment_ledger_id_fkey";
-            columns: ["ledger_id"];
+            foreignKeyName: "fk_oba_ledger";
+            columns: ["ledger_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "monthly_ledger";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -561,24 +561,24 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "template_category_id_fkey";
-            columns: ["category_id"];
+            foreignKeyName: "fk_template_account";
+            columns: ["default_payment_source_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "account";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "fk_template_category";
+            columns: ["category_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "category";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
           {
             foreignKeyName: "template_default_linked_member_id_fkey";
             columns: ["default_linked_member_id"];
             isOneToOne: false;
             referencedRelation: "family_members";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "template_default_payment_source_id_fkey";
-            columns: ["default_payment_source_id"];
-            isOneToOne: false;
-            referencedRelation: "account";
             referencedColumns: ["id"];
           },
         ];
