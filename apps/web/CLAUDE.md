@@ -207,8 +207,9 @@ standard audit columns. Cascades on profile deletion.
 A reusable `public.set_updated_at()` trigger auto-maintains `updated_at` on
 both tables.
 
-RLS is intentionally disabled — authorization is handled at the application
-layer (ADR-0019).
+RLS is **enabled** on both tables (owner-isolation policies keyed on
+`auth.uid()`), layered on top of app-layer authorization — see ADR-0024, which
+supersedes the original RLS-disabled stance of ADR-0019/0023 for these tables.
 
 Migrations:
 
@@ -216,6 +217,7 @@ Migrations:
 - `supabase/migrations/20260613000001_create_family_members_table.sql`
 - `supabase/migrations/20260618000000_create_insert_user_profile_rpc.sql`
 - `supabase/migrations/20260618000001_add_onboarding_completed_and_idempotent_rpc.sql`
+- `supabase/migrations/20260701000005_enable_rls_profiles_family_members.sql`
 
 ### Useful commands
 
