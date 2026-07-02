@@ -56,6 +56,16 @@ includes the module registry, dynamic route composition, and the module
 contract (types/interfaces). The placeholder at `_protected/app/` marks
 where that machinery will plug in.
 
+### Interim entry-gate routes
+
+Ahead of that machinery, Finance and Calendar currently mount as **in-shell
+stub routes** — `src/routes/_protected/_app/finance/` and `.../calendar/`,
+reachable at top-level `/finance` and `/calendar` (not `/app/:module/*`). Each
+is a thin `route.tsx` layout that specializes the shared rail + navbar, plus
+placeholder pages; there is no domain logic in the shell. Package-based,
+lazy-loaded mounting per ADR-0018 is still deferred to the domain-module epic —
+these routes will migrate to it then.
+
 ## Source structure
 
 ```

@@ -12,7 +12,7 @@ and the stylesheet — they never re-initialise Tailwind or shadcn.
 
 - `@nafios/ui/globals.css` — Tailwind + NafiOS theme variables (import in app root)
 - `@nafios/ui/components/ui/*` — shadcn primitives (`Button`, `Input`, `Label`, `Dialog`, …)
-- `@nafios/ui/components/*` — NafiOS composites (`ConfirmDialog`, …)
+- `@nafios/ui/components/*` — NafiOS composites (`ConfirmDialog`, `UserMenu`, `ScreenLoader`, `ProductSwitcher`, …)
 - `@nafios/ui/lib/utils` — `cn()` class merge helper
 - `@nafios/ui/hooks/use-theme` — `useTheme()` for light/dark switching
 

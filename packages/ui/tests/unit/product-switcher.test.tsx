@@ -156,6 +156,27 @@ describe("ProductSwitcher", () => {
     expect(() => fireEvent.click(link)).not.toThrow();
   });
 
+  test("renders an item's description beneath its label when provided", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProductSwitcher
+        items={items([{ description: "Track income & expenses" }, {}, {}])}
+        renderTrigger={() => trigger()}
+      />,
+    );
+
+    await user.click(screen.getByTestId("trigger"));
+    await waitFor(() => {
+      expect(screen.getByText("Finance")).toBeDefined();
+    });
+
+    // The described item shows its summary...
+    expect(screen.getByText("Track income & expenses")).toBeDefined();
+    // ...while a description-less item renders its label with no summary line.
+    const calendarRow = screen.getByText("Calendar").closest("button");
+    expect(calendarRow?.textContent).toBe("Calendar");
+  });
+
   test("highlights the active product", async () => {
     const user = userEvent.setup();
     render(
@@ -174,6 +195,49 @@ describe("ProductSwitcher", () => {
     // A non-active item does not carry the active highlight class.
     const inactiveEl = screen.getByText("Calendar").closest("button");
     expect(inactiveEl?.className).not.toContain("font-medium");
+  });
+
+  test("highlights the item whose id matches activeItem", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProductSwitcher items={items()} activeItem="calendar" renderTrigger={() => trigger()} />,
+    );
+
+    await user.click(screen.getByTestId("trigger"));
+    await waitFor(() => {
+      expect(screen.getByText("Calendar")).toBeDefined();
+    });
+
+    const activeEl = screen.getByText("Calendar").closest("button");
+    expect(activeEl?.className).toContain("bg-muted");
+    expect(activeEl?.className).toContain("font-medium");
+    expect(activeEl?.getAttribute("aria-current")).toBe("page");
+    // The active row reveals its brand dot.
+    expect(activeEl?.querySelector(".bg-brand")?.className).toContain("opacity-100");
+
+    // Non-matching items stay inactive and carry no aria-current.
+    const inactiveEl = screen.getByText("Finance").closest("button");
+    expect(inactiveEl?.className).not.toContain("font-medium");
+    expect(inactiveEl?.getAttribute("aria-current")).toBeNull();
+    // Inactive rows still render the dot slot (space reserved) but keep it hidden,
+    // so switching the active item never shifts the layout.
+    expect(inactiveEl?.querySelector(".bg-brand")?.className).toContain("opacity-0");
+  });
+
+  test("marks no item active when activeItem is undefined", async () => {
+    const user = userEvent.setup();
+    render(<ProductSwitcher items={items()} renderTrigger={() => trigger()} />);
+
+    await user.click(screen.getByTestId("trigger"));
+    await waitFor(() => {
+      expect(screen.getByText("Finance")).toBeDefined();
+    });
+
+    for (const label of ["Finance", "Calendar", "Drive"]) {
+      const el = screen.getByText(label).closest("button");
+      expect(el?.className).not.toContain("font-medium");
+      expect(el?.getAttribute("aria-current")).toBeNull();
+    }
   });
 
   test("never styles items with the accent color", async () => {

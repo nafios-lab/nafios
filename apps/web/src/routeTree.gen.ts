@@ -19,7 +19,14 @@ import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as ProtectedOnboardingRouteImport } from './routes/_protected/onboarding'
 import { Route as ProtectedAppRouteImport } from './routes/_protected/_app'
 import { Route as ProtectedAppWelcomeRouteImport } from './routes/_protected/_app/welcome'
+import { Route as ProtectedAppFinanceRouteRouteImport } from './routes/_protected/_app/finance/route'
+import { Route as ProtectedAppCalendarRouteRouteImport } from './routes/_protected/_app/calendar/route'
+import { Route as ProtectedAppFinanceIndexRouteImport } from './routes/_protected/_app/finance/index'
+import { Route as ProtectedAppCalendarIndexRouteImport } from './routes/_protected/_app/calendar/index'
 import { Route as ProtectedAppAppIndexRouteImport } from './routes/_protected/_app/app/index'
+import { Route as ProtectedAppFinanceTransactionsRouteImport } from './routes/_protected/_app/finance/transactions'
+import { Route as ProtectedAppFinanceAccountsRouteImport } from './routes/_protected/_app/finance/accounts'
+import { Route as ProtectedAppCalendarScheduleRouteImport } from './routes/_protected/_app/calendar/schedule'
 
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
@@ -69,11 +76,53 @@ const ProtectedAppWelcomeRoute = ProtectedAppWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => ProtectedAppRoute,
 } as any)
+const ProtectedAppFinanceRouteRoute =
+  ProtectedAppFinanceRouteRouteImport.update({
+    id: '/finance',
+    path: '/finance',
+    getParentRoute: () => ProtectedAppRoute,
+  } as any)
+const ProtectedAppCalendarRouteRoute =
+  ProtectedAppCalendarRouteRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => ProtectedAppRoute,
+  } as any)
+const ProtectedAppFinanceIndexRoute =
+  ProtectedAppFinanceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProtectedAppFinanceRouteRoute,
+  } as any)
+const ProtectedAppCalendarIndexRoute =
+  ProtectedAppCalendarIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProtectedAppCalendarRouteRoute,
+  } as any)
 const ProtectedAppAppIndexRoute = ProtectedAppAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
   getParentRoute: () => ProtectedAppRoute,
 } as any)
+const ProtectedAppFinanceTransactionsRoute =
+  ProtectedAppFinanceTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => ProtectedAppFinanceRouteRoute,
+  } as any)
+const ProtectedAppFinanceAccountsRoute =
+  ProtectedAppFinanceAccountsRouteImport.update({
+    id: '/accounts',
+    path: '/accounts',
+    getParentRoute: () => ProtectedAppFinanceRouteRoute,
+  } as any)
+const ProtectedAppCalendarScheduleRoute =
+  ProtectedAppCalendarScheduleRouteImport.update({
+    id: '/schedule',
+    path: '/schedule',
+    getParentRoute: () => ProtectedAppCalendarRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -83,8 +132,15 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/calendar': typeof ProtectedAppCalendarRouteRouteWithChildren
+  '/finance': typeof ProtectedAppFinanceRouteRouteWithChildren
   '/welcome': typeof ProtectedAppWelcomeRoute
+  '/calendar/schedule': typeof ProtectedAppCalendarScheduleRoute
+  '/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
+  '/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
   '/app/': typeof ProtectedAppAppIndexRoute
+  '/calendar/': typeof ProtectedAppCalendarIndexRoute
+  '/finance/': typeof ProtectedAppFinanceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -95,7 +151,12 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
   '/welcome': typeof ProtectedAppWelcomeRoute
+  '/calendar/schedule': typeof ProtectedAppCalendarScheduleRoute
+  '/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
+  '/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
   '/app': typeof ProtectedAppAppIndexRoute
+  '/calendar': typeof ProtectedAppCalendarIndexRoute
+  '/finance': typeof ProtectedAppFinanceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -108,8 +169,15 @@ export interface FileRoutesById {
   '/_protected/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/_protected/_app/calendar': typeof ProtectedAppCalendarRouteRouteWithChildren
+  '/_protected/_app/finance': typeof ProtectedAppFinanceRouteRouteWithChildren
   '/_protected/_app/welcome': typeof ProtectedAppWelcomeRoute
+  '/_protected/_app/calendar/schedule': typeof ProtectedAppCalendarScheduleRoute
+  '/_protected/_app/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
+  '/_protected/_app/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
   '/_protected/_app/app/': typeof ProtectedAppAppIndexRoute
+  '/_protected/_app/calendar/': typeof ProtectedAppCalendarIndexRoute
+  '/_protected/_app/finance/': typeof ProtectedAppFinanceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,8 +189,15 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/login'
     | '/auth/signup'
+    | '/calendar'
+    | '/finance'
     | '/welcome'
+    | '/calendar/schedule'
+    | '/finance/accounts'
+    | '/finance/transactions'
     | '/app/'
+    | '/calendar/'
+    | '/finance/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,7 +208,12 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/signup'
     | '/welcome'
+    | '/calendar/schedule'
+    | '/finance/accounts'
+    | '/finance/transactions'
     | '/app'
+    | '/calendar'
+    | '/finance'
   id:
     | '__root__'
     | '/'
@@ -145,8 +225,15 @@ export interface FileRouteTypes {
     | '/_protected/onboarding'
     | '/auth/login'
     | '/auth/signup'
+    | '/_protected/_app/calendar'
+    | '/_protected/_app/finance'
     | '/_protected/_app/welcome'
+    | '/_protected/_app/calendar/schedule'
+    | '/_protected/_app/finance/accounts'
+    | '/_protected/_app/finance/transactions'
     | '/_protected/_app/app/'
+    | '/_protected/_app/calendar/'
+    | '/_protected/_app/finance/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -229,12 +316,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAppWelcomeRouteImport
       parentRoute: typeof ProtectedAppRoute
     }
+    '/_protected/_app/finance': {
+      id: '/_protected/_app/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof ProtectedAppFinanceRouteRouteImport
+      parentRoute: typeof ProtectedAppRoute
+    }
+    '/_protected/_app/calendar': {
+      id: '/_protected/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof ProtectedAppCalendarRouteRouteImport
+      parentRoute: typeof ProtectedAppRoute
+    }
+    '/_protected/_app/finance/': {
+      id: '/_protected/_app/finance/'
+      path: '/'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof ProtectedAppFinanceIndexRouteImport
+      parentRoute: typeof ProtectedAppFinanceRouteRoute
+    }
+    '/_protected/_app/calendar/': {
+      id: '/_protected/_app/calendar/'
+      path: '/'
+      fullPath: '/calendar/'
+      preLoaderRoute: typeof ProtectedAppCalendarIndexRouteImport
+      parentRoute: typeof ProtectedAppCalendarRouteRoute
+    }
     '/_protected/_app/app/': {
       id: '/_protected/_app/app/'
       path: '/app'
       fullPath: '/app/'
       preLoaderRoute: typeof ProtectedAppAppIndexRouteImport
       parentRoute: typeof ProtectedAppRoute
+    }
+    '/_protected/_app/finance/transactions': {
+      id: '/_protected/_app/finance/transactions'
+      path: '/transactions'
+      fullPath: '/finance/transactions'
+      preLoaderRoute: typeof ProtectedAppFinanceTransactionsRouteImport
+      parentRoute: typeof ProtectedAppFinanceRouteRoute
+    }
+    '/_protected/_app/finance/accounts': {
+      id: '/_protected/_app/finance/accounts'
+      path: '/accounts'
+      fullPath: '/finance/accounts'
+      preLoaderRoute: typeof ProtectedAppFinanceAccountsRouteImport
+      parentRoute: typeof ProtectedAppFinanceRouteRoute
+    }
+    '/_protected/_app/calendar/schedule': {
+      id: '/_protected/_app/calendar/schedule'
+      path: '/schedule'
+      fullPath: '/calendar/schedule'
+      preLoaderRoute: typeof ProtectedAppCalendarScheduleRouteImport
+      parentRoute: typeof ProtectedAppCalendarRouteRoute
     }
   }
 }
@@ -253,12 +389,50 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
 )
 
+interface ProtectedAppCalendarRouteRouteChildren {
+  ProtectedAppCalendarScheduleRoute: typeof ProtectedAppCalendarScheduleRoute
+  ProtectedAppCalendarIndexRoute: typeof ProtectedAppCalendarIndexRoute
+}
+
+const ProtectedAppCalendarRouteRouteChildren: ProtectedAppCalendarRouteRouteChildren =
+  {
+    ProtectedAppCalendarScheduleRoute: ProtectedAppCalendarScheduleRoute,
+    ProtectedAppCalendarIndexRoute: ProtectedAppCalendarIndexRoute,
+  }
+
+const ProtectedAppCalendarRouteRouteWithChildren =
+  ProtectedAppCalendarRouteRoute._addFileChildren(
+    ProtectedAppCalendarRouteRouteChildren,
+  )
+
+interface ProtectedAppFinanceRouteRouteChildren {
+  ProtectedAppFinanceAccountsRoute: typeof ProtectedAppFinanceAccountsRoute
+  ProtectedAppFinanceTransactionsRoute: typeof ProtectedAppFinanceTransactionsRoute
+  ProtectedAppFinanceIndexRoute: typeof ProtectedAppFinanceIndexRoute
+}
+
+const ProtectedAppFinanceRouteRouteChildren: ProtectedAppFinanceRouteRouteChildren =
+  {
+    ProtectedAppFinanceAccountsRoute: ProtectedAppFinanceAccountsRoute,
+    ProtectedAppFinanceTransactionsRoute: ProtectedAppFinanceTransactionsRoute,
+    ProtectedAppFinanceIndexRoute: ProtectedAppFinanceIndexRoute,
+  }
+
+const ProtectedAppFinanceRouteRouteWithChildren =
+  ProtectedAppFinanceRouteRoute._addFileChildren(
+    ProtectedAppFinanceRouteRouteChildren,
+  )
+
 interface ProtectedAppRouteChildren {
+  ProtectedAppCalendarRouteRoute: typeof ProtectedAppCalendarRouteRouteWithChildren
+  ProtectedAppFinanceRouteRoute: typeof ProtectedAppFinanceRouteRouteWithChildren
   ProtectedAppWelcomeRoute: typeof ProtectedAppWelcomeRoute
   ProtectedAppAppIndexRoute: typeof ProtectedAppAppIndexRoute
 }
 
 const ProtectedAppRouteChildren: ProtectedAppRouteChildren = {
+  ProtectedAppCalendarRouteRoute: ProtectedAppCalendarRouteRouteWithChildren,
+  ProtectedAppFinanceRouteRoute: ProtectedAppFinanceRouteRouteWithChildren,
   ProtectedAppWelcomeRoute: ProtectedAppWelcomeRoute,
   ProtectedAppAppIndexRoute: ProtectedAppAppIndexRoute,
 }

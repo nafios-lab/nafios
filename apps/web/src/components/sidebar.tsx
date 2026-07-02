@@ -11,7 +11,7 @@ import {
   Sidebar as SidebarRoot,
 } from "@nafios/ui/components/ui/sidebar";
 import { UserMenu, type UserMenuUser } from "@nafios/ui/components/user-menu";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, type LinkProps, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
   createContext,
@@ -46,6 +46,13 @@ export interface SidebarNavItem {
   id: string;
   label: string;
   icon: LucideIcon;
+  /**
+   * Route this item links to. When set, the item is a real navigation link
+   * (SPA nav via TanStack `<Link>`, with intent preloading); when omitted the
+   * item is inert — a visual affordance only. Modules point their rail items at
+   * their own sub-routes (e.g. `/finance/accounts`).
+   */
+  to?: LinkProps["to"];
   /** Marks the item as the current location (visual only). */
   active?: boolean;
 }
@@ -79,8 +86,8 @@ const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : us
  *
  * @example
  * useSidebarNav([
- *   { id: "overview", label: "Overview", icon: LayoutGrid, active: true },
- *   { id: "accounts", label: "Accounts", icon: Wallet },
+ *   { id: "overview", label: "Overview", icon: LayoutGrid, to: "/finance", active: true },
+ *   { id: "accounts", label: "Accounts", icon: Wallet, to: "/finance/accounts" },
  * ]);
  */
 export function useSidebarNav(items: SidebarNavItem[]) {
@@ -121,21 +128,46 @@ export function Sidebar({ user }: SidebarProps) {
     // matching the draft. Colors come from the shadcn sidebar theme tokens.
     <SidebarRoot collapsible="icon" className="dark">
       <SidebarHeader className="items-center py-3">
-        <Logo variant="mark" className="size-8" />
+        {/* The brand mark doubles as the home affordance — the universal
+            click-the-logo-to-go-home convention. It lives in the shared
+            skeleton, so every module inherits a way back to /welcome. The mark
+            is aria-hidden, so the link carries its own accessible name. */}
+        <Link
+          to="/welcome"
+          aria-label="Go to NafiOS home"
+          className="rounded-md outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        >
+          <Logo variant="mark" className="size-8" />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="items-center gap-1">
-              {items.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton tooltip={item.label} isActive={item.active}>
-                    <item.icon />
+              {items.map((item) => {
+                const Icon = item.icon;
+                // Shared inner content — an icon plus its (tooltip-surfaced)
+                // label. Rendered directly inside the default button when the
+                // item is inert, or slotted into a <Link> when it navigates.
+                const content = (
+                  <>
+                    <Icon />
                     <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                  </>
+                );
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild={item.to !== undefined}
+                      tooltip={item.label}
+                      isActive={item.active}
+                    >
+                      {item.to !== undefined ? <Link to={item.to}>{content}</Link> : content}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

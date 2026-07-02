@@ -79,7 +79,11 @@ export function useNavbar({ leftAside, rightAside }: NavbarContent) {
 
 /** Consistent module heading, sized to sit beside the search bar. */
 export function NavbarTitle({ children }: { children: ReactNode }) {
-  return <span className="text-lg font-semibold tracking-tight">{children}</span>;
+  return (
+    <span className="text-xs font-medium tabular-nums tracking-wide text-muted-foreground">
+      {children}
+    </span>
+  );
 }
 
 /**

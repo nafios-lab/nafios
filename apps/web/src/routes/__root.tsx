@@ -4,6 +4,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { DevResetButton } from "../components/dev-reset-button";
+import { RouteProgress } from "../components/route-progress";
 import "../styles.css";
 
 export const Route = createRootRoute({
@@ -26,6 +27,7 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground font-body antialiased">
+        <RouteProgress />
         <Outlet />
         <ScreenLoader />
         <DevResetButton />

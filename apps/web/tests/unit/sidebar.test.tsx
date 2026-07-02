@@ -47,6 +47,13 @@ describe("Sidebar rail skeleton", () => {
     expect(screen.getByText("SmartTodo")).toBeDefined();
   });
 
+  test("the brand logo links home to the welcome dashboard", () => {
+    renderSidebar([]);
+    // The shell-owned brand mark is the always-available way back to /welcome.
+    const home = screen.getByRole("link", { name: "Go to NafiOS home" });
+    expect(home.getAttribute("href")).toBe("/welcome");
+  });
+
   test("owns only constant chrome — the account menu, with no route items leaking in", () => {
     renderSidebar([]);
     // The footer account menu is shell-owned and always present...

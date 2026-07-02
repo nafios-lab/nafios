@@ -19,7 +19,7 @@ function Welcome() {
   useNavbar({
     leftAside: (
       <>
-        <ServiceMenu />
+        <ServiceMenu active="home" />
         <TextInput
           className="min-w-[500px] border-transparent"
           placeholder="Search..."

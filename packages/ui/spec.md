@@ -1,8 +1,8 @@
 ---
 title: "@nafios/ui"
 status: active
-version: 1.1.0
-updated: 2026-06-18
+version: 1.2.0
+updated: 2026-07-02
 owner: Hanafi
 related_adrs: [0006]
 ---
@@ -57,6 +57,12 @@ nothing on the server / before client mount), locks body scroll while visible,
 and exposes `role="status"` / `aria-live` / `aria-busy`. Accepts an optional
 `defaultLoader` for the app-wide loader UI. **Mount exactly once** at the app
 root — driven via `useScreenLoader`. A second mount would render a second overlay.
+`ProductSwitcher` — product/app switcher dropdown composed from Popover. Takes
+`items: readonly ProductItem[]` (each `{ id, label, icon, description?, href?,
+onSelect?, active? }`) and a `renderTrigger` render-prop; items with an `href`
+render as links, otherwise as buttons. The active row is marked either per-item
+(`active`) or by route via `activeItem` (matched on `id`; `undefined` = none
+active), carries `aria-current="page"`, and shows a trailing brand dot.
 
 ## Invariants
 
