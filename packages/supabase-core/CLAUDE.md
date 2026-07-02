@@ -9,9 +9,11 @@ abstraction on top.
 ## What this package does
 
 - **Client construction:** `createServerClient(cookies)` for SSR / server
-  functions, `createBrowserClient()` for browser-side code, and
-  `createServiceRoleClient()` for privileged session-less server work. All
-  return the raw `SupabaseClient` — no wrapping, no schema typing.
+  functions, `createBrowserClient()` for browser-side code,
+  `createAuthedClient(accessToken)` for a session-less client that runs as a
+  request user (per-request JWT → RLS applies), and `createServiceRoleClient()`
+  for privileged session-less server work. All return the raw `SupabaseClient` —
+  no wrapping, no schema typing.
 - **Env/config:** reads `SUPABASE_URL` / `SUPABASE_ANON_KEY` (anon clients) or
   `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (service-role); throws
   synchronously if a required var is missing.
@@ -24,6 +26,8 @@ abstraction on top.
 All public exports live in `src/index.ts` (the barrel):
 
 - `createServerClient(cookies)` / `createBrowserClient()` — connection factories
+- `createAuthedClient(accessToken)` — session-less per-request-JWT client (RLS applies)
+- `createServiceRoleClient()` — privileged session-less client (bypasses RLS)
 - Type exports: `CookieAdapter`, `CookieOptions`
 - Re-exported provider types: `SupabaseClient`, `AuthError`, `User`
 
@@ -59,11 +63,13 @@ bun run typecheck # tsc --noEmit
 
 ```
 src/
-  index.ts        # barrel — public exports only
-  client.ts       # createServerClient, createBrowserClient (raw client)
-  types.ts        # CookieAdapter, CookieOptions
-tests/unit/       # bun:test unit tests
-spec.md           # package specification
+  index.ts                # barrel — public exports only
+  client.ts               # createServerClient, createBrowserClient (raw client)
+  authed-client.ts        # createAuthedClient (per-request JWT, session-less)
+  service-role-client.ts  # createServiceRoleClient (bypasses RLS, SERVER-ONLY)
+  types.ts                # CookieAdapter, CookieOptions
+tests/unit/               # bun:test unit tests
+spec.md                   # package specification
 ```
 
 ## Root context

@@ -46,6 +46,32 @@
   },
   "overrides": [
     {
+      "includes": ["packages/finance/src/domain/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "**/internal/**",
+                      "**/internal",
+                      "@nafios/database",
+                      "@nafios/supabase-core",
+                      "@supabase/*"
+                    ],
+                    "message": "src/domain/ is the pure layer — it must not import the data layer (src/internal/), @nafios/database, @nafios/supabase-core, or @supabase/*. Move I/O to src/internal/."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["packages/ui/src/styles/**/*.css"],
       "css": {
         "parser": {
