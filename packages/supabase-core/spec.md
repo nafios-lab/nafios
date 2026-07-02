@@ -57,6 +57,22 @@ downstream by `@nafios/database` (see Invariant 3).
 
 ```ts
 /**
+ * Creates a SESSION-LESS anon-key client with a per-request JWT attached via a
+ * global `Authorization: Bearer <token>` header. With the JWT attached,
+ * `auth.uid()` resolves and RLS applies — the client runs as the request user.
+ * Uses `createClient` (not the ssr cookie client): the token is per-request, so
+ * no session is persisted and no token is auto-refreshed. Reads SUPABASE_URL
+ * and SUPABASE_ANON_KEY. Returns the untyped client (typed downstream by asDb).
+ */
+function createAuthedClient(accessToken: string): SupabaseClient;
+```
+
+Consumed by feature packages (e.g. `@nafios/finance`) that wrap it with
+`@nafios/database`'s `asDb`. The anon key alone grants no access; the JWT is
+what authorizes the request.
+
+```ts
+/**
  * Creates a privileged, SESSION-LESS server client using the service-role key.
  * Bypasses RLS and carries no user identity — SERVER-ONLY. Uses
  * `createClient` (not the ssr cookie client): no cookies, no session
@@ -101,7 +117,7 @@ type CookieAdapter = {
 ## Error Handling
 
 Client construction throws synchronously if a required env var is missing
-(`SUPABASE_URL` / `SUPABASE_ANON_KEY` for the anon clients;
+(`SUPABASE_URL` / `SUPABASE_ANON_KEY` for the anon and authed clients;
 `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` for the service-role client). This
 is a startup-time failure, not a runtime error.
 
@@ -110,7 +126,7 @@ is a startup-time failure, not a runtime error.
 | Variable                     | Required by                  | Description                          |
 |------------------------------|------------------------------|--------------------------------------|
 | `SUPABASE_URL`               | All clients                  | Supabase project API URL             |
-| `SUPABASE_ANON_KEY`          | `createServer/BrowserClient` | Supabase anon (public) API key       |
+| `SUPABASE_ANON_KEY`          | `createServer/Browser/AuthedClient` | Supabase anon (public) API key; for `createAuthedClient` the per-request JWT is layered on top |
 | `SUPABASE_SERVICE_ROLE_KEY`  | `createServiceRoleClient`    | Service-role (secret) key — SERVER-ONLY; bypasses RLS, never expose to browser |
 
 ## Invariants
