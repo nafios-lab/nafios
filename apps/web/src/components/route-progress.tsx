@@ -49,7 +49,13 @@ export function RouteProgress() {
       resetRef.current = setTimeout(() => setProgress(0), 300);
     }
 
-    return stopTrickle;
+    return () => {
+      stopTrickle();
+      if (resetRef.current) {
+        clearTimeout(resetRef.current);
+        resetRef.current = null;
+      }
+    };
   }, [isNavigating]);
 
   if (progress === 0) return null;

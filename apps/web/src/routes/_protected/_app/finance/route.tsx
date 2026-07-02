@@ -45,9 +45,9 @@ function FinanceLayout() {
     })),
   );
 
-  // Finance composes the shared navbar from the same building blocks the rest
-  // of the suite uses: product switcher (highlighting Finance) + module title
-  // on the left; search + the account menu on the right.
+  // Finance specializes the shared navbar's left slot: product switcher
+  // (highlighting Finance) + module title. The right slot is intentionally
+  // empty — global search / account chrome is shell-owned, not per-module.
   useNavbar({
     leftAside: (
       <>
