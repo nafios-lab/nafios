@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { CalendarDays, CalendarRange } from "lucide-react";
 import { ServiceMenu } from "~/components/service-menu";
-import { NavbarTitle, SearchBar, UserMenu, useNavbar } from "../../../../components/navbar";
+import { NavbarTitle, useNavbar } from "../../../../components/navbar";
 import { type SidebarNavItem, useSidebarNav } from "../../../../components/sidebar";
 
 /**
@@ -13,7 +13,12 @@ import { type SidebarNavItem, useSidebarNav } from "../../../../components/sideb
 
 const CALENDAR_NAV = [
   { id: "month", label: "Month", icon: CalendarDays, to: "/calendar" },
-  { id: "schedule", label: "Schedule", icon: CalendarRange, to: "/calendar/schedule" },
+  {
+    id: "schedule",
+    label: "Schedule",
+    icon: CalendarRange,
+    to: "/calendar/schedule",
+  },
 ] as const satisfies readonly SidebarNavItem[];
 
 export const Route = createFileRoute("/_protected/_app/calendar")({
@@ -21,7 +26,6 @@ export const Route = createFileRoute("/_protected/_app/calendar")({
 });
 
 function CalendarLayout() {
-  const { session } = Route.useRouteContext();
   const { pathname } = useLocation();
 
   useSidebarNav(
@@ -35,13 +39,7 @@ function CalendarLayout() {
     leftAside: (
       <>
         <ServiceMenu active="calendar" />
-        <NavbarTitle>Calendar</NavbarTitle>
-      </>
-    ),
-    rightAside: (
-      <>
-        <SearchBar />
-        <UserMenu email={session.user.email} />
+        <NavbarTitle>CALENDAR</NavbarTitle>
       </>
     ),
   });

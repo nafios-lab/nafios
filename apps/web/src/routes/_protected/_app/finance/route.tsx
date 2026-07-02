@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { ArrowLeftRight, LayoutDashboard, Wallet } from "lucide-react";
 import { ServiceMenu } from "~/components/service-menu";
-import { NavbarTitle, SearchBar, UserMenu, useNavbar } from "../../../../components/navbar";
+import { NavbarTitle, useNavbar } from "../../../../components/navbar";
 import { type SidebarNavItem, useSidebarNav } from "../../../../components/sidebar";
 
 /**
@@ -19,7 +19,12 @@ import { type SidebarNavItem, useSidebarNav } from "../../../../components/sideb
 const FINANCE_NAV = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, to: "/finance" },
   { id: "accounts", label: "Accounts", icon: Wallet, to: "/finance/accounts" },
-  { id: "transactions", label: "Transactions", icon: ArrowLeftRight, to: "/finance/transactions" },
+  {
+    id: "transactions",
+    label: "Transactions",
+    icon: ArrowLeftRight,
+    to: "/finance/transactions",
+  },
 ] as const satisfies readonly SidebarNavItem[];
 
 export const Route = createFileRoute("/_protected/_app/finance")({
@@ -28,7 +33,7 @@ export const Route = createFileRoute("/_protected/_app/finance")({
 
 function FinanceLayout() {
   // Session flows down from `_protected` (fetched once in its beforeLoad).
-  const { session } = Route.useRouteContext();
+
   const { pathname } = useLocation();
 
   // Highlight the current rail item: exact match for the overview index,
@@ -47,13 +52,7 @@ function FinanceLayout() {
     leftAside: (
       <>
         <ServiceMenu active="finance" />
-        <NavbarTitle>Finance</NavbarTitle>
-      </>
-    ),
-    rightAside: (
-      <>
-        <SearchBar />
-        <UserMenu email={session.user.email} />
+        <NavbarTitle>FINANCE</NavbarTitle>
       </>
     ),
   });
