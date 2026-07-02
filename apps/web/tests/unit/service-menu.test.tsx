@@ -28,6 +28,38 @@ describe("ServiceMenu", () => {
     }
   });
 
+  test("highlights the product named by the active prop", async () => {
+    const user = userEvent.setup();
+    render(<ServiceMenu active="finance" />);
+
+    await user.click(screen.getByRole("button", { name: "Services Menu" }));
+    await waitFor(() => expect(screen.getByText("Finance")).toBeDefined());
+
+    // The active product carries the highlight + aria-current…
+    const activeRow = screen.getByText("Finance").closest("button");
+    expect(activeRow?.className).toContain("font-medium");
+    expect(activeRow?.getAttribute("aria-current")).toBe("page");
+
+    // …while every other product stays inactive.
+    const inactiveRow = screen.getByText("Calendar").closest("button");
+    expect(inactiveRow?.className).not.toContain("font-medium");
+    expect(inactiveRow?.getAttribute("aria-current")).toBeNull();
+  });
+
+  test("marks no product active when the active prop is omitted", async () => {
+    const user = userEvent.setup();
+    render(<ServiceMenu />);
+
+    await user.click(screen.getByRole("button", { name: "Services Menu" }));
+    await waitFor(() => expect(screen.getByText("Finance")).toBeDefined());
+
+    for (const label of PRODUCTS) {
+      const row = screen.getByText(label).closest("button");
+      expect(row?.className).not.toContain("font-medium");
+      expect(row?.getAttribute("aria-current")).toBeNull();
+    }
+  });
+
   test("flips the trigger to the solid variant while the menu is open", async () => {
     const user = userEvent.setup();
     render(<ServiceMenu />);

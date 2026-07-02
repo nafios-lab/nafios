@@ -13,13 +13,38 @@ import { ProductSwitcher, type ProductSwitcherProps } from "./product-switcher.t
 import { Button } from "./ui/button.tsx";
 
 const products: ProductSwitcherProps["items"] = [
-  { id: "finance", label: "Finance", icon: FinanceLogo },
-  { id: "calendar", label: "Calendar", icon: CalendarLogo },
-  { id: "doc", label: "Doc", icon: DocLogo },
-  { id: "storage", label: "Storage", icon: StorageLogo },
-  { id: "budgeting", label: "Budgeting", icon: BudgetingLogo },
-  { id: "notebook", label: "Notebook", icon: NotebookLogo },
-  { id: "radio", label: "Radio", icon: RadioLogo },
+  {
+    id: "finance",
+    label: "Finance",
+    description: "Track income, expenses & net worth",
+    icon: FinanceLogo,
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    description: "Plan events and shared schedules",
+    icon: CalendarLogo,
+  },
+  { id: "doc", label: "Doc", description: "Draft, sign & store documents", icon: DocLogo },
+  {
+    id: "storage",
+    label: "Storage",
+    description: "Cloud drive for all your files",
+    icon: StorageLogo,
+  },
+  {
+    id: "budgeting",
+    label: "Budgeting",
+    description: "Set budgets and watch your spending",
+    icon: BudgetingLogo,
+  },
+  {
+    id: "notebook",
+    label: "Notebook",
+    description: "Capture notes and quick to-dos",
+    icon: NotebookLogo,
+  },
+  { id: "radio", label: "Radio", description: "Your personal mini radio station", icon: RadioLogo },
 ];
 
 type StoryArgs = ProductSwitcherProps;
@@ -50,6 +75,18 @@ export const WithActiveProduct: Story = {
       ...p,
       active: p.id === "finance",
     })),
+    renderTrigger: ({ open }) => (
+      <Button variant={open ? "outline" : "ghost"} size="icon">
+        <LayoutGrid />
+      </Button>
+    ),
+  },
+};
+
+export const WithActiveItem: Story = {
+  args: {
+    items: products,
+    activeItem: "calendar",
     renderTrigger: ({ open }) => (
       <Button variant={open ? "outline" : "ghost"} size="icon">
         <LayoutGrid />

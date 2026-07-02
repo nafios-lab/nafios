@@ -1,4 +1,3 @@
-import { ChevronRight } from "lucide-react";
 import type * as React from "react";
 import { useState } from "react";
 import { cn } from "../lib/utils.ts";
@@ -8,8 +7,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 export interface ProductItem {
   /** Unique identifier for the product. */
   id: string;
-  /** Display label shown below the icon. */
+  /** Display label shown next to the icon. */
   label: string;
+  /** Optional one-line summary shown beneath the label to hint what the module does. */
+  description?: string;
   /** Product icon/logo component. */
   icon: React.ComponentType<{ className?: string }>;
   /** Optional href — when provided the item renders as a link. */
@@ -21,8 +22,15 @@ export interface ProductItem {
 }
 
 export interface ProductSwitcherProps {
-  /** Products to display in the list. */
-  items: ProductItem[];
+  /** Products to display in the list. Read-only so callers can pass an `as const` list. */
+  items: readonly ProductItem[];
+  /**
+   * Id of the currently-active product. The matching item gets the active
+   * highlight — so consumers can derive it from the current route/location
+   * instead of hand-setting `active` on each item. `undefined` = no active item.
+   * Composes with a per-item `active` flag (either marks an item active).
+   */
+  activeItem?: string;
   /**
    * Render-prop for the trigger element.
    * Receives `{ open }` so you can style based on dropdown state.
@@ -45,6 +53,7 @@ export interface ProductSwitcherProps {
 
 function ProductSwitcher({
   items,
+  activeItem,
   renderTrigger,
   align = "center",
   side = "bottom",
@@ -71,46 +80,49 @@ function ProductSwitcher({
         align={align}
         side={side}
         sideOffset={sideOffset}
-        className={cn("w-56 p-1.5", contentClassName)}
+        className={cn("w-72 p-1.5", contentClassName)}
       >
         <div className="flex flex-col gap-0.5">
           {items.map((item) => {
             const Icon = item.icon;
+            // Active if the parent marks it by id (route-driven) or the item
+            // opts in via its own flag. `activeItem === undefined` disables the
+            // id path (no id equals undefined), so nothing is active by default.
+            const isActive = item.active || item.id === activeItem;
             const inner = (
               <>
-                {/* App-icon tile: shaded rounded square framing the base logo SVG.
-                    On row hover/focus it lifts, brightens, and gains a brand ring + glow. */}
-                <span
-                  className={cn(
-                    "flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand/10",
-                    "shadow-sm ring-1 ring-transparent transition-all duration-200 ease-out",
-                    "group-hover:bg-brand/15 group-hover:ring-brand group-hover:shadow-[0_6px_16px_-6px_hsl(var(--brand)/0.45)]",
-                    "group-focus-visible:-translate-y-0.5 group-focus-visible:bg-brand/15 group-focus-visible:ring-brand group-focus-visible:shadow-[0_6px_16px_-6px_hsl(var(--brand)/0.45)]",
-                  )}
-                >
-                  <Icon className="size-5" />
+                <Icon className="size-6" />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5 justify-start text-left">
+                  <Text as="span" variant="label" size="sm" className="truncate leading-tight">
+                    {item.label}
+                  </Text>
+                  {item.description ? (
+                    <Text as="span" size="xs" muted className="line-clamp-2 leading-snug">
+                      {item.description}
+                    </Text>
+                  ) : null}
                 </span>
-                <Text as="span" variant="label" size="sm" className="leading-tight">
-                  {item.label}
-                </Text>
-                {/* "Open" affordance — slides + fades in on row hover/focus. */}
-                <ChevronRight
+                {/* Trailing brand dot marks the active product. The slot is always
+                    reserved (only its opacity toggles) so activating a row never
+                    reflows the layout — inactive rows keep the same spare space. */}
+                <span
                   aria-hidden="true"
                   className={cn(
-                    "ml-auto size-4 shrink-0 -translate-x-1 text-foreground opacity-0 transition-all duration-200 ease-out",
-                    "group-hover:translate-x-0 group-hover:opacity-100",
-                    "group-focus-visible:translate-x-0 group-focus-visible:opacity-100",
+                    "size-2 shrink-0 rounded-full bg-brand transition-opacity duration-200",
+                    isActive ? "opacity-100" : "opacity-0",
                   )}
                 />
               </>
             );
 
-            // Neutral `muted` for hover/active/focus — never the (blue) accent.
+            // Full-contrast `foreground` text at rest so rows read as clickable
+            // (not disabled). Neutral `muted` background is the hover/active/focus
+            // affordance — never the (blue) accent.
             const sharedClassName = cn(
-              "group flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-muted-foreground transition-colors",
-              "hover:bg-muted hover:text-foreground",
-              "focus-visible:bg-muted focus-visible:text-foreground focus-visible:outline-none",
-              item.active && "bg-muted font-medium text-foreground",
+              "group flex w-full items-center gap-3 rounded-md px-2.5 py-4 text-foreground transition-colors",
+              "hover:bg-muted",
+              "focus-visible:bg-muted focus-visible:outline-none",
+              isActive && "bg-muted font-medium",
             );
 
             if (item.href) {
@@ -119,6 +131,7 @@ function ProductSwitcher({
                   key={item.id}
                   href={item.href}
                   className={sharedClassName}
+                  aria-current={isActive ? "page" : undefined}
                   onClick={() => item.onSelect?.()}
                 >
                   {inner}
@@ -131,6 +144,7 @@ function ProductSwitcher({
                 key={item.id}
                 type="button"
                 className={cn(sharedClassName, "cursor-pointer")}
+                aria-current={isActive ? "page" : undefined}
                 onClick={() => item.onSelect?.()}
               >
                 {inner}
