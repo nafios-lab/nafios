@@ -1,8 +1,12 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ServiceMenu } from "../../src/components/service-menu.tsx";
+import { navigate } from "../setup.ts";
 
+// `navigate` is the shared router spy from tests/setup.ts. Clear its history
+// before each test so selection assertions see only this test's calls.
+beforeEach(() => navigate.mockClear());
 afterEach(cleanup);
 
 // The fixed suite catalog the menu surfaces, in declaration order.
@@ -58,6 +62,75 @@ describe("ServiceMenu", () => {
       expect(row?.className).not.toContain("font-medium");
       expect(row?.getAttribute("aria-current")).toBeNull();
     }
+  });
+
+  test("navigates to the module route when a routed product is selected", async () => {
+    const user = userEvent.setup();
+    render(<ServiceMenu />);
+
+    const trigger = screen.getByRole("button", { name: "Services Menu" });
+    await user.click(trigger);
+    await waitFor(() => expect(screen.getByText("Finance")).toBeDefined());
+
+    // Finance and Calendar have mounted routes → selecting one is SPA nav.
+    await user.click(screen.getByText("Finance").closest("button") as HTMLElement);
+    expect(navigate).toHaveBeenCalledWith({ to: "/finance" });
+
+    // Selecting dismisses the menu, so reopen it before the next pick.
+    await user.click(trigger);
+    await waitFor(() => expect(screen.getByText("Calendar")).toBeDefined());
+    await user.click(screen.getByText("Calendar").closest("button") as HTMLElement);
+    expect(navigate).toHaveBeenCalledWith({ to: "/calendar" });
+  });
+
+  test("surfaces a Home entry that navigates to the welcome dashboard", async () => {
+    const user = userEvent.setup();
+    render(<ServiceMenu />);
+
+    await user.click(screen.getByRole("button", { name: "Services Menu" }));
+    await waitFor(() => expect(screen.getByText("Home")).toBeDefined());
+
+    // Home is the always-available way back to /welcome from any module.
+    await user.click(screen.getByText("Home").closest("button") as HTMLElement);
+    expect(navigate).toHaveBeenCalledWith({ to: "/welcome" });
+  });
+
+  test("highlights Home when it is the active entry", async () => {
+    const user = userEvent.setup();
+    render(<ServiceMenu active="home" />);
+
+    await user.click(screen.getByRole("button", { name: "Services Menu" }));
+    await waitFor(() => expect(screen.getByText("Home")).toBeDefined());
+
+    const homeRow = screen.getByText("Home").closest("button");
+    expect(homeRow?.className).toContain("font-medium");
+    expect(homeRow?.getAttribute("aria-current")).toBe("page");
+  });
+
+  test("dismisses the menu once a routed selection settles", async () => {
+    const user = userEvent.setup();
+    render(<ServiceMenu />);
+
+    await user.click(screen.getByRole("button", { name: "Services Menu" }));
+    await waitFor(() => expect(screen.getByText("Finance")).toBeDefined());
+
+    // Navigating across modules should auto-close the panel — the catalog
+    // unmounts once the navigation resolves.
+    await user.click(screen.getByText("Finance").closest("button") as HTMLElement);
+    await waitFor(() => expect(screen.queryByText("Finance")).toBeNull());
+  });
+
+  test("leaves a product with no mounted route inert — no navigation", async () => {
+    const user = userEvent.setup();
+    render(<ServiceMenu />);
+
+    await user.click(screen.getByRole("button", { name: "Services Menu" }));
+    await waitFor(() => expect(screen.getByText("Document")).toBeDefined());
+
+    // Document has no route yet → its row carries no onSelect, so clicking it
+    // does nothing (never links to a route that would 404).
+    await user.click(screen.getByText("Document").closest("button") as HTMLElement);
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   test("flips the trigger to the solid variant while the menu is open", async () => {

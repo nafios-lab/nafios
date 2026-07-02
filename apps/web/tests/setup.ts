@@ -137,9 +137,22 @@ mock.module("@tanstack/react-start/server", () => ({
 // react-router in two files would clobber across the global registry.
 export const navigate = mock((_opts?: unknown) => {});
 
+// Navigation state exposed to useRouterState consumers (e.g. the top-line
+// RouteProgress bar). No live router runs under test, so tests steer the
+// pending/loading flags through this holder and re-render. Only the fields the
+// app actually selects on are modelled.
+type RouterNavState = { status: "idle" | "pending"; isLoading: boolean; isTransitioning: boolean };
+let routerState: RouterNavState = { status: "idle", isLoading: false, isTransitioning: false };
+/** Drive `useRouterState` under test; re-render the component to observe it. */
+export function setRouterState(next: Partial<RouterNavState>): void {
+  routerState = { ...routerState, ...next };
+}
+
 mock.module("@tanstack/react-router", () => ({
   ...ReactRouter,
   useNavigate: () => navigate,
+  useRouterState: ({ select }: { select?: (state: RouterNavState) => unknown } = {}) =>
+    select ? select(routerState) : routerState,
   Link: ({ children, to, ...props }: { children?: unknown; to?: string }) =>
     createElement("a", { href: to, ...props }, children as never),
 }));
