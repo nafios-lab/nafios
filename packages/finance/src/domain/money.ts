@@ -82,7 +82,7 @@ export function decodeMoney(dbValue: string): Money {
  *   715235 (cents) -> "7152.35"   |   -1250 -> "-12.50"   |   0 -> "0.00"
  */
 export function encodeMoney(value: Money): string {
-  const cents = value as number;
+  const cents = toCents(value);
   const abs = Math.abs(cents);
   const dollars = Math.floor(abs / 100);
   const fraction = String(abs % 100).padStart(2, "0");

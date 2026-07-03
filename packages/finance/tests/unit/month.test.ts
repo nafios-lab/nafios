@@ -1,27 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
   addMonths,
-  CodecError,
-  type CodecErrorCode,
   compareMonths,
   decodeMonth,
   encodeMonth,
   type Month,
   monthOf,
 } from "../../src/domain";
-
-// Run `fn`, assert it threw a CodecError, and return its `code` for assertion.
-function codeOf(fn: () => unknown): CodecErrorCode {
-  try {
-    fn();
-  } catch (error) {
-    if (error instanceof CodecError) {
-      return error.code;
-    }
-    throw error;
-  }
-  throw new Error("expected a CodecError, but nothing was thrown");
-}
+import { codeOf } from "./codec-error.helper";
 
 describe("decodeMonth / encodeMonth", () => {
   test("#1 decodes a first-of-month DATE to YYYY-MM", () => {

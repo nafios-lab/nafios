@@ -1,8 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
   addMoney,
-  CodecError,
-  type CodecErrorCode,
   compareMoney,
   decodeMoney,
   encodeMoney,
@@ -13,19 +11,7 @@ import {
   toCents,
   ZERO_MONEY,
 } from "../../src/domain";
-
-// Run `fn`, assert it threw a CodecError, and return its `code` for assertion.
-function codeOf(fn: () => unknown): CodecErrorCode {
-  try {
-    fn();
-  } catch (error) {
-    if (error instanceof CodecError) {
-      return error.code;
-    }
-    throw error;
-  }
-  throw new Error("expected a CodecError, but nothing was thrown");
-}
+import { codeOf } from "./codec-error.helper";
 
 describe("decodeMoney / toCents / encodeMoney", () => {
   test("#1 decodes a numeric(12,2) string to integer cents", () => {

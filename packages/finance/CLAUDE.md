@@ -1,10 +1,11 @@
 # @nafios/finance
 
-The whole finance module as a single `@nafios/<module>` package. At M0 it is a
+The whole finance module as a single `@nafios/<module>` package. EF2 shipped the
 **skeleton**: the architecture (internal layer split + connection spine), not
-the features. Domain types, the Money/Month codecs, repositories, queries,
-metrics, and UI land later as incremental feature tickets — always inside the
-structure this package establishes, never re-architecting it.
+the features. EF3.1 landed the first pure-domain code — the `Money`/`Month`
+value types + codecs. Further domain types, repositories, queries, metrics, and
+UI land later as incremental feature tickets — always inside the structure this
+package establishes, never re-architecting it.
 
 ## Internal layer boundary (the core invariant)
 
@@ -12,10 +13,10 @@ One package, two **internal** layers. The pure-vs-I/O split is enforced
 _inside_ the package by a **Biome import-boundary rule** (see root
 [biome.json](../../biome.json)), not by the package graph:
 
-- **`src/domain/` — the pure layer.** Reserved for framework-agnostic types,
-  enums, and the Money/Month codecs. **Zero I/O.** It must **not** import
-  `src/internal/`, `@nafios/database`, `@nafios/supabase-core`, or
-  `@supabase/*`. Empty (placeholder barrel only) at EF2.
+- **`src/domain/` — the pure layer.** Framework-agnostic types, enums, and
+  codecs. **Zero I/O.** It must **not** import `src/internal/`,
+  `@nafios/database`, `@nafios/supabase-core`, or `@supabase/*`. Holds the
+  `Money`/`Month` value types + codecs (EF3.1); more domain types land later.
 - **`src/internal/` — the data layer.** The **only** place `@nafios/database`
   and `@nafios/supabase-core` appear. It may import `src/domain/`. At EF2 it
   holds the client factories + auth/session seam (the connection spine) and
@@ -95,7 +96,10 @@ bun run typecheck # tsc --noEmit
 src/
   index.ts              # barrel — the only public export surface
   domain/
-    index.ts            # placeholder barrel — pure types/enums/codecs land later
+    index.ts            # domain barrel — re-exports the pure types/codecs below
+    money.ts            # Money value type + codec + arithmetic (EF3.1)
+    month.ts            # Month value type + codec + monthOf/addMonths/compareMonths (EF3.1)
+    codec-error.ts      # CodecError thrown by the decode/construct paths (EF3.1)
   internal/
     client.ts           # createBrowserClient, createServiceClient, FinanceClient
 tests/
