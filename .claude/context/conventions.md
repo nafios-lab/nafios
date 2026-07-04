@@ -41,8 +41,12 @@ not `tsconfig` path aliases.
 ## Spec location
 
 Package specs are **co-located**: `packages/<x>/spec.md`. `specs/` holds only
-**cross-cutting** specs (shared APIs, events, domain models).
-→ Decision: [ADR-0011](../../adr/0011-co-locate-package-specs.md).
+**cross-cutting** specs (shared APIs, events, domain models). Domain specs are
+grouped per module under `specs/domain/<module>/`, which also holds that
+module's reference material (DBML, DB design, images) — tell specs from
+reference by frontmatter/banner, not by location.
+→ Decisions: [ADR-0011](../../adr/0011-co-locate-package-specs.md) (co-location),
+[ADR-0025](../../adr/0025-domain-specs-grouped-by-module-with-reference-material.md) (per-module grouping + colocated reference material).
 
 ## Required files per workspace
 

@@ -17,7 +17,7 @@ export interface UseOnboardingProfileOptions {
  * with both optional fields; the server skips whichever is empty. Retries
  * `system` faults up to {@link MAX_PROFILE_ATTEMPTS}; every failure inside
  * onboarding is a system fault (there are no user-fixable errors here — see
- * specs/domain/onboarding-flow.md), so the surfaced message is generic.
+ * specs/domain/auth-onboarding/onboarding-flow.md), so the surfaced message is generic.
  *
  * Skip is **not** handled here: it writes nothing and simply advances the wizard.
  */

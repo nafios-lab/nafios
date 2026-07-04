@@ -12,7 +12,7 @@ nafios/
 ├── services/      headless backends (REST, workers)
 ├── packages/      shared libraries (@nafios/*)
 ├── tooling/       generators and dev scripts
-├── specs/         cross-cutting specs (APIs, events, domain models)
+├── specs/         cross-cutting specs (APIs, events, per-module domain models + their reference material)
 ├── adr/           architectural decisions (immutable)
 └── .claude/       agent context (conventions, glossary, tech-stack, this file)
 ```

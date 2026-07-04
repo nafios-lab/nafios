@@ -2,7 +2,7 @@ import type { SelectOption } from "@nafios/ui/components/select-field";
 import { z } from "zod";
 
 // ----- Step 2 — Profile -------------------------------//
-// (Canonical numbering per specs/domain/onboarding-flow.md: Step 1 is signup.)
+// (Canonical numbering per specs/domain/auth-onboarding/onboarding-flow.md: Step 1 is signup.)
 /** SG mobile in the formatted display shape, e.g. "(+65) 9123 4567". */
 const SG_MOBILE_RE = /^\(\+65\) [89]\d{3} \d{4}$/;
 

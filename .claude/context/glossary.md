@@ -24,7 +24,14 @@ in a spec or ADR, not here.
 
 - **Spec** — authoritative description of *what* a thing does; agents implement
   to it. Co-located at `packages/<x>/spec.md` or cross-cutting in `specs/`.
+  Domain specs are grouped per module under `specs/domain/<module>/`.
   → [specs/README.md](../../specs/README.md).
+- **Reference material** — supporting artifacts that illustrate a spec but do
+  **not** govern (DB-design notes, DBML, ER diagrams, layout JSON, images). Lives
+  beside the specs in the same `specs/domain/<module>/` folder; a spec always
+  overrides it. Spotted by being a non-`.md` file, or a `.md` banner-marked
+  *"not a spec."*
+  → [ADR-0025](../../adr/0025-domain-specs-grouped-by-module-with-reference-material.md).
 - **ADR** — numbered note capturing *why* a choice was made (immutable once
   accepted). → [adr/README.md](../../adr/README.md).
 - **Context docs** — the four files in `.claude/context/` (this one included):

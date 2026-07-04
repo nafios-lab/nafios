@@ -21,7 +21,7 @@ reproducible across sessions and contributors.
 | **Package specs** | Co-located at `packages/<name>/spec.md` | `packages/core-utils/spec.md` |
 | **API contracts** | `specs/api/` | REST endpoint specs, RPC contracts |
 | **Event schemas** | `specs/events/` | Pub/sub event definitions |
-| **Domain models** | `specs/domain/` | Cross-cutting domain concepts |
+| **Domain models** | `specs/domain/<module>/` | `specs/domain/finance/`, `specs/domain/calendar/` |
 | **Data conventions** | `specs/data/` | Database, migration, and table conventions |
 
 Package specs live with their package for maximum discoverability — an agent
@@ -30,6 +30,33 @@ entering a package finds `CLAUDE.md` + `spec.md` + code together. See
 
 Cross-cutting specs that don't belong to a single package live here under
 `specs/`.
+
+### Domain specs are grouped by module
+
+`specs/domain/` is organized into **one subfolder per module** so everything for
+a module stays together — `specs/domain/finance/`, `specs/domain/auth-onboarding/`,
+`specs/domain/calendar/`, and so on. A spec scoped to one module lives in that
+module's folder. See [`specs/domain/README.md`](domain/README.md) for the layout.
+
+**A module folder holds both specs and their reference material.** Alongside the
+authoritative `.md` specs, keep the module's supporting artifacts in the *same*
+folder — DB-design notes, DBML, ER diagrams, layout JSON, images, exploratory
+drafts. Everything for a module lives in one place, so an agent entering
+`specs/domain/finance/` finds the contract and the material behind it together.
+→ [ADR-0025](../adr/0025-domain-specs-grouped-by-module-with-reference-material.md).
+
+Within a folder, tell the two apart by **intent, not location**:
+
+- **Authoritative spec** — the contract agents implement to. A `.md` file whose
+  header declares it a spec (standard versioned frontmatter, `status: draft` or
+  `active`). Its **Entities**/**Invariants** sections govern.
+- **Reference material** — supports or illustrates a spec but never governs.
+  Every non-`.md` file (`.dbml`, `.layout.json`, images) is reference. A `.md`
+  file is reference *only* when it carries a top banner marking it
+  non-authoritative (e.g. `> Status: reference — not a spec`), like
+  [`finance-db-design.md`](domain/finance/finance-db-design.md).
+
+When a spec and a diagram disagree, **the spec wins.**
 
 ## Versioning
 
@@ -79,5 +106,10 @@ A valid spec is a Markdown file that:
 2. Includes the eight standard sections from the template (Purpose through Open questions).
 3. Lives at one of the recognized locations:
    - `packages/<name>/spec.md` for package specs.
-   - `specs/api/*.md`, `specs/events/*.md`, `specs/domain/*.md`, or `specs/data/*.md` for cross-cutting specs.
+   - `specs/api/*.md`, `specs/events/*.md`, `specs/domain/**/*.md`, or `specs/data/*.md` for cross-cutting specs (`specs/domain/` is recursed so per-module subfolders count).
 4. Has `status` set to `draft` or `active` (not `deprecated`).
+
+**Reference material colocated in a module folder is not a coverage gap.**
+Non-`.md` files (DBML, layout JSON, images) and `.md` files banner-marked as
+non-authoritative (e.g. `finance-db-design.md`) intentionally fail rule 1 — they
+are supporting artifacts, not specs, and the coverage check skips them by design.
