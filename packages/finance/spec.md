@@ -1,8 +1,8 @@
 ---
 title: "@nafios/finance"
 status: active
-version: 0.1.0
-updated: 2026-07-02
+version: 0.2.0
+updated: 2026-07-03
 owner: Hanafi
 related_adrs: [0005, 0006, 0014, 0019, 0020, 0021]
 ---
@@ -11,11 +11,12 @@ related_adrs: [0005, 0006, 0014, 0019, 0020, 0021]
 
 ## Purpose
 
-The NafiOS finance module as a single `@nafios/<module>` package. At M0 this
-package is a **skeleton**: it ships the architecture — the internal pure/data
-layer split and the client/auth **connection spine** — but essentially no
-functional code. Adding the first entity type, codec, or repository should
-require only writing it in the correct layer, never re-architecting the package.
+The NafiOS finance module as a single `@nafios/<module>` package. EF2 shipped
+the **skeleton**: the architecture — the internal pure/data layer split and the
+client/auth **connection spine** — with no functional code. EF3.1 then landed
+the first pure-domain code: the `Money`/`Month` value types + codecs. Adding
+each subsequent entity type, codec, or repository requires only writing it in
+the correct layer, never re-architecting the package.
 
 Scope and boundary are defined by the EF2 epic and its two sub-tickets:
 
@@ -37,11 +38,17 @@ Scope and boundary are defined by the EF2 epic and its two sub-tickets:
   (`asDb`, `Db`) and `@nafios/supabase-core` (client construction), per
   [ADR-0021](../../adr/0021-supabase-core-connection-foundation.md).
 
+**In (EF3.1):** the first pure-domain value types + codecs — `Money` (branded
+integer-cents) and `Month` (branded `"YYYY-MM"`), their DB read/write codecs,
+the sanctioned money-arithmetic helpers, and the `CodecError` they throw. Zero
+I/O, zero dependencies; lives in `src/domain/`. Full contract, behavior rules,
+and verification matrix: [EF3.1](../../issues/EF3.1.md).
+
 **Out (deferred to later finance feature tickets):** domain entity/enum types,
-the Money/Month codecs, base repository helpers, row↔domain mappers,
-`FinanceDataError` / SQLSTATE mapping, all repositories, derived-metric and
-domain-engine logic, the default-data seed, any service/API endpoints, any UI,
-and any schema/migration change (EF2 consumes the EF1 schema unchanged).
+base repository helpers, row↔domain mappers, `FinanceDataError` / SQLSTATE
+mapping, all repositories, derived-metric and domain-engine logic, the
+default-data seed, any service/API endpoints, any UI, and any schema/migration
+change (EF2 consumes the EF1 schema unchanged).
 
 ## Architecture
 
@@ -60,6 +67,8 @@ src/internal/ (data) → src/domain/ (domain) → (nothing app-specific)
 
 ## Public API
 
+### Connection spine (EF2.2)
+
 ```ts
 /** A finance data-layer client — the schema-typed Db (SupabaseClient<Database>). */
 export type FinanceClient = Db;
@@ -74,6 +83,47 @@ export function createServiceClient(): FinanceClient;
 The raw `SupabaseClient` type and the generated `@nafios/database` row types are
 **never** re-exported — `FinanceClient` (an alias of `Db`) is what callers see.
 
+### Domain value types & codecs (EF3.1)
+
+Pure `src/domain/` surface — branded value types plus the codecs that convert
+them to/from the raw DB shapes. Signatures only; see
+[EF3.1](../../issues/EF3.1.md) for behavior rules and the verification matrix.
+
+```ts
+// Money — exact money held as branded integer CENTS (numeric(12,2) is read as a string).
+export type Money = number & { readonly __brand: "Money" };
+export const ZERO_MONEY: Money;
+export function decodeMoney(dbValue: string): Money; // numeric(12,2) string -> Money
+export function encodeMoney(value: Money): string; // Money -> canonical numeric(12,2) string
+export function moneyFromCents(cents: number): Money;
+export function toCents(value: Money): number;
+export function addMoney(a: Money, b: Money): Money;
+export function subtractMoney(a: Money, b: Money): Money; // result MAY be negative
+export function sumMoney(values: readonly Money[]): Money; // [] -> ZERO_MONEY
+export function compareMoney(a: Money, b: Money): -1 | 0 | 1;
+export function isNegativeMoney(value: Money): boolean;
+
+// Month — calendar month as branded "YYYY-MM" (lexicographic order == chronological).
+export type Month = string & { readonly __brand: "Month" };
+export function decodeMonth(dbValue: string): Month; // first-of-month DATE -> Month
+export function encodeMonth(value: Month): string; // Month -> first-of-month DATE
+export function monthOf(isoDate: string): Month; // month containing a caller-supplied date
+export function addMonths(value: Month, n: number): Month; // rolls the year in both directions
+export function compareMonths(a: Month, b: Month): -1 | 0 | 1;
+
+// The single error type thrown by the decode/construct paths on malformed input.
+export type CodecErrorCode =
+  | "money_not_numeric"
+  | "money_too_many_decimals"
+  | "money_out_of_range"
+  | "money_not_integer_cents"
+  | "month_not_a_date"
+  | "month_not_first_of_month";
+export class CodecError extends Error {
+  readonly code: CodecErrorCode;
+}
+```
+
 ## Behavior & rules
 
 1. **Browser client runs as the user.** Finance executes client-side; supabase-core's
@@ -86,9 +136,11 @@ The raw `SupabaseClient` type and the generated `@nafios/database` row types are
    so `auth.uid()` is NULL; a service insert that omits `user_id` is correctly
    rejected by `NOT NULL` (`23502`). Callers must set `user_id` explicitly.
    Never on a request path.
-3. **No domain rules here.** No lifecycle/status/metric/guardrail/cursor logic,
-   no Money/Month conversion, no error mapping — those are later feature
-   tickets. The spine only constructs correctly-scoped clients.
+3. **The connection spine has no domain rules.** The `src/internal/` spine only
+   constructs correctly-scoped clients — no lifecycle/status/metric/guardrail/
+   cursor logic and no SQLSTATE error mapping. The Money/Month value types +
+   codecs now live in the pure `src/domain/` layer (EF3.1); repositories,
+   row↔domain mappers, and metrics remain later feature tickets.
 4. **`@supabase/*` stays in supabase-core.** Finance imports only
    `@nafios/database` + `@nafios/supabase-core`.
 
@@ -132,6 +184,6 @@ The raw `SupabaseClient` type and the generated `@nafios/database` row types are
   drop it, but this is unverified). A future `@nafios/finance/data` vs
   server-only subpath split may be needed to guarantee the secret path can never
   reach a client bundle.
-- **Codec home** — the Money/Month codecs will live in `src/domain/`; extract
-  to a shared `@nafios/math` / `@nafios/temporal` package only when a second
-  module needs them.
+- **Codec home** — the Money/Month codecs now live in `src/domain/` (EF3.1);
+  extracting to a shared `@nafios/math` / `@nafios/temporal` package stays
+  deferred until a second module needs them.
