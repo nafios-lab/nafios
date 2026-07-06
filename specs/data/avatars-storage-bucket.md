@@ -15,7 +15,7 @@ related_adrs: [0019, 0021, 0016]
 > **Package:** `@nafios/supabase-core` · `@nafios/storage` · `supabase/`
 > **Depends on:** C3 migrations (done — `profiles.avatar_url`, `family_members.avatar_url` exist)
 > **Blocks:** avatar upload flow (onboarding Step 2 + family step) — see
-> the [onboarding-flow spec](../domain/onboarding-flow.md) ("D3 — Avatar storage")
+> the [onboarding-flow spec](../domain/auth-onboarding/onboarding-flow.md) ("D3 — Avatar storage")
 > **Related:** [ADR-0019 app-layer authz](../../adr/0019-app-layer-authz-rls-deferred.md) ·
 > [ADR-0021 supabase-core](../../adr/0021-supabase-core-connection-foundation.md) ·
 > [supabase/README.md](../../supabase/README.md)
@@ -196,7 +196,7 @@ function uploadAvatar(input: UploadAvatarInput): Promise<{ path: string }>;
   free of any `@supabase/*` import.
 
 > The server function + RPC plumbing (`saveOnboardingProfileFn`, family uploads) is owned by
-> the [onboarding-flow spec](../domain/onboarding-flow.md) (Slices 2–3) — out of scope here.
+> the [onboarding-flow spec](../domain/auth-onboarding/onboarding-flow.md) (Slices 2–3) — out of scope here.
 > This guide stops at "the bucket exists and a sanctioned helper can write to it."
 
 ---
@@ -254,7 +254,7 @@ After the upload code lands, the real gate is:
 - ADRs: [0019 app-layer authz](../../adr/0019-app-layer-authz-rls-deferred.md) ·
   [0016 auth schema referenced](../../adr/0016-auth-schema-referenced-not-owned.md) ·
   [0021 supabase-core](../../adr/0021-supabase-core-connection-foundation.md)
-- Sibling docs: [onboarding-flow spec](../domain/onboarding-flow.md) ·
+- Sibling docs: [onboarding-flow spec](../domain/auth-onboarding/onboarding-flow.md) ·
   `nafios-auth-d4-onboarding-avatar-upload.md` (working doc)
 - Supabase docs: [Creating buckets](https://supabase.com/docs/guides/storage/buckets/creating-buckets) ·
   [Access control](https://supabase.com/docs/guides/storage/security/access-control)

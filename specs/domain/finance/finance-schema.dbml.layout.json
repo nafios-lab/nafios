@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "positions": {
+    "table-public.category": {
+      "x": 0,
+      "y": 180
+    },
+    "table-public.account": {
+      "x": 260,
+      "y": 195
+    },
+    "table-public.person": {
+      "x": 520,
+      "y": 195
+    },
+    "table-public.template": {
+      "x": 852.0310206798663,
+      "y": 11.702857459843944
+    },
+    "table-public.monthly_ledger": {
+      "x": 1165,
+      "y": 165
+    },
+    "table-public.envelope": {
+      "x": 1472,
+      "y": 0
+    },
+    "table-public.carry_over": {
+      "x": 1791,
+      "y": 150
+    },
+    "table-public.ledger_settlement_summary": {
+      "x": 2065,
+      "y": 105
+    },
+    "table-public.finance_settings": {
+      "x": 2395,
+      "y": 166
+    },
+    "table-public.opening_balance_adjustment": {
+      "x": 2766,
+      "y": 180
+    },
+    "table-auth.users": {
+      "x": 3132,
+      "y": 286
+    }
+  }
+}

@@ -20,7 +20,7 @@ export interface UseCompleteOnboardingOptions {
  * uploads their avatars and stamps `onboarding_completed_at`. Retries `system`
  * faults up to {@link MAX_COMPLETE_ATTEMPTS}; every failure here is a system fault
  * (there are no user-fixable errors in onboarding — see
- * specs/domain/onboarding-flow.md), so the surfaced message is generic.
+ * specs/domain/auth-onboarding/onboarding-flow.md), so the surfaced message is generic.
  *
  * On success `isCompleting` is intentionally left `true`: the caller navigates
  * away and the full-screen loader should persist until the route unmounts, so we

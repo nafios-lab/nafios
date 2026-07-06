@@ -53,3 +53,5 @@ already covers it. If it does, respect it — or write a new ADR that supersedes
 | [0021](0021-supabase-core-connection-foundation.md) | Supabase connection foundation split into `supabase-core` + feature packages | Accepted |
 | [0022](0022-tanstack-query-for-client-server-state.md) | TanStack Query for client-side server-state; loaders for SSR | Accepted |
 | [0023](0023-rls-for-owned-domain-tables.md) | Row-Level Security for owned domain tables (operationalizes ADR-0019) | Accepted |
+| [0024](0024-rls-for-auth-epic-tables.md) | Row-Level Security for the auth-epic tables | Accepted |
+| [0025](0025-domain-specs-grouped-by-module-with-reference-material.md) | Group domain specs by module, with reference material colocated | Accepted |

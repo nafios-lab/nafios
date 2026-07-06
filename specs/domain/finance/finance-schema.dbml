@@ -1,0 +1,306 @@
+// ─────────────────────────────────────────────
+//  NafiOS Finance — MVP physical model (Supabase Postgres)
+//  Iteration 1 · see finance-db-design.md for decisions D1–D13
+//  Render: paste into https://dbdiagram.io
+//
+//  Ownership & RLS (D12): every table carries user_id -> auth.users(id),
+//  defaulting to auth.uid(). RLS is enabled per table; the owner-isolation
+//  policy + per-user uniqueness indexes live in finance-db-design.md §4/§8.
+//  Ref lines marked "[soft]" are ERD-only — per D9 they get NO FK constraint.
+// ─────────────────────────────────────────────
+
+Project nafios_finance {
+  database_type: 'PostgreSQL'
+  Note: 'Finance MVP schema for Supabase Postgres. Behavior source of truth: specs/domain/finance/*.md (finance-domain-spec, monthly-ledger, template). Storage + RLS decisions: specs/domain/finance/finance-db-design.md'
+}
+
+// Managed by Supabase Auth (GoTrue). Stub for FK/RLS reference ONLY —
+// do not create or migrate this table; it already exists in the auth schema.
+Table auth.users {
+  id uuid [pk]
+}
+
+// ===== Enums (D4) =====
+Enum ledger_status {
+  ongoing
+  reconciling
+  settled
+}
+
+Enum envelope_status {
+  pending
+  paid
+  skipped
+  carried_over // 'carried-over' in TS (D4 seam)
+}
+
+Enum template_type {
+  recurring
+  adhoc
+}
+
+Enum recurring_template_status {
+  active
+  pending_reconciliation
+  completed
+  terminated
+}
+
+Enum account_type {
+  bank
+  cash
+  other
+}
+
+Enum person_relationship {
+  spouse
+  parent
+  child
+  other
+}
+
+Enum max_capped_mode {
+  hard_amount
+  percentage_of_opening
+}
+
+Enum max_capped_behavior {
+  warn_only
+  block_add
+}
+
+Enum carry_over_status {
+  outstanding
+  added
+  killed
+}
+
+// Phase 2 — reserved, nullable, inert in MVP (domain §6.1)
+Enum obligation_kind {
+  debt_repayment
+  recurring_service
+  tax_installment
+  utility
+  set_aside
+  family_support
+  insurance_premium
+  discretionary
+}
+
+// ===== Reference data =====
+Table category {
+  id            uuid          [pk, default: `gen_random_uuid()`]
+  user_id       uuid          [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
+  name          varchar(80)   [not null]
+  display_order integer       [not null, default: 0]
+  color         varchar(32)
+  created_at    timestamptz   [not null, default: `now()`]
+  updated_at    timestamptz   [not null, default: `now()`]
+
+  indexes {
+    (user_id, display_order)
+  }
+  Note: 'User-defined grouping label. No priority/payment semantics (domain §3).'
+}
+Ref: category.user_id > auth.users.id [delete: cascade]
+
+Table account {
+  id         uuid         [pk, default: `gen_random_uuid()`]
+  user_id    uuid         [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
+  name       varchar(80)  [not null]
+  type       account_type [not null]
+  created_at timestamptz  [not null, default: `now()`]
+  updated_at timestamptz  [not null, default: `now()`]
+
+  indexes {
+    (user_id)
+  }
+  Note: 'Source of funds. Label only — no balance tracking at MVP (domain §4).'
+}
+Ref: account.user_id > auth.users.id [delete: cascade]
+
+Table person {
+  id           uuid                [pk, default: `gen_random_uuid()`]
+  user_id      uuid                [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
+  name         varchar(120)        [not null]
+  relationship person_relationship [not null]
+  created_at   timestamptz         [not null, default: `now()`]
+  updated_at   timestamptz         [not null, default: `now()`]
+
+  indexes {
+    (user_id)
+  }
+}
+Ref: person.user_id > auth.users.id [delete: cascade]
+
+// ===== Template (D5 — single discriminated table) =====
+Table template {
+  id                        uuid          [pk, default: `gen_random_uuid()`]
+  user_id                   uuid          [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
+  type                      template_type [not null, note: 'Immutable after creation (Decision 7.5)']
+  item                      varchar(160)  [not null]
+  category_id               uuid          [not null]
+  sort_order                integer
+  default_amount            numeric(12,2) [not null]
+  default_remark            text
+  default_payment_source_id uuid
+  default_linked_person_id  uuid
+
+  // recurring-only (NULL for adhoc) — presence enforced by CHECK (see finance-db-design.md §4)
+  next_due_month            date          [note: 'first-of-month (D3); cursor']
+  end_month                 date          [note: 'first-of-month; NULL = indefinite']
+  status                    recurring_template_status [note: 'NULL for adhoc']
+  termination_reason        text          [note: 'required iff status=terminated']
+
+  // adhoc-only (NULL for recurring)
+  archived                  boolean       [note: 'NULL for recurring; default false on adhoc']
+  last_used_month           date
+  usage_count               integer       [note: 'NULL for recurring; 0 default on adhoc']
+
+  created_at                timestamptz   [not null, default: `now()`]
+  updated_at                timestamptz   [not null, default: `now()`]
+
+  indexes {
+    (user_id, type, status, next_due_month)    [name: 'idx_template_generation']
+    (user_id, type, archived, last_used_month) [name: 'idx_adhoc_library']
+    (category_id)
+  }
+}
+Ref: template.user_id                   > auth.users.id [delete: cascade]
+Ref: template.category_id               > category.id   [delete: restrict]
+Ref: template.default_payment_source_id > account.id    [delete: set null]
+Ref: template.default_linked_person_id  > person.id     [delete: set null]
+
+// ===== Monthly Ledger =====
+// NOTE: derived metrics (COL/HM/ASM/Outstanding/Amendments) are NOT stored (D11).
+// Per-user uniqueness (one ledger per month, one ongoing) is in finance-db-design.md §4.
+Table monthly_ledger {
+  id              uuid          [pk, default: `gen_random_uuid()`]
+  user_id         uuid          [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
+  month           date          [not null, note: 'first-of-month (D3); unique per user']
+  opening_balance numeric(12,2) [not null]
+  max_capped      numeric(12,2) [not null]
+  status          ledger_status [not null, default: 'ongoing']
+  created_at      timestamptz   [not null, default: `now()`]
+  settled_at      timestamptz   [note: 'non-null iff status=settled']
+
+  indexes {
+    (user_id, month) [unique, name: 'uq_ledger_user_month']
+  }
+}
+Ref: monthly_ledger.user_id > auth.users.id [delete: cascade]
+
+// ===== Envelope =====
+Table envelope {
+  id                       uuid            [pk, default: `gen_random_uuid()`]
+  user_id                  uuid            [not null, default: `auth.uid()`, note: 'owner (D12, RLS); matches ledger owner']
+  ledger_id                uuid            [not null]
+  category_id              uuid            [not null]
+  item                     varchar(160)    [not null]
+  amount                   numeric(12,2)   [not null, note: '>= 0; $0 valid']
+  original_amount          numeric(12,2)   [note: 'template-linked only; NULL for manual']
+  status                   envelope_status [not null, default: 'pending']
+  paid_at                  timestamptz     [note: 'non-null iff status=paid']
+  payment_source_id        uuid
+  remark                   text
+  linked_person_id         uuid
+  sort_order               integer         [not null, default: 0]
+  template_id              uuid            [note: 'soft ref (D9); NULL=manual; may be orphaned']
+  carried_from_envelope_id uuid            [note: 'soft ref (D9); set => dirty/carried-over origin']
+  carry_over_reason        text            [note: '>=10 chars when set; never emptied (CHECK §4)']
+  obligation_kind          obligation_kind [note: 'Phase 2 reserved; always NULL in MVP']
+  created_at               timestamptz     [not null, default: `now()`]
+  updated_at               timestamptz     [not null, default: `now()`]
+
+  indexes {
+    (user_id, ledger_id)            [name: 'idx_envelope_ledger']
+    (user_id, template_id, status)  [name: 'idx_envelope_template_status']
+    (user_id, linked_person_id)     [name: 'idx_envelope_person']
+    (category_id)
+  }
+}
+Ref: envelope.user_id           > auth.users.id     [delete: cascade]
+Ref: envelope.ledger_id         > monthly_ledger.id [delete: cascade]
+Ref: envelope.category_id       > category.id       [delete: restrict]
+Ref: envelope.payment_source_id > account.id        [delete: set null]
+Ref: envelope.linked_person_id  > person.id         [delete: set null]
+// soft refs (D9) — NO FK constraint generated:
+//   envelope.template_id              -> template.id
+//   envelope.carried_from_envelope_id -> envelope.id
+
+// ===== Carry-over panel entry (D6) =====
+Table carry_over {
+  id                 uuid              [pk, default: `gen_random_uuid()`]
+  user_id            uuid              [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
+  template_id        uuid              [not null, note: 'panel owner']
+  source_envelope_id uuid              [not null, unique, note: 'the envelope marked carried-over']
+  status             carry_over_status [not null, default: 'outstanding']
+  kill_reason        text              [note: 'required iff status=killed']
+  added_envelope_id  uuid              [note: 'set iff status=added -> the new pending envelope']
+  created_at         timestamptz       [not null, default: `now()`]
+  resolved_at        timestamptz       [note: 'set when status leaves outstanding']
+
+  indexes {
+    (user_id, template_id, status) [name: 'idx_carryover_template_status']
+    (source_envelope_id)           [unique]
+  }
+  Note: 'Outstanding rows hard-deleted if source envelope reverts before action; added/killed retained as history (D6).'
+}
+Ref: carry_over.user_id            > auth.users.id     [delete: cascade]
+Ref: carry_over.template_id        > template.id       [delete: cascade]
+Ref: carry_over.source_envelope_id > envelope.id       [delete: cascade]
+Ref: carry_over.added_envelope_id  > envelope.id       [delete: set null]
+
+// ===== Settlement summary (D7 — 1:1 with settled ledgers) =====
+Table ledger_settlement_summary {
+  ledger_id          uuid          [pk, note: '1:1 with monthly_ledger; existence = settled']
+  user_id            uuid          [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
+  col                numeric(12,2) [not null]
+  health_margin      numeric(12,2) [not null]
+  asm_contribution   numeric(12,2) [not null]
+  opening_balance    numeric(12,2) [not null, note: 'snapshotted copy']
+  max_capped         numeric(12,2) [not null, note: 'snapshotted copy']
+  total_envelopes    integer       [not null]
+  paid_count         integer       [not null]
+  skipped_count      integer       [not null]
+  carried_over_count integer       [not null]
+  settled_at         timestamptz   [not null]
+
+  indexes {
+    (user_id)
+  }
+}
+Ref: ledger_settlement_summary.user_id   > auth.users.id     [delete: cascade]
+Ref: ledger_settlement_summary.ledger_id > monthly_ledger.id [delete: cascade]
+
+// ===== Config (D8 — one row per user) =====
+Table finance_settings {
+  id                      uuid                [pk, default: `gen_random_uuid()`]
+  user_id                 uuid                [not null, unique, default: `auth.uid()`, note: 'one settings row per user (D8, D12)']
+  default_opening_balance numeric(12,2)        // DefaultOpeningBalance
+  max_capped_mode         max_capped_mode     [not null, default: 'hard_amount'] // MaxCappedPolicy
+  max_capped_value        numeric(12,2)
+  max_capped_behavior     max_capped_behavior [not null, default: 'warn_only']
+  lead_days               integer             [not null, default: 7, note: 'clamped 1..7 (CHECK §4)'] // LedgerCreationWindow
+  created_at              timestamptz         [not null, default: `now()`]
+  updated_at              timestamptz         [not null, default: `now()`]
+}
+Ref: finance_settings.user_id > auth.users.id [delete: cascade]
+
+// ===== Opening-balance adjustment audit log =====
+Table opening_balance_adjustment {
+  id             uuid          [pk, default: `gen_random_uuid()`]
+  user_id        uuid          [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
+  ledger_id      uuid          [not null]
+  previous_value numeric(12,2) [not null]
+  new_value      numeric(12,2) [not null]
+  reason         text
+  adjusted_at    timestamptz   [not null, default: `now()`]
+
+  indexes {
+    (user_id, ledger_id)
+  }
+  Note: 'Append-only. Satisfies "Opening Balance adjustments are logged" (domain §5).'
+}
+Ref: opening_balance_adjustment.user_id   > auth.users.id     [delete: cascade]
+Ref: opening_balance_adjustment.ledger_id > monthly_ledger.id [delete: cascade]

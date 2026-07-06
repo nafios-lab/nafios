@@ -9,7 +9,7 @@ that can operate any app in the suite.
 - `apps/` — deployable user-facing applications
 - `services/` — headless backend services (REST, workers, AI agents)
 - `packages/` — shared libraries, published as `@nafios/*`
-- `specs/` — authoritative specifications; read before changing any public API
+- `specs/` — authoritative specifications; read before changing any public API. Domain specs are grouped per module in `specs/domain/<module>/`, which also holds that module's reference material (DB design, DBML, images) — see [ADR-0025](adr/0025-domain-specs-grouped-by-module-with-reference-material.md)
 - `adr/` — architectural decisions; **grep here before deviating from a pattern**
 - `tooling/` — generators and dev scripts
 
@@ -17,7 +17,7 @@ that can operate any app in the suite.
 
 1. Read `.claude/context/conventions.md` — naming, structure, file layout.
 2. Read `.claude/context/tech-stack.md` — chosen libraries and why.
-3. Check the co-located `spec.md` (packages/services) or `specs/` (cross-cutting) for any spec governing the area you're touching.
+3. Check the co-located `spec.md` (packages/services) or `specs/` (cross-cutting — domain specs live under `specs/domain/<module>/`, alongside reference material like DBML/diagrams) for any spec governing the area you're touching. When a spec and a diagram disagree, the spec wins.
 4. To create a package, use the generator (`/new-package`) — never hand-scaffold.
 
 ## Hard Rules

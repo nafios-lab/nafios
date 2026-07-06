@@ -15,7 +15,10 @@ Read and internalize the authoritative standards. You will apply them in Step 3:
 4. `.claude/context/architecture.md` — system shape.
 5. For each area the diff touches, the governing spec: the co-located
    `packages/<x>/spec.md` or `services/<x>/spec.md`, or a cross-cutting spec under
-   `specs/`.
+   `specs/`. Domain specs live per module in `specs/domain/<module>/`, which also
+   holds that module's **reference material** (DBML, DB-design notes, images) —
+   the authoritative `.md` spec governs; a diagram only illustrates. Reference
+   material colocated there is intentional, not a misplaced file. → ADR-0025.
 6. The local `CLAUDE.md` of any package/service/app the diff touches.
 7. Any `adr/` entry relevant to a pattern in the diff — `grep` `adr/` before
    flagging a deviation as wrong; the decision may already be documented.
