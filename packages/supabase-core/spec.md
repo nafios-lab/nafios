@@ -111,7 +111,7 @@ type CookieAdapter = {
 
 ### Re-exported provider types
 
-`SupabaseClient`, `AuthError`, `User` are re-exported from
+`SupabaseClient`, `AuthError`, `User`, `PostgrestError` are re-exported from
 `@supabase/supabase-js` so consumers never import the SDK directly.
 
 ## Error Handling

@@ -15,3 +15,13 @@ export {
   createServiceClient,
   type FinanceClient,
 } from "./internal/client";
+// Data-layer error surface (EF3.6). The app/UI catches FinanceDataError and
+// branches on its `code` (e.g. "this month already has a ledger"). The
+// repository factory and the mapper stay internal — imported within the package
+// by later feature tickets (EF3.7 / EF3.10), never re-exported.
+export {
+  FinanceDataError,
+  type FinanceDataErrorCode,
+} from "./internal/errors";
+// The persisted-ledger shape EF3.10's read surface builds on.
+export type { LedgerHeader } from "./internal/repositories/ledger.repo";

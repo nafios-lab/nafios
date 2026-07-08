@@ -55,10 +55,21 @@ Behavior is governed by the cross-cutting domain specs
 [`finance-domain-spec.md`](../../specs/domain/finance/finance-domain-spec.md) and
 [`monthly-ledger.md`](../../specs/domain/finance/monthly-ledger.md).
 
-**Out (deferred to later finance feature tickets):** base repository helpers,
-row↔domain mappers, `FinanceDataError` / SQLSTATE mapping, all repositories, the
-default-data seed, any service/API endpoints, any UI, and any schema/migration
-change (EF2 consumes the EF1 schema unchanged).
+**In (EF3.6):** the first `src/internal/` **data-layer feature** — the ledger
+repository (`createLedgerRepository` → `insert` / `findById` / `findByMonth` /
+`findOngoing` / `list` / `updateStatus` / `delete`) plus the two foundations
+every later repository reuses: the typed `FinanceDataError` + the single
+SQLSTATE→code classifier (`mapPostgrestError`, with the 23505-by-constraint-name
+split), and the row↔domain mapper (money/month via the EF3.1 codecs). Barrel
+surface: `FinanceDataError`, `FinanceDataErrorCode`, `LedgerHeader`; the factory,
+mapper, and classifier stay **internal**. Full contract, verification matrix, and
+the test-lane decision: [EF3.6](../../boards/finance/EF3/EF3.6.md).
+
+**Out (deferred to later finance feature tickets):** the envelope repository +
+commands (EF3.8), the create-ledger command's guardrail/window/atomicity
+orchestration (EF3.7), the composed read surface + metrics attachment (EF3.10),
+the default-category provisioning API (EF3.9), any service/API endpoints, any UI,
+and any schema/migration change (EF3 consumes the EF1 schema unchanged).
 
 ## Architecture
 
@@ -187,6 +198,33 @@ export function computeLedgerMetrics(ledger: {
   maxCapped: Money;
   envelopes: readonly { amount: Money; status: EnvelopeStatus }[];
 }): LedgerMetrics;
+```
+
+### Data layer — ledger repository (EF3.6)
+
+Barrel-exported: the typed data-layer error (caught and branched on by the
+app/UI) and the persisted-ledger shape the read surface (EF3.10) builds on.
+`createLedgerRepository`, the mapper, and `mapPostgrestError` stay **internal** —
+consumed within the package by EF3.7 / EF3.10, never re-exported. `PostgrestError`
+comes from `@nafios/supabase-core` (finance never imports `@supabase/*` directly).
+
+```ts
+export type FinanceDataErrorCode =
+  | "duplicate_month" // 23505 uq_ledger_user_month
+  | "ongoing_exists" // 23505 uq_one_ongoing_ledger
+  | "check_violation" // 23514
+  | "not_null_violation" // 23502
+  | "unknown"; // incl. RLS 42501, unexpected SQLSTATEs
+
+export class FinanceDataError extends Error {
+  readonly code: FinanceDataErrorCode;
+  readonly constraint: string | null; // DB constraint name when the SQLSTATE carries one
+  readonly cause: PostgrestError; // the raw SDK error
+}
+
+// A MonthlyLedger WITHOUT its envelopes — everything the monthly_ledger table
+// alone yields; EF3.10 completes it with envelopes + computed metrics.
+export type LedgerHeader = Omit<MonthlyLedger, "envelopes">;
 ```
 
 ## Behavior & rules
