@@ -4,7 +4,7 @@
 // Re-exported provider types. Feature packages (auth-core, database, …) import
 // these from here rather than from `@supabase/*` directly, so this stays the
 // single package that depends on the Supabase SDK.
-export type { AuthError, SupabaseClient, User } from "@supabase/supabase-js";
+export type { AuthError, PostgrestError, SupabaseClient, User } from "@supabase/supabase-js";
 // Session-less anon-key client with a per-request JWT attached — auth.uid()
 // resolves and RLS applies. Consumed by feature packages (e.g. @nafios/finance)
 // via asDb. See authed-client.ts and spec.md.

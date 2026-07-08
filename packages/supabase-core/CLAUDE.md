@@ -18,8 +18,8 @@ abstraction on top.
   `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (service-role); throws
   synchronously if a required var is missing.
 - **Connection types:** `CookieAdapter`, `CookieOptions`.
-- **Provider type re-exports:** `SupabaseClient`, `AuthError`, `User` — so
-  consumers never import from `@supabase/*` directly.
+- **Provider type re-exports:** `SupabaseClient`, `AuthError`, `User`,
+  `PostgrestError` — so consumers never import from `@supabase/*` directly.
 
 ## Public API surface
 
@@ -29,7 +29,7 @@ All public exports live in `src/index.ts` (the barrel):
 - `createAuthedClient(accessToken)` — session-less per-request-JWT client (RLS applies)
 - `createServiceRoleClient()` — privileged session-less client (bypasses RLS)
 - Type exports: `CookieAdapter`, `CookieOptions`
-- Re-exported provider types: `SupabaseClient`, `AuthError`, `User`
+- Re-exported provider types: `SupabaseClient`, `AuthError`, `User`, `PostgrestError`
 
 ## Invariants
 

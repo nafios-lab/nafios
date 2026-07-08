@@ -18,9 +18,11 @@ _inside_ the package by a **Biome import-boundary rule** (see root
   `@nafios/database`, `@nafios/supabase-core`, or `@supabase/*`. Holds the
   `Money`/`Month` value types + codecs (EF3.1); more domain types land later.
 - **`src/internal/` — the data layer.** The **only** place `@nafios/database`
-  and `@nafios/supabase-core` appear. It may import `src/domain/`. At EF2 it
-  holds the client factories + auth/session seam (the connection spine) and
-  nothing else.
+  and `@nafios/supabase-core` appear. It may import `src/domain/`. Holds the
+  client factories + auth/session seam (the connection spine), and — since EF3.6
+  — the first repository: the typed `FinanceDataError` + SQLSTATE classifier
+  (`errors.ts`), the row↔domain `ledger-mapper.ts`, and `createLedgerRepository`
+  (`repositories/ledger-repository.ts`).
 
 Layering is one-way: `src/internal/ (data) → src/domain/ (domain) → (nothing
 app-specific)`. A domain-imports-data violation **fails `bun run check`** via
@@ -51,8 +53,16 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   and tests only.
 - Types: `FinanceClient` (an alias of the schema-typed `Db`).
 
+- `FinanceDataError` + `FinanceDataErrorCode` — the typed error every finance
+  repository throws (EF3.6). The app/UI catches it and branches on `code`
+  (`duplicate_month` / `ongoing_exists` / `check_violation` / …).
+- `LedgerHeader` — the persisted ledger (a `MonthlyLedger` minus `envelopes`);
+  the shape EF3.10's read surface builds on.
+
 The raw `SupabaseClient` type and the generated `@nafios/database` row types are
-**never** re-exported.
+**never** re-exported. `createLedgerRepository`, the mapper, and
+`mapPostgrestError` stay **internal** — imported within the package by later
+tickets (EF3.7 / EF3.10), not surfaced on the barrel.
 
 ## Environment variables
 
@@ -78,10 +88,17 @@ operator context):
   constraint-hardening migration.
 - **No build step.** Consumed as TypeScript source via workspace resolution
   ([ADR-0006](../../adr/0006-no-build-internal-packages.md)).
-- **The RLS proof is a separate lane.** The mocked-SDK unit tests here run in
-  `bun run check`; the live-DB RLS matrix lives at repo-root
-  `tests/integration/` and runs via `bun run test:integration` only — never in
-  `bun run check` (there is no live Supabase in CI).
+- **The live-DB proof is a separate lane.** The mocked-SDK/mocked-client unit
+  tests here run in `bun run check` and satisfy the coverage gate; the live-DB
+  matrices (connection-spine RLS + the EF3.6 ledger-repository §6 matrix,
+  `tests/integration/ledger.repo.test.ts`) live at repo-root `tests/integration/`
+  and run via `bun run test:integration` only — never in `bun run check` (no live
+  Supabase in CI, and the per-file coverage scoping in
+  [ADR-0020](../../adr/0020-test-coverage-scoping-and-gate.md) is why they can't
+  load the real cross-package clients inside a package run). Both `skipIf` when
+  the Supabase env vars are absent. The EF3.6 matrix imports the internal
+  `createLedgerRepository` via a relative path — a documented, test-only
+  exception to the internal-import rule (see the header of that file).
 
 ## Scripts
 
@@ -102,9 +119,14 @@ src/
     codec-error.ts      # CodecError thrown by the decode/construct paths (EF3.1)
   internal/
     client.ts           # createBrowserClient, createServiceClient, FinanceClient
+    errors.ts           # FinanceDataError, FinanceDataErrorCode, mapPostgrestError (EF3.6)
+    mappers/
+      ledger.mapper.ts  # monthly_ledger row ↔ LedgerHeader / NewLedger (EF3.6)
+    repositories/
+      ledger.repo.ts    # createLedgerRepository, LedgerRepository, LedgerHeader, NewLedger (EF3.6)
 tests/
-  unit/                 # mocked-SDK unit tests (in the coverage gate)
-  integration/          # placeholder — the live-DB RLS matrix lives at repo-root tests/integration/
+  unit/                 # mocked-SDK/mocked-client unit tests (in the coverage gate)
+  integration/          # placeholder — the live-DB matrices live at repo-root tests/integration/
 spec.md                 # package specification
 ```
 
