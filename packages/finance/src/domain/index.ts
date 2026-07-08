@@ -9,6 +9,7 @@ export * from "./codec-error";
 export * from "./creation-window";
 export * from "./envelope";
 export * from "./ledger-metrics";
+export * from "./max-capped";
 export * from "./money";
 export * from "./month";
 export * from "./monthly-ledger";
