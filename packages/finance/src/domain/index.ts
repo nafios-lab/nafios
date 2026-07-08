@@ -6,5 +6,8 @@
 // `@supabase/*` — a Biome import-boundary rule (see root biome.json) enforces
 // it.
 export * from "./codec-error";
+export * from "./envelope";
+export * from "./ledger-metrics";
 export * from "./money";
 export * from "./month";
+export * from "./monthly-ledger";
