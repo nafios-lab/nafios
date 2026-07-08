@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   computeLedgerMetrics,
   decodeMoney,
-  encodeMoney,
   type EnvelopeStatus,
+  encodeMoney,
   type LedgerStatus,
   subtractMoney,
 } from "../../src/domain";

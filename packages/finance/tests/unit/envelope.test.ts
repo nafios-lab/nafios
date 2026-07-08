@@ -3,9 +3,9 @@ import {
   applyStatusTransition,
   countsTowardCol,
   decodeMoney,
-  encodeMoney,
   ENVELOPE_STATUSES,
   type EnvelopeStatus,
+  encodeMoney,
   sumMoney,
 } from "../../src/domain";
 

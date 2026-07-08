@@ -1,8 +1,8 @@
 ---
 title: "@nafios/finance"
 status: active
-version: 0.2.0
-updated: 2026-07-03
+version: 0.3.0
+updated: 2026-07-08
 owner: Hanafi
 related_adrs: [0005, 0006, 0014, 0019, 0020, 0021]
 ---
@@ -44,9 +44,19 @@ the sanctioned money-arithmetic helpers, and the `CodecError` they throw. Zero
 I/O, zero dependencies; lives in `src/domain/`. Full contract, behavior rules,
 and verification matrix: [EF3.1](../../issues/EF3.1.md).
 
-**Out (deferred to later finance feature tickets):** domain entity/enum types,
-base repository helpers, row↔domain mappers, `FinanceDataError` / SQLSTATE
-mapping, all repositories, derived-metric and domain-engine logic, the
+**In (EF3.2 / EF3.3):** the first domain **entity** shapes + the derived-metrics
+engine — the `Envelope` and `MonthlyLedger` in-memory shapes, their status
+vocabularies (`EnvelopeStatus` / `LedgerStatus`) and the frozen
+`ENVELOPE_STATUSES` set, the `countsTowardCol` COL-contribution rule, the pure
+`applyStatusTransition` `paidAt` resolver, `isLedgerMutable`, and the
+`computeLedgerMetrics` engine (COL, Health Margin, ASM Contribution, Outstanding,
+plus the negative-ASM signal). Pure — zero I/O, no clock; lives in `src/domain/`.
+Behavior is governed by the cross-cutting domain specs
+[`finance-domain-spec.md`](../../specs/domain/finance/finance-domain-spec.md) and
+[`monthly-ledger.md`](../../specs/domain/finance/monthly-ledger.md).
+
+**Out (deferred to later finance feature tickets):** base repository helpers,
+row↔domain mappers, `FinanceDataError` / SQLSTATE mapping, all repositories, the
 default-data seed, any service/API endpoints, any UI, and any schema/migration
 change (EF2 consumes the EF1 schema unchanged).
 
@@ -122,6 +132,61 @@ export type CodecErrorCode =
 export class CodecError extends Error {
   readonly code: CodecErrorCode;
 }
+```
+
+### Domain entities & metrics (EF3.2 / EF3.3)
+
+Pure `src/domain/` surface — the in-memory entity shapes, their status models,
+and the derived-metrics engine. Metrics are **computed on read, never stored**.
+Signatures only; full behavior + verification matrix live in the cross-cutting
+domain specs
+[`finance-domain-spec.md`](../../specs/domain/finance/finance-domain-spec.md) and
+[`monthly-ledger.md`](../../specs/domain/finance/monthly-ledger.md).
+
+```ts
+// Envelope — a single line item (a pocket of cash) within a ledger.
+export type EnvelopeStatus = "pending" | "paid" | "skipped" | "carried-over";
+export const ENVELOPE_STATUSES: readonly EnvelopeStatus[]; // frozen, display order
+export interface Envelope {
+  /* id, ledgerId, category, item, amount, status, paidAt, … — see envelope.ts */
+}
+export function countsTowardCol(status: EnvelopeStatus): boolean; // pending | paid
+
+// Pure paidAt set/clear resolver — never reads the clock (`now` is caller-supplied).
+export interface EnvelopeStatusState {
+  status: EnvelopeStatus;
+  paidAt: string | null;
+}
+export function applyStatusTransition(
+  current: EnvelopeStatusState,
+  next: EnvelopeStatus,
+  now: string,
+): EnvelopeStatusState; // invariant on result: paidAt != null ⟺ status === 'paid'
+
+// MonthlyLedger — one calendar month of cashflow; derived metrics are NOT stored.
+export type LedgerStatus = "ongoing" | "reconciling" | "settled";
+export interface MonthlyLedger {
+  /* id, month, openingBalance, maxCapped, status, envelopes, … — see monthly-ledger.ts */
+}
+export function isLedgerMutable(status: LedgerStatus): boolean; // false once settled
+
+// Derived-metrics engine — recomputed live on every read (never stored).
+export interface Outstanding {
+  count: number;
+  total: Money;
+}
+export interface LedgerMetrics {
+  col: Money; // Σ(amount) where status is pending or paid
+  healthMargin: Money; // MaxCapped − COL   (may be negative)
+  asmContribution: Money; // Opening − COL     (may be negative)
+  outstanding: Outstanding;
+  isAsmNegative: boolean;
+}
+export function computeLedgerMetrics(ledger: {
+  openingBalance: Money;
+  maxCapped: Money;
+  envelopes: readonly { amount: Money; status: EnvelopeStatus }[];
+}): LedgerMetrics;
 ```
 
 ## Behavior & rules
