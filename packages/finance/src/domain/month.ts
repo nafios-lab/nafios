@@ -8,6 +8,7 @@
 // This module OWNS the first-of-month invariant: it is enforced here (decode
 // rejects day ≠ 01, encode always emits 01) and relied on everywhere else.
 
+import { daysInMonth } from "./calendar";
 import { CodecError } from "./codec-error";
 
 /**
@@ -16,20 +17,6 @@ import { CodecError } from "./codec-error";
  * decodeMonth or monthOf.
  */
 export type Month = string & { readonly __brand: "Month" };
-
-function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-}
-
-function daysInMonth(year: number, month: number): number {
-  if (month === 2) {
-    return isLeapYear(year) ? 29 : 28;
-  }
-  if (month === 4 || month === 6 || month === 9 || month === 11) {
-    return 30;
-  }
-  return 31;
-}
 
 /** Parse & validate a strict "YYYY-MM-DD" ISO date. Throws month_not_a_date on a
  *  bad format, an impossible month, or an impossible day (leap-year aware). */

@@ -62,7 +62,7 @@ Fifteen tickets — pure domain engine, then data layer, then the web slice:
 - [x] EF3.1 Money & Month codecs
 - [x] EF3.2 MonthlyLedger type + derived-metrics engine (verified to the cent)
 - [x] EF3.3 Envelope type + status enum + COL-contribution & `paidAt` rules
-- [ ] EF3.4 Creation-window & openable-month resolver + roll-forward signal
+- [x] EF3.4 Creation-window & openable-month resolver + roll-forward signal
 - [ ] EF3.5 MaxCapped guardrails (amber confirm, 2× hard block)
 - [ ] EF3.6 Ledger repository (CRUD, uniqueness, ongoing query)
 - [ ] EF3.7 Create-ledger command (manual inputs, prev→reconciling, atomic)

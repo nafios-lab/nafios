@@ -10,16 +10,18 @@
 // picker (EF3.12), the create command (EF3.7), and the hub banner (EF3.11/EF3.13)
 // agree by construction instead of each re-deriving the date math.
 //
-// This file OWNS the day-level window math — day-of-month and daysInMonth (with
-// the leap-year rule) — because EF3.1's Month deliberately has no day component.
-// Everything at month granularity (build/shift/compare) goes through EF3.1; this
-// file never hand-rolls "YYYY-MM" string math and never re-checks first-of-month.
+// This file does the day-level window math — reading the day-of-month and, via
+// the shared calendar.ts helper, the month's length — because EF3.1's Month
+// deliberately has no day component. Everything at month granularity
+// (build/shift/compare) goes through EF3.1; this file never hand-rolls
+// "YYYY-MM" string math and never re-checks first-of-month.
 // It also HOMES the roll-forward warning (deferred from the metrics engine —
 // EF3.2 §8.6): it is derived from `today` + the SET of ledgers, not from any
 // single ledger's fields. Reports permission only — the prev-`ongoing` →
 // `reconciling` transition and envelope generation are the create command's job
 // (EF3.7), never performed here.
 
+import { daysInMonth } from "./calendar";
 import { addMonths, compareMonths, type Month, monthOf } from "./month";
 import type { LedgerStatus } from "./monthly-ledger";
 
@@ -88,23 +90,7 @@ export interface CreationState {
   readonly rollForward: RollForwardSignal;
 }
 
-// ─────────────────── Day-level math (owned here) ──────────────
-
-/** Leap-year rule: divisible by 4, except centuries not divisible by 400. */
-function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-}
-
-/** Days in a given calendar month (1–12), leap-year aware for February. */
-function daysInMonth(year: number, month: number): number {
-  if (month === 2) {
-    return isLeapYear(year) ? 29 : 28;
-  }
-  if (month === 4 || month === 6 || month === 9 || month === 11) {
-    return 30;
-  }
-  return 31;
-}
+// ─────────────────── Window sizing (day-level) ────────────────
 
 /** Clamp `leadDays` to the domain range 1–7 (fractional floored first), per
  *  monthly-ledger.md §3/§6. EF3 always passes 7; the clamp is defensive so a bad
