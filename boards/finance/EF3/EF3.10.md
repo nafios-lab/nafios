@@ -20,10 +20,10 @@ User is on a fresh onboarded status with nothing being setup, no financial data 
 ### DESIGN
 
 > SCENARIO: User on first time usage where, no active ledgers, 0 pending and `Today` does not fall within LeadDay
-> ![alt text](EF3.10-image2.png)
+> ![alt text](images/EF3.10-image2.png)
 
 > SCENARIO: User on first time usage where, no active ledgers, 0 pending and `Today` fall within Recon-period
-> ![alt text](EF3.10-image1.png)
+> ![alt text](images/EF3.10-image1.png)
 
 ### Acceptance Criteria
 
