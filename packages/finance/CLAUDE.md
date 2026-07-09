@@ -22,9 +22,15 @@ _inside_ the package by a **Biome import-boundary rule** (see root
   client factories + auth/session seam (the connection spine); the first
   repository (EF3.6): the typed `FinanceDataError` + SQLSTATE classifier
   (`errors.ts`), the row↔domain `ledger.mapper.ts`, and `createLedgerRepository`
-  (`repositories/ledger.repo.ts`); and the first command (EF3.7):
+  (`repositories/ledger.repo.ts`); the first command (EF3.7):
   `createLedgerCommands` (`commands/create-ledger.ts`), which composes the pure
-  rules with those repository primitives to open a ledger atomically.
+  rules with those repository primitives to open a ledger atomically; and the
+  second repository + envelope command surface (EF3.8): `createEnvelopeRepository`
+  (`repositories/envelope.repo.ts`) with the `envelope.mapper.ts` that owns the
+  `carried_over ↔ carried-over` DB-label seam, and `createEnvelopeCommands`
+  (`commands/envelope-commands.ts`), which gates every manual-envelope write on the
+  parent ledger's mutability. `errors.ts` was extended once for EF3.8 with
+  `23503 → foreign_key_violation`.
 
 Layering is one-way: `src/internal/ (data) → src/domain/ (domain) → (nothing
 app-specific)`. A domain-imports-data violation **fails `bun run check`** via
@@ -56,8 +62,9 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
 - Types: `FinanceClient` (an alias of the schema-typed `Db`).
 
 - `FinanceDataError` + `FinanceDataErrorCode` — the typed error every finance
-  repository throws (EF3.6). The app/UI catches it and branches on `code`
-  (`duplicate_month` / `ongoing_exists` / `check_violation` / …).
+  repository throws (EF3.6, extended in EF3.8). The app/UI catches it and branches
+  on `code` (`duplicate_month` / `ongoing_exists` / `check_violation` /
+  `foreign_key_violation` / …).
 - `LedgerHeader` — the persisted ledger (a `MonthlyLedger` minus `envelopes`);
   the shape EF3.10's read surface builds on.
 
@@ -70,8 +77,20 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   `FinanceDataError` on a DB failure. Types: `LedgerCommands`, `CreateLedgerInput`,
   `CreateLedgerResult`, `CreateLedgerRejectionReason`.
 
+- `createEnvelopeCommands(client)` — the app-facing **write surface** for manual
+  envelopes (EF3.8): `createEnvelope` / `editEnvelope` / `setEnvelopeStatus` /
+  `deleteEnvelope`. Each gates on the parent ledger's mutability (EF3.2's
+  `isLedgerMutable`), checks amount non-negativity, and computes `paidAt` via
+  EF3.3's `applyStatusTransition` (so `paidAt != null ⟺ status === 'paid'` holds by
+  construction) before any write — returning a `{ ok: false }` rejection
+  (`EnvelopeRejectionReason`) the UI renders, or throwing `FinanceDataError`
+  (`foreign_key_violation` for a bad/unowned category). Types: `EnvelopeCommands`,
+  `CreateEnvelopeInput`, `EditEnvelopeInput`, `SetEnvelopeStatusInput`,
+  `EnvelopeRejectionReason`, and the four `*Result` types.
+
 The raw `SupabaseClient` type and the generated `@nafios/database` row types are
-**never** re-exported. `createLedgerRepository`, the mapper, and
+**never** re-exported. `createLedgerRepository`, `createEnvelopeRepository`, the
+mappers (including the `carried_over` seam), and
 `mapPostgrestError` stay **internal** — imported within the package (e.g. by the
 EF3.7 command and EF3.10's read surface), not surfaced on the barrel.
 
@@ -102,18 +121,22 @@ operator context):
 - **The live-DB proof is a separate lane.** The mocked-SDK/mocked-client unit
   tests here run in `bun run check` and satisfy the coverage gate; the live-DB
   matrices (connection-spine RLS, the EF3.6 ledger-repository §6 matrix
-  `tests/integration/ledger.repo.test.ts`, and the EF3.7 create-ledger §6 matrix
-  `tests/integration/create-ledger.test.ts`) live at repo-root
-  `tests/integration/` and run via `bun run test:integration` only — never in
-  `bun run check` (no live Supabase in CI, and the per-file coverage scoping in
+  `tests/integration/ledger.repo.test.ts`, the EF3.7 create-ledger §6 matrix
+  `tests/integration/create-ledger.test.ts`, and the EF3.8 envelope §6 matrices
+  `tests/integration/envelope.repo.test.ts` + `tests/integration/envelope-commands.test.ts`)
+  live at repo-root `tests/integration/` and run via `bun run test:integration`
+  only — never in `bun run check` (no live Supabase in CI, and the per-file
+  coverage scoping in
   [ADR-0020](../../adr/0020-test-coverage-scoping-and-gate.md) is why they can't
   load the real cross-package clients inside a package run). All `skipIf` when
-  the Supabase env vars are absent. The EF3.6 matrix imports the internal
-  `createLedgerRepository` via a relative path — a documented, test-only
-  exception to the internal-import rule (see the header of that file); the EF3.7
-  matrix needs **no** such exception — it drives the public, barrel-exported
-  `createLedgerCommands`. The per-file coverage gate for `create-ledger.ts` is
-  met by the mocked unit test `tests/unit/create-ledger.test.ts`.
+  the Supabase env vars are absent. The EF3.6 and EF3.8-repository matrices import
+  the internal `create*Repository` (and, for EF3.8, the mapper's `carried_over`
+  seam) via a relative path — a documented, test-only exception to the
+  internal-import rule (see each file's header); the EF3.7 and EF3.8-commands
+  matrices need **no** such exception — they drive the public, barrel-exported
+  `create*Commands`. The per-file coverage gate for `create-ledger.ts`,
+  `envelope.repo.ts`, `envelope.mapper.ts`, and `envelope-commands.ts` is met by
+  their mocked unit tests under `tests/unit/`.
 
 ## Scripts
 
@@ -136,11 +159,14 @@ src/
     client.ts           # createBrowserClient, createServiceClient, FinanceClient
     errors.ts           # FinanceDataError, FinanceDataErrorCode, mapPostgrestError (EF3.6)
     mappers/
-      ledger.mapper.ts  # monthly_ledger row ↔ LedgerHeader / NewLedger (EF3.6)
+      ledger.mapper.ts    # monthly_ledger row ↔ LedgerHeader / NewLedger (EF3.6)
+      envelope.mapper.ts  # envelope row ↔ Envelope + carried_over ↔ carried-over seam (EF3.8)
     repositories/
-      ledger.repo.ts    # createLedgerRepository, LedgerRepository, LedgerHeader, NewLedger (EF3.6)
+      ledger.repo.ts      # createLedgerRepository, LedgerRepository, LedgerHeader, NewLedger (EF3.6)
+      envelope.repo.ts    # createEnvelopeRepository, EnvelopeRepository, NewEnvelope/EnvelopePatch (EF3.8)
     commands/
-      create-ledger.ts  # createLedgerCommands — the single write path opening a ledger (EF3.7)
+      create-ledger.ts       # createLedgerCommands — the single write path opening a ledger (EF3.7)
+      envelope-commands.ts   # createEnvelopeCommands — manual envelope CRUD + set-status (EF3.8)
 tests/
   unit/                 # mocked-SDK/mocked-client unit tests (in the coverage gate)
   integration/          # placeholder — the live-DB matrices live at repo-root tests/integration/

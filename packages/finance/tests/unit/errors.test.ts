@@ -62,6 +62,18 @@ describe("mapPostgrestError — other SQLSTATEs", () => {
     expect(err.constraint).toBe("ck_maxcapped_ceiling");
   });
 
+  test("23503 → foreign_key_violation (constraint recorded) — EF3.8", () => {
+    const raw = pgError({
+      code: "23503",
+      message:
+        'insert or update on table "envelope" violates foreign key constraint "fk_envelope_category"',
+    });
+    const err = mapPostgrestError(raw);
+    expect(err.code).toBe("foreign_key_violation");
+    expect(err.constraint).toBe("fk_envelope_category");
+    expect(err.cause).toBe(raw);
+  });
+
   test("23502 → not_null_violation (no named constraint → null)", () => {
     const raw = pgError({
       code: "23502",

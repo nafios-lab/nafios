@@ -78,10 +78,28 @@ no RPC, no migration). Adds **no** business rule. Barrel surface:
 **internal**. Full contract, verification matrix, and the test-lane decision:
 [EF3.7](../../boards/finance/EF3/EF3.7.md).
 
-**Out (deferred to later finance feature tickets):** the envelope repository +
-commands (EF3.8), the composed read surface + metrics attachment (EF3.10),
-the default-category provisioning API (EF3.9), any service/API endpoints, any UI,
-and any schema/migration change (EF3 consumes the EF1 schema unchanged).
+**In (EF3.8):** the second `src/internal/` **data-layer feature** — the envelope
+repository (`createEnvelopeRepository` → `insert` / `findById` / `listByLedger` /
+`update` / `updateStatus` / `delete`) and the app-facing envelope **command**
+surface (`createEnvelopeCommands` → `createEnvelope` / `editEnvelope` /
+`setEnvelopeStatus` / `deleteEnvelope`). The repository carries the envelope
+mapper, which **owns the `carried_over ↔ carried-over` DB-label seam** (the only
+place the snake_case label appears). The commands mirror the EF3.7 pattern
+(validate-in-domain → orchestrate → result/throw) and add the **parent-ledger
+mutability gate** (EF3.2's `isLedgerMutable`) shared by all four, computing
+`paidAt` via EF3.3's `applyStatusTransition` so `paidAt != null ⟺ status ===
+'paid'` holds by construction. Reuses EF3.6's `FinanceDataError` classifier,
+**extended once** with `23503 → foreign_key_violation` (a bad/unowned category).
+Barrel surface: `createEnvelopeCommands`, `EnvelopeCommands`, the three command
+input types, `EnvelopeRejectionReason`, and the four `*Result` types; the
+repository + mapper stay **internal** (EF3.10 imports the repository for
+`listByLedger`). Full contract, verification matrix, and the test-lane decision:
+[EF3.8](../../boards/finance/EF3/EF3.8.md).
+
+**Out (deferred to later finance feature tickets):** the composed read surface +
+metrics attachment (EF3.10), the default-category provisioning API (EF3.9), any
+service/API endpoints, any UI, and any schema/migration change (EF3 consumes the
+EF1 schema unchanged).
 
 ## Architecture
 
@@ -225,6 +243,7 @@ export type FinanceDataErrorCode =
   | "duplicate_month" // 23505 uq_ledger_user_month
   | "ongoing_exists" // 23505 uq_one_ongoing_ledger
   | "check_violation" // 23514
+  | "foreign_key_violation" // 23503 — EF3.8 (bad/unowned category or ledger on an envelope write)
   | "not_null_violation" // 23502
   | "unknown"; // incl. RLS 42501, unexpected SQLSTATEs
 
@@ -283,6 +302,55 @@ export type CreateLedgerResult =
       readonly reason: CreateLedgerRejectionReason;
       readonly guardrail: MaxCappedGuardrail | null; // EF3.5 max-capped guardrail; present iff a guardrail reason
     };
+```
+
+### Data layer — envelope repository + commands (EF3.8)
+
+Barrel-exported: the app-facing **write surface** for manual envelopes, consumed
+by the EF3.14 envelope UI. Each command validates against the pure domain rules
+(the parent-ledger mutability gate via EF3.2's `isLedgerMutable`, amount
+non-negativity, EF3.3's `applyStatusTransition`) **before any write**, returning a
+`{ ok: false }` rejection the UI renders, and throws `FinanceDataError` on a DB
+failure — notably `foreign_key_violation` for a bad/unowned category. The
+`createEnvelopeRepository` factory and the envelope mapper (which **owns the
+`carried_over ↔ carried-over` DB-label seam** — the only place the snake_case
+label appears) stay **internal**; EF3.10 imports the repository within the package
+for `listByLedger`. Full contract + verification matrix:
+[EF3.8](../../boards/finance/EF3/EF3.8.md).
+
+```ts
+export function createEnvelopeCommands(client: FinanceClient): EnvelopeCommands;
+
+export interface EnvelopeCommands {
+  createEnvelope(input: CreateEnvelopeInput): Promise<CreateEnvelopeResult>;
+  editEnvelope(input: EditEnvelopeInput): Promise<EditEnvelopeResult>;
+  setEnvelopeStatus(input: SetEnvelopeStatusInput): Promise<SetEnvelopeStatusResult>;
+  deleteEnvelope(input: { readonly envelopeId: string }): Promise<DeleteEnvelopeResult>;
+}
+
+// createEnvelope writes a MANUAL, pending line (paidAt null, manual-only fields
+// null); editEnvelope changes only present line fields (never status/paidAt);
+// setEnvelopeStatus funnels every status change through applyStatusTransition so
+// paidAt != null ⟺ status === 'paid' holds by construction (transitions are
+// free-form). Manual-only fields (templateId/originalAmount/…) are never accepted.
+export interface CreateEnvelopeInput {
+  readonly ledgerId: string;
+  readonly category: string; // a category the user owns (EF3.9)
+  readonly item: string;
+  readonly amount: Money; // ≥ 0
+  readonly paymentSource?: string | null;
+  readonly remark?: string | null;
+  readonly linkedPerson?: string | null;
+  readonly sortOrder?: number;
+}
+
+// Why a command refused BEFORE any write — a deterministic input/context failure
+// the UI renders (DB failures throw FinanceDataError instead).
+export type EnvelopeRejectionReason =
+  | "ledger_not_found" // parent ledger absent / not owned (create)
+  | "envelope_not_found" // target envelope absent / not owned (edit / set-status / delete)
+  | "ledger_not_mutable" // parent ledger is settled (isLedgerMutable === false)
+  | "negative_amount"; // amount < 0 (create / edit)
 ```
 
 ## Behavior & rules
