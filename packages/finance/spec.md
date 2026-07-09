@@ -65,9 +65,21 @@ surface: `FinanceDataError`, `FinanceDataErrorCode`, `LedgerHeader`; the factory
 mapper, and classifier stay **internal**. Full contract, verification matrix, and
 the test-lane decision: [EF3.6](../../boards/finance/EF3/EF3.6.md).
 
+**In (EF3.7):** the first `src/internal/` **command** — the create-ledger
+command (`createLedgerCommands` → `createLedger`), the single write path that
+opens a `MonthlyLedger`. It composes the pure rules (EF3.5 guardrail, EF3.4
+openable-month window, input non-negativity) enforced server-side before any
+write, then the EF3.6 repository primitives to perform the previous-`ongoing` →
+`reconciling` park and the new-ledger insert as one all-or-nothing operation
+(ordered writes + compensation, backstopped by EF1.1's `uq_one_ongoing_ledger`;
+no RPC, no migration). Adds **no** business rule. Barrel surface:
+`createLedgerCommands`, `LedgerCommands`, `CreateLedgerInput`,
+`CreateLedgerResult`, `CreateLedgerRejectionReason`; the repository stays
+**internal**. Full contract, verification matrix, and the test-lane decision:
+[EF3.7](../../boards/finance/EF3/EF3.7.md).
+
 **Out (deferred to later finance feature tickets):** the envelope repository +
-commands (EF3.8), the create-ledger command's guardrail/window/atomicity
-orchestration (EF3.7), the composed read surface + metrics attachment (EF3.10),
+commands (EF3.8), the composed read surface + metrics attachment (EF3.10),
 the default-category provisioning API (EF3.9), any service/API endpoints, any UI,
 and any schema/migration change (EF3 consumes the EF1 schema unchanged).
 
@@ -225,6 +237,52 @@ export class FinanceDataError extends Error {
 // A MonthlyLedger WITHOUT its envelopes — everything the monthly_ledger table
 // alone yields; EF3.10 completes it with envelopes + computed metrics.
 export type LedgerHeader = Omit<MonthlyLedger, "envelopes">;
+```
+
+### Data layer — create-ledger command (EF3.7)
+
+Barrel-exported: the app-facing **write surface** — the single command path that
+opens a `MonthlyLedger`, consumed by the EF3.12 creation flow. `createLedger`
+enforces input non-negativity, the EF3.5 maxCapped guardrail, and the EF3.4
+openable-month window **before any write** (returning a `{ ok: false }` rejection
+the UI renders), then parks the current `ongoing` ledger and inserts the new one
+as an all-or-nothing operation, throwing `FinanceDataError` (EF3.6) on a DB
+failure / `CodecError` (EF3.1) on a malformed `today`. `createLedgerRepository`
+stays **internal** — the command is the public write API, the repository its
+private primitive. Full contract + verification matrix:
+[EF3.7](../../boards/finance/EF3/EF3.7.md).
+
+```ts
+export function createLedgerCommands(client: FinanceClient): LedgerCommands;
+
+export interface LedgerCommands {
+  createLedger(input: CreateLedgerInput): Promise<CreateLedgerResult>;
+}
+
+// Manual creation inputs (no config prefill in EF3; leadDays is fixed at 7).
+export interface CreateLedgerInput {
+  readonly month: Month; // one of EF3.4's openable months
+  readonly openingBalance: Money; // ≥ 0
+  readonly maxCapped: Money; // ≥ 0 and passes the EF3.5 guardrail
+  readonly confirmed: boolean; // explicit amber-zone acknowledgement (EF3.5)
+  readonly today: string; // caller-supplied "YYYY-MM-DD"; no clock read
+}
+
+// Why createLedger refused BEFORE any write — a deterministic input/context
+// failure the UI renders (DB failures throw FinanceDataError instead).
+export type CreateLedgerRejectionReason =
+  | "month_not_openable" // month ∉ EF3.4 openable set
+  | "negative_amount" // openingBalance or maxCapped < 0
+  | "requires_confirmation" // EF3.5 amber zone, not confirmed
+  | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — no override
+
+export type CreateLedgerResult =
+  | { readonly ok: true; readonly ledger: LedgerHeader; readonly parkedLedgerId: string | null }
+  | {
+      readonly ok: false;
+      readonly reason: CreateLedgerRejectionReason;
+      readonly guardrail: MaxCappedGuardrail | null; // EF3.5 max-capped guardrail; present iff a guardrail reason
+    };
 ```
 
 ## Behavior & rules

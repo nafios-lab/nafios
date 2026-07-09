@@ -19,10 +19,12 @@ _inside_ the package by a **Biome import-boundary rule** (see root
   `Money`/`Month` value types + codecs (EF3.1); more domain types land later.
 - **`src/internal/` — the data layer.** The **only** place `@nafios/database`
   and `@nafios/supabase-core` appear. It may import `src/domain/`. Holds the
-  client factories + auth/session seam (the connection spine), and — since EF3.6
-  — the first repository: the typed `FinanceDataError` + SQLSTATE classifier
-  (`errors.ts`), the row↔domain `ledger-mapper.ts`, and `createLedgerRepository`
-  (`repositories/ledger-repository.ts`).
+  client factories + auth/session seam (the connection spine); the first
+  repository (EF3.6): the typed `FinanceDataError` + SQLSTATE classifier
+  (`errors.ts`), the row↔domain `ledger.mapper.ts`, and `createLedgerRepository`
+  (`repositories/ledger.repo.ts`); and the first command (EF3.7):
+  `createLedgerCommands` (`commands/create-ledger.ts`), which composes the pure
+  rules with those repository primitives to open a ledger atomically.
 
 Layering is one-way: `src/internal/ (data) → src/domain/ (domain) → (nothing
 app-specific)`. A domain-imports-data violation **fails `bun run check`** via
@@ -59,10 +61,19 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
 - `LedgerHeader` — the persisted ledger (a `MonthlyLedger` minus `envelopes`);
   the shape EF3.10's read surface builds on.
 
+- `createLedgerCommands(client)` — the app-facing **write surface** (EF3.7): the
+  one command path that opens a `MonthlyLedger`. `createLedger(input)` enforces
+  the pure rules (non-negativity, the EF3.5 guardrail, the EF3.4 openable-month
+  window) before any write, then parks the current `ongoing` ledger and inserts
+  the new one all-or-nothing. Returns `CreateLedgerResult` (a `{ ok }` union with
+  `CreateLedgerRejectionReason` / `guardrail` for UI rejections), throws
+  `FinanceDataError` on a DB failure. Types: `LedgerCommands`, `CreateLedgerInput`,
+  `CreateLedgerResult`, `CreateLedgerRejectionReason`.
+
 The raw `SupabaseClient` type and the generated `@nafios/database` row types are
 **never** re-exported. `createLedgerRepository`, the mapper, and
-`mapPostgrestError` stay **internal** — imported within the package by later
-tickets (EF3.7 / EF3.10), not surfaced on the barrel.
+`mapPostgrestError` stay **internal** — imported within the package (e.g. by the
+EF3.7 command and EF3.10's read surface), not surfaced on the barrel.
 
 ## Environment variables
 
@@ -90,15 +101,19 @@ operator context):
   ([ADR-0006](../../adr/0006-no-build-internal-packages.md)).
 - **The live-DB proof is a separate lane.** The mocked-SDK/mocked-client unit
   tests here run in `bun run check` and satisfy the coverage gate; the live-DB
-  matrices (connection-spine RLS + the EF3.6 ledger-repository §6 matrix,
-  `tests/integration/ledger.repo.test.ts`) live at repo-root `tests/integration/`
-  and run via `bun run test:integration` only — never in `bun run check` (no live
-  Supabase in CI, and the per-file coverage scoping in
+  matrices (connection-spine RLS, the EF3.6 ledger-repository §6 matrix
+  `tests/integration/ledger.repo.test.ts`, and the EF3.7 create-ledger §6 matrix
+  `tests/integration/create-ledger.test.ts`) live at repo-root
+  `tests/integration/` and run via `bun run test:integration` only — never in
+  `bun run check` (no live Supabase in CI, and the per-file coverage scoping in
   [ADR-0020](../../adr/0020-test-coverage-scoping-and-gate.md) is why they can't
-  load the real cross-package clients inside a package run). Both `skipIf` when
+  load the real cross-package clients inside a package run). All `skipIf` when
   the Supabase env vars are absent. The EF3.6 matrix imports the internal
   `createLedgerRepository` via a relative path — a documented, test-only
-  exception to the internal-import rule (see the header of that file).
+  exception to the internal-import rule (see the header of that file); the EF3.7
+  matrix needs **no** such exception — it drives the public, barrel-exported
+  `createLedgerCommands`. The per-file coverage gate for `create-ledger.ts` is
+  met by the mocked unit test `tests/unit/create-ledger.test.ts`.
 
 ## Scripts
 
@@ -124,6 +139,8 @@ src/
       ledger.mapper.ts  # monthly_ledger row ↔ LedgerHeader / NewLedger (EF3.6)
     repositories/
       ledger.repo.ts    # createLedgerRepository, LedgerRepository, LedgerHeader, NewLedger (EF3.6)
+    commands/
+      create-ledger.ts  # createLedgerCommands — the single write path opening a ledger (EF3.7)
 tests/
   unit/                 # mocked-SDK/mocked-client unit tests (in the coverage gate)
   integration/          # placeholder — the live-DB matrices live at repo-root tests/integration/
