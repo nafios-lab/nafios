@@ -50,5 +50,16 @@ export {
   FinanceDataError,
   type FinanceDataErrorCode,
 } from "./internal/errors";
+// The app-facing onboarding surface (EF3.9) — the finance-owned provisioning API
+// the auth/onboarding layer (EF3.12) calls once per new user on a SERVICE client
+// to stock the default categories, plus the runtime AUTHED read the EF3.14
+// envelope picker / EF3.13 grouping consume. The catalog + `Category` type ship
+// via the domain barrel above (`DEFAULT_CATEGORIES`, `DefaultCategory`,
+// `Category`); the `createCategoryRepository` factory + the mapper stay internal.
+export {
+  listCategories,
+  type ProvisionCategoriesResult,
+  provisionDefaultCategories,
+} from "./internal/provisioning/provision-default-categories";
 // The persisted-ledger shape EF3.10's read surface builds on.
 export type { LedgerHeader } from "./internal/repositories/ledger.repo";

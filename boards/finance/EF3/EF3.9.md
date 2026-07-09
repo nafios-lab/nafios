@@ -117,6 +117,13 @@ export interface CategoryRepository {
    *  safe, DB-design §8.2). Returns the created rows. Throws FinanceDataError on a DB fault. */
   insertManyForUser(userId: string, inputs: readonly NewCategory[]): Promise<Category[]>;
 
+  /** `userId`'s own categories, filtered by user_id EXPLICITLY (service/trusted-job safe),
+   *  ordered by display_order asc then name asc. [] when none. The provisioning NO-OP read:
+   *  provisioning runs on a SERVICE client, where the RLS-scoped `listByUser` would return
+   *  every user's rows — so the already-stocked branch reads back the user's set through this
+   *  explicit-`userId` method instead (see §4.3 step 2 + the v0.3 note). */
+  listForUser(userId: string): Promise<Category[]>;
+
   /** The AUTHED caller's own categories under RLS, ordered by display_order asc then name asc.
    *  [] when they have none. The runtime picker read (do NOT call on a service client). */
   listByUser(): Promise<Category[]>;
@@ -177,14 +184,14 @@ packages/finance/
 │       ├── client.ts                              # FinanceClient, createAuthedClient/createServiceClient (EF2.2)
 │       ├── errors.ts                              # FinanceDataError + mapPostgrestError (EF3.6) — reused as-is
 │       ├── mappers/
-│       │   └── category-mapper.ts                 # row ↔ Category                                  ← this ticket
+│       │   └── category.mapper.ts                 # row ↔ Category                                  ← this ticket
 │       ├── repositories/
-│       │   └── category-repository.ts             # createCategoryRepository / CategoryRepository   ← this ticket
+│       │   └── category.repo.ts                     # createCategoryRepository / CategoryRepository   ← this ticket
 │       └── provisioning/
 │           └── provision-default-categories.ts    # provisionDefaultCategories, listCategories      ← this ticket
 └── tests/
     └── integration/
-        ├── category-repository.test.ts            # §6.1 matrix (reuses EF3.6's harness)            ← this ticket
+        ├── category.repo.test.ts                  # §6.1 matrix (reuses EF3.6's harness)            ← this ticket
         └── provision-default-categories.test.ts   # §6.2 matrix                                     ← this ticket
 ```
 
@@ -227,7 +234,7 @@ packages/finance/
 `provisionDefaultCategories(client, userId)`:
 
 1. `const existing = await repo.countForUser(userId)`.
-2. If `existing > 0` → **no write**; return `{ seeded: false, categories: <userId's rows, ordered> }`.
+2. If `existing > 0` → **no write**; return `{ seeded: false, categories: <userId's rows, ordered> }` — read back via `repo.listForUser(userId)` (the explicit-`userId` method, service-safe; **not** `listByUser`, which is RLS-scoped and would return every user's rows on the service client provisioning runs on).
 3. Else `const categories = await repo.insertManyForUser(userId, DEFAULT_CATEGORIES)` (mapping each `DefaultCategory` → `NewCategory`, `color` null) → return `{ seeded: true, categories }`.
 
 - **Idempotency is a count-guard, not `ON CONFLICT`.** EF1.2 ships **no `UNIQUE(user_id, name)`** (EF1.2 §13 #3), so a per-name upsert isn't available. "Provision iff the user owns zero categories" is the rule — running onboarding twice for a stocked user is a safe no-op. **Consequence (intentional for EF3):** a user who *deletes all* their categories and is somehow re-provisioned would be re-stocked — a zero-category state is unusable (no envelope can be created), so re-seeding it is benign. Because provisioning fires once at onboarding, this edge is largely theoretical; a precise "provisioned once, ever" marker is a later refinement.
@@ -292,7 +299,7 @@ await listCategories(createAuthedClient({ session: sessionB })); // only B's own
 
 SDK-driven integration tests against a local Supabase (`supabase db reset`) with **two seeded users A and B** — **reusing EF3.6's harness**, each user starting **category-clean** (if the harness seed pre-creates categories, clear them first so "fresh user" is genuine). Provisioning is exercised via a **service client** + explicit `userId`; the read via an **authed client**. "No write" rows assert the row count is unchanged.
 
-### 6.1 Repository (`category-repository.test.ts`)
+### 6.1 Repository (`category.repo.test.ts`)
 
 | # | Action | Expected |
 | --- | --- | --- |
@@ -321,7 +328,7 @@ SDK-driven integration tests against a local Supabase (`supabase db reset`) with
 
 ## 7. Acceptance criteria
 
-- [ ] **AC1** — `src/domain/category.ts`, `src/domain/default-categories.ts`, `src/internal/mappers/category-mapper.ts`, `src/internal/repositories/category-repository.ts`, and `src/internal/provisioning/provision-default-categories.ts` exist in `@nafios/finance`; `Category`, `DefaultCategory`, `DEFAULT_CATEGORIES`, `provisionDefaultCategories`, `ProvisionCategoriesResult`, and `listCategories` are re-exported from `src/index.ts` (the repository + mapper stay internal); wired into `bun run check` (`typecheck` + `test`).
+- [ ] **AC1** — `src/domain/category.ts`, `src/domain/default-categories.ts`, `src/internal/mappers/category.mapper.ts`, `src/internal/repositories/category.repo.ts`, and `src/internal/provisioning/provision-default-categories.ts` exist in `@nafios/finance`; `Category`, `DefaultCategory`, `DEFAULT_CATEGORIES`, `provisionDefaultCategories`, `ProvisionCategoriesResult`, and `listCategories` are re-exported from `src/index.ts` (the repository + mapper stay internal); wired into `bun run check` (`typecheck` + `test`).
 - [ ] **AC2** — `DEFAULT_CATEGORIES` is the exact eight-entry set of §4.1 (names + 0-based `displayOrder`), living in `src/domain/` (pure, zero I/O); the list is defined **once** here — nothing in SQL or in the auth package hardcodes it.
 - [ ] **AC3** — The category mapper decodes `display_order`→`displayOrder` and passes `color` (nullable) verbatim; it does **not** surface `user_id`/`created_at`/`updated_at`; `insertManyForUser` sets `user_id` **explicitly** to the passed `userId` (row 2), omits `id`/`created_at`/`updated_at`, and defaults `display_order=0`/`color=null` (row 6). No money, no enum, no status seam.
 - [ ] **AC4** — `provisionDefaultCategories(client, userId)` is designed for a **service client** (RLS bypassed, `user_id` explicit per DB-design §8.2) and is idempotent via a **count-guard**: `{ seeded:true }` + full catalog on a zero-category user (row 9); `{ seeded:false }` + **no write** when the user owns ≥1 (rows 10–11); re-stocks on an emptied user (row 12). Returns the user's ordered set in `categories` either way. No `{ ok:false }` union (takes a `userId`, not free input).
@@ -351,7 +358,7 @@ _Provenance (not required reading): the eight-category default set, categories-a
 
 This ticket is **one PR** that closes EF3.9. It is the third `src/internal/` feature (+ one pure `src/domain/` catalog), depending on EF1.2 (the table), EF3.6 (data foundations), and EF2.2 (client factories) — **independent of EF3.7/EF3.8**. Mergeable when all of the following hold — no follow-up, no stubs, no TODOs:
 
-- [ ] `src/domain/category.ts`, `src/domain/default-categories.ts`, `src/internal/mappers/category-mapper.ts`, `src/internal/repositories/category-repository.ts`, `src/internal/provisioning/provision-default-categories.ts`, `tests/integration/category-repository.test.ts`, and `tests/integration/provision-default-categories.test.ts` are present; the §2.1/§2.3 surface is re-exported from `src/index.ts`; the repository + mapper stay internal.
+- [ ] `src/domain/category.ts`, `src/domain/default-categories.ts`, `src/internal/mappers/category.mapper.ts`, `src/internal/repositories/category.repo.ts`, `src/internal/provisioning/provision-default-categories.ts`, `tests/integration/category.repo.test.ts`, and `tests/integration/provision-default-categories.test.ts` are present; the §2.1/§2.3 surface is re-exported from `src/index.ts`; the repository + mapper stay internal.
 - [ ] **All §7 acceptance criteria (AC1–AC9) pass**, including the exact eight-entry catalog, explicit `user_id` on the service-client insert path, the count-guard idempotency (no double-seed on retry, re-stock on an emptied user), RLS isolation on the runtime read, and the pure-domain/data boundary.
 - [ ] **`bun run check` is green across the workspace** — `typecheck`, all §6 integration tests against a local Supabase with two seeded users (reusing EF3.6's harness, each user starting category-clean), and the eslint domain/data import-boundary rule (AC9). This is the merge gate.
 - [ ] The §4.5 **integration contract** for the auth/onboarding layer is documented (finance owns the API + list; the auth layer calls `provisionDefaultCategories(createServiceClient(), userId)` once per new user; idempotent/retry-safe). The auth-package call site itself is a coordinated edit tracked in the auth/platform repo, not this PR.
@@ -365,5 +372,7 @@ This ticket is **one PR** that closes EF3.9. It is the third `src/internal/` fea
 
 | Version | Date       | Author            | Changes |
 | ------- | ---------- | ----------------- | ------- |
+| 0.4     | 2026-07-09 | NafiOS Foundation | **PR-review fixes (no behavioural change).** (1) **Updated the co-located package spec** `packages/finance/spec.md` (the Hard Rule for a public-API change): added an `In (EF3.9)` scope entry + a `### Data layer — category provisioning + read (EF3.9)` Public API section (mirroring the EF3.6/3.7/3.8 treatment) and removed the provisioning API from the **Out** list, which had still listed EF3.9 as deferred — a spec-vs-code contradiction. (2) **Renamed the repository + mapper to the package's `<domain>.<role>.ts` convention:** `category-repository.ts` → `category.repo.ts` and `category-mapper.ts` → `category.mapper.ts` (+ their unit/integration tests), matching `ledger.repo.ts` / `envelope.repo.ts` / `ledger.mapper.ts` / `envelope.mapper.ts` so the `*.repo.ts` / `*.mapper.ts` role globs find them. The §3 file-tree above is updated to match. `provision-default-categories.ts` stays hyphenated (its `provisioning/` dir has no `.role.ts` sibling, like `commands/`). |
+| 0.3     | 2026-07-09 | NafiOS Foundation | **Implementation delivered + two spec corrections found while building.** (1) **Added `CategoryRepository.listForUser(userId)`** — the §2.2 surface as originally drafted (`countForUser` / `insertManyForUser` / `listByUser`) could not satisfy §4.3 step 2: the no-op branch must return *that user's* ordered rows, but provisioning runs on a **service** client where the RLS-scoped `listByUser` returns **every** user's rows (§2.2 itself forbids calling it on a service client). Added an explicit-`userId`, service-safe read for that branch; `listByUser` stays the RLS runtime read. (2) **Test layout follows ADR-0020, not §3/§9's in-package `tests/integration/` framing:** mocked unit tests live in `packages/finance/tests/unit/` (in the per-file 90% coverage gate, run by `bun run check`); the §6.1/§6.2 live-DB matrices live at repo-root `tests/integration/` and run **only** via `bun run test:integration` (`bun run check` never calls them — no live Supabase in CI), exactly as the EF3.6/3.7/3.8 matrices do. The §6.1 repository matrix takes the documented internal-import exception; the §6.2 provisioning matrix uses only the public barrel. `bun run check` is green (typecheck + unit coverage 100% on all new files + lint + format). No behavioural change to the shipped API. |
 | 0.2     | 2026-07-09 | NafiOS Foundation | **Linked the downstream consumer.** [EF3.12](EF3.12.md) now owns the onboarding wiring that invokes this API (the §4.5 integration contract): added a **Blocks: EF3.12** marker to the header and named EF3.12 as the primary consumer, correcting the stale *"coordinated edit in the auth/platform repo"* framing — it is an `apps/web` monorepo edit (no separate auth/platform repo exists). No scope, API, or behaviour change. |
 | 0.1     | 2026-07-03 | NafiOS Foundation | Initial standalone task for **default-category provisioning** in `@nafios/finance`. Settles the EF3 epic's open mechanism as a **finance-owned TypeScript API the auth/onboarding package imports and calls** for each new user — `provisionDefaultCategories(client, userId)`, run as a trusted backend job on a **service client** (RLS bypassed, `user_id` set **explicitly** per DB-design §8.2), idempotent via a count-guard (seed iff zero categories; retry-safe; no `{ ok:false }` union since it takes a `userId`, not free input). Grounded in finance-domain-spec §3 / RFC-008 (categories are user-owned, mutable, deletable rows — a global/system-wide table is impossible under EF1.2's `user_id NOT NULL` + `owner_all` RLS). Ships: a **pure domain catalog** (`DEFAULT_CATEGORIES`, the eight-category set, + the `Category` type) as the single source of truth; a minimal **category repository** (`countForUser` / `insertManyForUser` (explicit `user_id`) / `listByUser` + mapper, the third repository on EF3.6's foundations, no classifier extension); the **`provisionDefaultCategories`** onboarding API + the §4.5 integration contract for the auth layer; and the runtime authed **`listCategories`** read the EF3.14 picker / EF3.13 grouping consume. **EF3 adds no migration** — superseding the "one migration = EF3.9 seed" wording in the epic, EF3.6, EF3.7, and EF3.8 (§8 note 3; EF3.7's no-RPC conclusion is unaffected). Scopes OUT category mutation/CRUD (later reference-data epic), any migration, and money/metrics/ledger/envelope logic. Verification matrix (repository explicit-`user_id`/order/RLS/defaults + provisioning idempotency/re-seed/isolation via service+authed clients) + AC1–AC9 + §9 Definition of Done (green `bun run check` incl. local-Supabase integration tests as the merge gate); PR-able on EF1.2 + EF3.6 + EF2.2, independent of EF3.7/EF3.8. |

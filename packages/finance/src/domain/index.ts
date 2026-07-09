@@ -5,8 +5,10 @@
 // (`src/internal/`), `@nafios/database`, `@nafios/supabase-core`, or
 // `@supabase/*` — a Biome import-boundary rule (see root biome.json) enforces
 // it.
+export * from "./category";
 export * from "./codec-error";
 export * from "./creation-window";
+export * from "./default-categories";
 export * from "./envelope";
 export * from "./ledger-metrics";
 export * from "./max-capped";
