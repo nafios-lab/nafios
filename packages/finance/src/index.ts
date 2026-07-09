@@ -26,6 +26,22 @@ export {
   createLedgerCommands,
   type LedgerCommands,
 } from "./internal/commands/create-ledger";
+// The app-facing WRITE surface for manual envelopes (EF3.8) — create / edit /
+// set-status / delete. EF3.14's envelope UI imports these; the underlying
+// `createEnvelopeRepository` + the envelope mapper stay internal (EF3.10 imports
+// the repository within the package for `listByLedger`).
+export {
+  type CreateEnvelopeInput,
+  type CreateEnvelopeResult,
+  createEnvelopeCommands,
+  type DeleteEnvelopeResult,
+  type EditEnvelopeInput,
+  type EditEnvelopeResult,
+  type EnvelopeCommands,
+  type EnvelopeRejectionReason,
+  type SetEnvelopeStatusInput,
+  type SetEnvelopeStatusResult,
+} from "./internal/commands/envelope-commands";
 // Data-layer error surface (EF3.6). The app/UI catches FinanceDataError and
 // branches on its `code` (e.g. "this month already has a ledger"). The
 // repository factory and the mapper stay internal — imported within the package

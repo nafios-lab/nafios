@@ -21,7 +21,8 @@ import type { PostgrestError } from "@nafios/supabase-core";
 export type FinanceDataErrorCode =
   | "duplicate_month" // 23505 on uq_ledger_user_month — a ledger already exists for that month
   | "ongoing_exists" // 23505 on uq_one_ongoing_ledger — would be a 2nd ongoing ledger for the user
-  | "check_violation" // 23514 — a CHECK failed (ck_maxcapped_ceiling / ck_balances_nonneg / ck_settled_at / ck_ledger_month_first)
+  | "check_violation" // 23514 — a CHECK failed (ck_maxcapped_ceiling / ck_balances_nonneg / ck_settled_at / ck_ledger_month_first / ck_env_*)
+  | "foreign_key_violation" // 23503 — an FK failed (EF3.8: a bad/unowned category or ledger on an envelope write — fk_envelope_category / fk_envelope_ledger)
   | "not_null_violation" // 23502 — a NOT NULL failed (e.g. a service-role caller omitted user_id)
   | "unknown"; // any PostgrestError not mapped above (incl. RLS 42501, unexpected SQLSTATEs)
 
@@ -69,6 +70,7 @@ function extractConstraint(error: PostgrestError): string | null {
  *   - 23505 uq_one_ongoing_ledger → ongoing_exists
  *   - 23505 (any other)           → unknown (constraint still recorded)
  *   - 23514                       → check_violation (constraint recorded)
+ *   - 23503                       → foreign_key_violation (constraint recorded) — EF3.8
  *   - 23502                       → not_null_violation
  *   - anything else (incl. RLS 42501, unexpected SQLSTATEs) → unknown
  * The raw error always travels on `.cause`.
@@ -88,6 +90,8 @@ export function mapPostgrestError(error: PostgrestError): FinanceDataError {
     }
     case "23514":
       return new FinanceDataError("check_violation", constraint, error);
+    case "23503":
+      return new FinanceDataError("foreign_key_violation", constraint, error);
     case "23502":
       return new FinanceDataError("not_null_violation", constraint, error);
     default:
