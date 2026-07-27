@@ -64,10 +64,10 @@ Fifteen tickets — pure domain engine, then data layer, then the web slice:
 - [x] EF3.3 Envelope type + status enum + COL-contribution & `paidAt` rules
 - [x] EF3.4 Creation-window & openable-month resolver + roll-forward signal
 - [x] EF3.5 MaxCapped guardrails (amber confirm, 2× hard block)
-- [ ] EF3.6 Ledger repository (CRUD, uniqueness, ongoing query)
-- [ ] EF3.7 Create-ledger command (manual inputs, prev→reconciling, atomic)
-- [ ] EF3.8 Envelope repository + commands (CRUD + set-status)
-- [ ] EF3.9 Default-category catalog + per-user provisioning API (no migration)
+- [x] EF3.6 Ledger repository (CRUD, uniqueness, ongoing query)
+- [x] EF3.7 Create-ledger command (manual inputs, prev→reconciling, atomic)
+- [x] EF3.8 Envelope repository + commands (CRUD + set-status)
+- [x] EF3.9 Default-category catalog + per-user provisioning API (no migration)
 - [ ] EF3.10 Ledger read/query surface + integration tests
 - [ ] EF3.11 Finance web app shell + routing + data layer
 - [ ] EF3.12 New-ledger creation flow (manual-input form, guardrail UI)

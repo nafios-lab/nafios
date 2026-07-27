@@ -1,8 +1,8 @@
 ---
 title: "@nafios/finance"
 status: active
-version: 0.3.0
-updated: 2026-07-08
+version: 0.4.0
+updated: 2026-07-09
 owner: Hanafi
 related_adrs: [0005, 0006, 0014, 0019, 0020, 0021]
 ---
@@ -96,10 +96,32 @@ repository + mapper stay **internal** (EF3.10 imports the repository for
 `listByLedger`). Full contract, verification matrix, and the test-lane decision:
 [EF3.8](../../boards/finance/EF3/EF3.8.md).
 
+**In (EF3.9):** the third `src/internal/` **data-layer feature** — the category
+repository (`createCategoryRepository` → `countForUser` / `insertManyForUser` /
+`listForUser` / `listByUser`) plus the app-facing **onboarding** surface
+(`provisionDefaultCategories` → idempotently stock a new user with the default
+category set, and `listCategories` → the runtime authed read the EF3.14 picker /
+EF3.13 grouping consume). The repository carries the category mapper (row ↔
+`Category` + the **explicit-`user_id`** insert path — the service/trusted-job seam,
+DB-design §8.2) and the `*ForUser(userId)` methods filter/set `user_id` explicitly
+so they are correct under a service client (RLS bypassed) as well as an authed one.
+Provisioning adds exactly one rule — the idempotency **count-guard** (seed iff the
+user owns zero categories; no `ON CONFLICT` because EF1.2 has no
+`UNIQUE(user_id, name)`) — and takes a `userId`, not free input, so there is **no
+`{ ok: false }` rejection union**; a DB fault throws `FinanceDataError` (EF3.6,
+reused **unextended** — a category write has no user-supplied FK). The pure
+catalog (`DEFAULT_CATEGORIES` / `DefaultCategory`) and the `Category` type live in
+`src/domain/` as the single source of truth. Barrel surface:
+`provisionDefaultCategories`, `listCategories`, `ProvisionCategoriesResult`, and —
+via the domain barrel — `Category`, `DefaultCategory`, `DEFAULT_CATEGORIES`; the
+`createCategoryRepository` factory + the mapper stay **internal**. EF3.9 adds **no
+migration**. Full contract + verification matrix:
+[EF3.9](../../boards/finance/EF3/EF3.9.md).
+
 **Out (deferred to later finance feature tickets):** the composed read surface +
-metrics attachment (EF3.10), the default-category provisioning API (EF3.9), any
-service/API endpoints, any UI, and any schema/migration change (EF3 consumes the
-EF1 schema unchanged).
+metrics attachment (EF3.10), category mutation/CRUD + a management UI (a later
+reference-data epic), any service/API endpoints, any UI, and any schema/migration
+change (EF3 consumes the EF1 schema unchanged).
 
 ## Architecture
 
@@ -351,6 +373,40 @@ export type EnvelopeRejectionReason =
   | "envelope_not_found" // target envelope absent / not owned (edit / set-status / delete)
   | "ledger_not_mutable" // parent ledger is settled (isLedgerMutable === false)
   | "negative_amount"; // amount < 0 (create / edit)
+```
+
+### Data layer — category provisioning + read (EF3.9)
+
+Barrel-exported: the finance-owned **onboarding** API the auth/onboarding layer
+(EF3.12) calls once per new user as a trusted backend job on a **service client**
+(RLS bypassed, `user_id` set explicitly per DB-design §8.2), plus the runtime
+**authed** read the EF3.14 picker / EF3.13 grouping consume.
+`provisionDefaultCategories` is idempotent via a **count-guard** (seed the pure
+`DEFAULT_CATEGORIES` catalog iff the user owns zero categories; no `ON CONFLICT`
+because EF1.2 has no `UNIQUE(user_id, name)`) — it takes a `userId`, not free
+input, so there is **no `{ ok: false }` rejection union**; a DB fault throws
+`FinanceDataError` (EF3.6, reused **unextended**). The pure catalog +
+`Category` type ship via the domain barrel. The `createCategoryRepository`
+factory and the category mapper (row ↔ `Category` + the explicit-`user_id`
+insert path) stay **internal**. Full contract + verification matrix:
+[EF3.9](../../boards/finance/EF3/EF3.9.md).
+
+```ts
+export function provisionDefaultCategories(
+  client: FinanceClient,
+  userId: string,
+): Promise<ProvisionCategoriesResult>;
+
+// The runtime authed read (RLS-scoped), ordered by displayOrder then name. Must
+// NOT be called on a service client (RLS bypassed → would return every user's rows).
+export function listCategories(client: FinanceClient): Promise<Category[]>;
+
+// seeded is true iff this call inserted the defaults; false means the user already
+// owned ≥1 category (no write). categories is always the user's current set, ordered.
+export interface ProvisionCategoriesResult {
+  readonly seeded: boolean;
+  readonly categories: Category[];
+}
 ```
 
 ## Behavior & rules
