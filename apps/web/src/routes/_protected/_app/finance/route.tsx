@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { ArrowLeftRight, LayoutDashboard, Wallet } from "lucide-react";
 import { ServiceMenu } from "~/components/service-menu";
-import { NavbarTitle, useNavbar } from "../../../../components/navbar";
+import { NavbarClock, NavbarTitle, useNavbar } from "../../../../components/navbar";
 import { type SidebarNavItem, useSidebarNav } from "../../../../components/sidebar";
 
 /**
@@ -45,14 +45,15 @@ function FinanceLayout() {
     })),
   );
 
-  // Finance specializes the shared navbar's left slot: product switcher
-  // (highlighting Finance) + module title. The right slot is intentionally
-  // empty — global search / account chrome is shell-owned, not per-module.
+  // Finance specializes the shared navbar: the module title sits in the left
+  // slot, while the product switcher (highlighting Finance) and the live clock
+  // sit in the right slot alongside the shell-owned account chrome.
   useNavbar({
-    leftAside: (
+    leftAside: <NavbarTitle>FINANCE</NavbarTitle>,
+    rightAside: (
       <>
         <ServiceMenu active="finance" />
-        <NavbarTitle>FINANCE</NavbarTitle>
+        <NavbarClock />
       </>
     ),
   });

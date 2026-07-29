@@ -1,0 +1,13 @@
+# Repo-root Bun config.
+#
+# `bun test` run from the repo root (the VS Code Jest Runner extension does this,
+# because the only bun lockfile is at the root) loads THIS bunfig instead of a
+# package's own. The dispatcher below restores each package's DOM/mocks setup
+# based on which test file is running, so click-to-run and `bun test <file>`
+# work from the root. See the script header for the full rationale.
+#
+# This does NOT affect `bun run test` (= `bun --filter '*' test`): that runs
+# `bun test` inside each package, where the package's own bunfig.toml applies and
+# this preload is never loaded. For the full suite always use `bun run test`.
+[test]
+preload = ["./tooling/scripts/root-test-preload.ts"]

@@ -1,3 +1,4 @@
+import { SidebarTrigger } from "@nafios/ui/components/ui/sidebar";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Search } from "lucide-react";
@@ -80,7 +81,7 @@ export function useNavbar({ leftAside, rightAside }: NavbarContent) {
 /** Consistent module heading, sized to sit beside the search bar. */
 export function NavbarTitle({ children }: { children: ReactNode }) {
   return (
-    <span className="text-xs font-medium tabular-nums tracking-wide text-muted-foreground">
+    <span className="truncate text-xs font-medium tabular-nums tracking-wide text-muted-foreground">
       {children}
     </span>
   );
@@ -110,12 +111,16 @@ function useNow(): Date | null {
   return now;
 }
 
-/** Live date + time building block, e.g. `THU · 15 MAY · 09:42AM`. */
+/**
+ * Live date + time building block, e.g. `THU · 15 MAY · 09:42AM`. Lowest-priority
+ * bar content: hidden below `sm` so the narrow (mobile) bar spends its width on
+ * search + actions rather than the clock.
+ */
 export function NavbarClock() {
   const now = useNow();
 
   return (
-    <span className="text-xs font-medium tabular-nums tracking-wide text-muted-foreground">
+    <span className="hidden whitespace-nowrap text-xs font-medium tabular-nums tracking-wide text-muted-foreground sm:inline">
       {now && format(now, "EEE · d MMM · hh:mma").toUpperCase()}
     </span>
   );
@@ -168,9 +173,19 @@ export function Navbar() {
   const { leftAside, rightAside } = useContext(NavbarContentContext);
 
   return (
-    <nav className="flex items-center justify-between gap-4 border-b border-border px-6 py-3">
-      <div className="flex items-center gap-3">{leftAside}</div>
-      <div className="flex items-center gap-4">{rightAside}</div>
+    <nav className="flex items-center gap-2 border-b border-border/50 px-4 py-3 sm:gap-4 sm:px-6">
+      {/* Left slot: takes the slack and yields first. `min-w-0` lets its
+          contents shrink below their intrinsic width instead of overflowing
+          the bar — the flexbox default (`min-width: auto`) would not. */}
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+        {/* Below `md` the rail collapses to an off-canvas sheet; this is the
+            only way to open it, so it's the sole element shown at that width. */}
+        <SidebarTrigger className="md:hidden" />
+        {leftAside}
+      </div>
+      {/* Right slot: intrinsic width, never squeezed — module actions and the
+          user/account chrome stay legible as the bar narrows. */}
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">{rightAside}</div>
     </nav>
   );
 }

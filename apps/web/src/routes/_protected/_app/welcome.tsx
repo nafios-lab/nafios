@@ -18,16 +18,18 @@ function Welcome() {
   // clock on the right. No module title.
   useNavbar({
     leftAside: (
+      // Grows to a 500px cap on wide screens, but `min-w-0` lets it shrink in
+      // place as the bar narrows instead of overflowing on mobile.
+      <div className="min-w-0 max-w-125 flex-1">
+        <TextInput className="border-transparent" placeholder="Search..." iconRight={<Search />} />
+      </div>
+    ),
+    rightAside: (
       <>
         <ServiceMenu active="home" />
-        <TextInput
-          className="min-w-[500px] border-transparent"
-          placeholder="Search..."
-          iconRight={<Search />}
-        />
+        <NavbarClock />
       </>
     ),
-    rightAside: <NavbarClock />,
   });
 
   return (
