@@ -8,20 +8,27 @@ import { Label } from "./ui/label.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select.tsx";
 
-const selectFieldVariants = cva("", {
-  variants: {
-    variant: {
-      default: "[&>button]:border-input [&>button]:focus:ring-ring",
-      error: "[&>button]:border-error-foreground [&>button]:focus:ring-error-foreground",
+const selectFieldVariants = cva(
+  // Grey the trigger while it's active/focused/open — mirrors the DatePicker
+  // outline field (active:bg-foreground/10). Applies across all variants.
+  "[&>button]:active:bg-foreground/10 [&>button]:focus:bg-foreground/10 [&>button]:data-[state=open]:bg-foreground/10",
+  {
+    variants: {
+      variant: {
+        default: "[&>button]:border-input [&>button]:focus:ring-ring",
+        error: "[&>button]:border-error-foreground [&>button]:focus:ring-error-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
     },
   },
-  defaultVariants: {
-    variant: "default",
-  },
-});
+);
 
 const searchableTriggerVariants = cva(
-  "flex h-9 w-full items-center justify-between gap-2 rounded-full border bg-card px-3 py-1 text-md shadow-sm transition-colors md:text-sm",
+  // Grey the field while active/focused/open (aria-expanded stays greyed while
+  // the popover is open, since focus moves into the list) — mirrors DatePicker.
+  "flex h-9 w-full items-center justify-between gap-2 rounded-full border bg-card px-3 py-1 text-md dark:shadow-sm transition-colors focus-within:bg-foreground/10 active:bg-foreground/10 aria-expanded:bg-foreground/10 md:text-sm",
   {
     variants: {
       variant: {

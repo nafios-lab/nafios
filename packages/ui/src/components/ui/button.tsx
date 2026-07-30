@@ -27,13 +27,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-border text-fg-100 shadow hover:brightness-125",
-        brand: "bg-brand-darker border border-brand text-fg-100 shadow hover:brightness-125",
-        destructive: "bg-error text-error-foreground shadow-sm hover:bg-error/90",
-        outline: "border border-input bg-background shadow-sm hover:brightness-150",
+        default:
+          "bg-foreground text-background dark:shadow hover:bg-foreground/90 active:bg-foreground/80",
+        brand: "bg-brand-darker border border-brand text-fg-100 dark:shadow hover:brightness-125",
+        destructive: "bg-error-foreground text-error dark:shadow-sm hover:bg-error-foreground/90",
+        outline:
+          "border border-input bg-background text-foreground dark:shadow-sm hover:bg-border/50 hover:border-foreground/20 active:bg-foreground/10 active:border-foreground/40",
         secondary:
-          "bg-accent-darker/10 border border-accent text-accent shadow-sm hover:brightness-115",
-        ghost: "hover:bg-border",
+          "bg-secondary text-secondary-foreground border border-border dark:shadow-sm hover:bg-border/50 active:brightness-95 dark:active:brightness-110",
+        ghost: "hover:bg-border/50",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

@@ -8,7 +8,7 @@ import { Text } from "../typography/text.tsx";
 import { Label } from "./label.tsx";
 
 const checkboxVariants = cva(
-  "peer shrink-0 rounded-sm border shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+  "peer shrink-0 rounded-sm border dark:shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
