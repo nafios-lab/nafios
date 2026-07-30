@@ -12,7 +12,7 @@ type Story = StoryObj<typeof BlobBackground>;
 
 export const Default: Story = {
   render: () => (
-    <BlobBackground className="w-full h-[300px] items-center justify-center rounded-xl">
+    <BlobBackground className="w-full h-75 items-center justify-center rounded-xl">
       <p className="text-2xl font-display font-semibold text-foreground">NafiOS</p>
     </BlobBackground>
   ),
@@ -22,7 +22,7 @@ export const Subtle: Story = {
   render: () => (
     <BlobBackground
       intensity="subtle"
-      className="flex h-[1000px] items-center justify-center rounded-xl"
+      className="flex h-250 items-center justify-center rounded-xl"
     >
       <p className="text-lg text-foreground/80">Subtle intensity</p>
     </BlobBackground>
@@ -31,10 +31,7 @@ export const Subtle: Story = {
 
 export const Vivid: Story = {
   render: () => (
-    <BlobBackground
-      intensity="vivid"
-      className="flex h-[1000px] items-center justify-center rounded-xl"
-    >
+    <BlobBackground intensity="vivid" className="flex h-250 items-center justify-center rounded-xl">
       <p className="text-lg font-display font-semibold text-foreground">Vivid intensity</p>
     </BlobBackground>
   ),
@@ -42,7 +39,7 @@ export const Vivid: Story = {
 
 export const DarkCard: Story = {
   render: () => (
-    <BlobBackground className="flex h-[300px] w-[500px] flex-col items-center justify-center gap-4 rounded-2xl bg-card">
+    <BlobBackground className="flex h-75 w-125 flex-col items-center justify-center gap-4 rounded-2xl bg-card">
       <h2 className="text-xl font-display font-bold text-foreground">Welcome back</h2>
       <p className="text-sm text-muted-foreground">Your AI workspace is ready</p>
     </BlobBackground>
@@ -51,7 +48,7 @@ export const DarkCard: Story = {
 
 export const FullPage: Story = {
   render: () => (
-    <BlobBackground className="flex h-[600px] flex-col items-center justify-center gap-6">
+    <BlobBackground className="flex h-150 flex-col items-center justify-center gap-6">
       <h1 className="text-2xl font-display font-bold text-foreground">NafiOS</h1>
       <p className="max-w-md text-center text-muted-foreground">
         A suite of AI-native apps — Finance, Budgeting, Documents, Drive, Calendar, and more —
