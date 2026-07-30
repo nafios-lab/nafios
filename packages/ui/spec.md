@@ -1,8 +1,8 @@
 ---
 title: "@nafios/ui"
 status: active
-version: 1.2.0
-updated: 2026-07-02
+version: 1.3.0
+updated: 2026-07-30
 owner: Hanafi
 related_adrs: [0006]
 ---
@@ -63,6 +63,12 @@ onSelect?, active? }`) and a `renderTrigger` render-prop; items with an `href`
 render as links, otherwise as buttons. The active row is marked either per-item
 (`active`) or by route via `activeItem` (matched on `id`; `undefined` = none
 active), carries `aria-current="page"`, and shows a trailing brand dot.
+`ThemeToggle` — floating light/dark toggle driven by `useTheme`. Pins itself to
+the bottom-right corner (`position: fixed`) and flips between explicit `light`
+and `dark` based on the resolved theme, so the first click always moves away
+from what the user currently sees. Placement is overridable via `className`
+(merged last through `cn`, so a `bottom-*` / `right-*` utility wins) to clear a
+corner-pinned widget such as a devtools trigger. Mount once at the app root.
 
 ## Invariants
 

@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -55,12 +55,6 @@ function initTheme() {
   const stored = getCookie();
   currentTheme = stored ?? "system";
   applyTheme(currentTheme);
-
-  window.matchMedia(MEDIA_QUERY).addEventListener("change", () => {
-    if (currentTheme === "system") {
-      applyTheme("system");
-    }
-  });
 }
 
 let initialized = false;
@@ -72,6 +66,20 @@ export function useTheme() {
   }
 
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  // Re-apply the theme when the OS preference flips, but only while tracking
+  // "system". Scoped to the mount (with cleanup) rather than a process-global
+  // one-shot so the listener's lifecycle follows the component.
+  useEffect(() => {
+    const mql = window.matchMedia(MEDIA_QUERY);
+    const onChange = () => {
+      if (currentTheme === "system") {
+        applyTheme("system");
+      }
+    };
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
   const setTheme = useCallback((next: Theme) => {
     currentTheme = next;
