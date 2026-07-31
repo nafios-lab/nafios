@@ -1,3 +1,4 @@
+import { TextInput } from "@nafios/ui/components/text-input";
 import { SidebarTrigger } from "@nafios/ui/components/ui/sidebar";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
@@ -126,16 +127,23 @@ export function NavbarClock() {
   );
 }
 
-/** Global search building block (display-only prototype). */
+/**
+ * Global search building block (display-only prototype). Composes the shared
+ * `TextInput` so it stays visually identical to every other search field in the
+ * shell (e.g. the welcome bar) across light and dark mode — rather than
+ * re-styling a raw `<input>`.
+ */
 export function SearchBar() {
   return (
-    <div className="relative w-64 max-w-[40vw]">
-      <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-      <input
-        type="search"
+    <div className="w-64 max-w-[40vw]">
+      <TextInput
+        type="text"
         placeholder="Search…"
         aria-label="Search"
-        className="h-9 w-full rounded-md border border-border bg-muted/40 pr-3 pl-8 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:bg-background"
+        className="bg-secondary border-transparent"
+        iconRight={<Search />}
+        autoComplete="off"
+        autoCorrect="off"
       />
     </div>
   );

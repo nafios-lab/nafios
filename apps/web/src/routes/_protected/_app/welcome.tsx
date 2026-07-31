@@ -1,8 +1,7 @@
-import { TextInput } from "@nafios/ui/components/text-input";
 import { createFileRoute } from "@tanstack/react-router";
-import { ListChecks, Search } from "lucide-react";
+import { ListChecks } from "lucide-react";
 import { ServiceMenu } from "~/components/service-menu";
-import { NavbarClock, useNavbar } from "../../../components/navbar";
+import { NavbarClock, SearchBar, useNavbar } from "../../../components/navbar";
 import { useSidebarNav } from "../../../components/sidebar";
 
 export const Route = createFileRoute("/_protected/_app/welcome")({
@@ -21,7 +20,7 @@ function Welcome() {
       // Grows to a 500px cap on wide screens, but `min-w-0` lets it shrink in
       // place as the bar narrows instead of overflowing on mobile.
       <div className="min-w-0 max-w-125 flex-1">
-        <TextInput className="border-transparent" placeholder="Search..." iconRight={<Search />} />
+        <SearchBar />
       </div>
     ),
     rightAside: (
