@@ -64,7 +64,7 @@ export function LedgerStartCard({
               </Badge>
             </Button>
             <Button variant="outline" className="w-full text-muted-foreground">
-              Open {formatMonthLong(currentMonth)} instead
+              Open {formatMonthLong(currentMonth)} Instead
             </Button>
           </>
         ) : (
