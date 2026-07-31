@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   Sidebar as SidebarRoot,
 } from "@nafios/ui/components/ui/sidebar";
+import { TooltipProvider } from "@nafios/ui/components/ui/tooltip";
 import { UserMenu, type UserMenuUser } from "@nafios/ui/components/user-menu";
 import { Link, type LinkProps, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
@@ -147,31 +148,52 @@ export function Sidebar({ user }: SidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="items-center gap-1">
-              {items.map((item) => {
-                const Icon = item.icon;
-                // Shared inner content — an icon plus its (tooltip-surfaced)
-                // label. Rendered directly inside the default button when the
-                // item is inert, or slotted into a <Link> when it navigates.
-                const content = (
-                  <>
-                    <Icon />
-                    <span>{item.label}</span>
-                  </>
-                );
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      asChild={item.to !== undefined}
-                      tooltip={item.label}
-                      isActive={item.active}
-                    >
-                      {item.to !== undefined ? <Link to={item.to}>{content}</Link> : content}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            {/* The shadcn SidebarProvider wraps the whole shell in a
+                `<TooltipProvider delayDuration={0}>`, so rail tooltips fire the
+                instant the cursor grazes an icon — and Radix's default
+                `skipDelayDuration` then machine-guns them on/off as you sweep the
+                rail. Nest our own provider over just the menu to override that
+                (composition, so the primitive stays unforked): require a short
+                deliberate hover before a label appears (`delayDuration`), and
+                make every item re-earn that delay (`skipDelayDuration={0}`) so
+                there's no instant re-pop when moving between items. */}
+            <TooltipProvider delayDuration={500} skipDelayDuration={0}>
+              <SidebarMenu className="items-center gap-1">
+                {items.map((item) => {
+                  const Icon = item.icon;
+                  // Shared inner content — an icon plus its (tooltip-surfaced)
+                  // label. Rendered directly inside the default button when the
+                  // item is inert, or slotted into a <Link> when it navigates.
+                  const content = (
+                    <>
+                      <Icon />
+                      <span>{item.label}</span>
+                    </>
+                  );
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        asChild={item.to !== undefined}
+                        tooltip={item.label}
+                        isActive={item.active}
+                        // The shadcn primitive paints hover *and* active with the
+                        // same neutral `sidebar-accent`, so in this icon-only rail
+                        // the current route is indistinguishable from whatever's
+                        // hovered. Keep hover neutral (per the theme's rule that
+                        // interactive states stay neutral, not accent), but give
+                        // the active item the brand (`sidebar-primary`) — a green
+                        // tint + green glyph reads clearly as "you are here" and
+                        // never collides with the neutral hover. These override the
+                        // primitive's active classes via cn()/tailwind-merge.
+                        className="transition-colors data-[active=true]:bg-sidebar-primary/15 data-[active=true]:text-sidebar-primary data-[active=true]:hover:bg-sidebar-primary/20 data-[active=true]:hover:text-sidebar-primary"
+                      >
+                        {item.to !== undefined ? <Link to={item.to}>{content}</Link> : content}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </TooltipProvider>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

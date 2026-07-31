@@ -145,7 +145,7 @@
   --sidebar-foreground: 240 10% 8%;
   --sidebar-primary: 120 32% 34%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 5% 90%; /* hover surface */
+  --sidebar-accent: 240 5% 87%; /* hover surface — darker than the 95% rail so hover reads as a clear step */
   --sidebar-accent-foreground: 240 10% 8%;
   --sidebar-border: 240 6% 82%;
   --sidebar-ring: 120 32% 34%;
@@ -225,8 +225,8 @@
   --sidebar-foreground: 0 0% 91%;
   --sidebar-primary: 120 22% 61%;
   --sidebar-primary-foreground: 240 8% 7%;
-  --sidebar-accent: 240 3% 17%;
-  --sidebar-accent-foreground: 0 0% 91%;
+  --sidebar-accent: 240 4% 21%; /* hover surface — lifted off the 7% rail so hover reads as a clear step */
+  --sidebar-accent-foreground: 0 0% 96%;
   --sidebar-border: 240 2% 21%;
   --sidebar-ring: 120 22% 61%;
 
