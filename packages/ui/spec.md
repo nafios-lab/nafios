@@ -1,8 +1,8 @@
 ---
 title: "@nafios/ui"
 status: active
-version: 1.3.0
-updated: 2026-07-30
+version: 1.4.0
+updated: 2026-07-31
 owner: Hanafi
 related_adrs: [0006]
 ---
@@ -39,7 +39,13 @@ components, NafiOS brand theming, and composites built from primitives.
 ### Components (shadcn primitives)
 
 Re-exported from `@nafios/ui/components/ui/*`:
-`Button`, `Input`, `Label`, `Dialog` (+ sub-parts), `DropdownMenu` (+ sub-parts), `Separator`.
+`Button`, `Input`, `Label`, `Dialog` (+ sub-parts), `DropdownMenu` (+ sub-parts), `Separator`,
+`Collapsible` (+ `CollapsibleTrigger` / `CollapsibleContent`).
+
+`Collapsible` — unstyled Radix disclosure primitive: a `Collapsible` root with a
+`CollapsibleTrigger` and `CollapsibleContent`. Structural only (open/closed);
+consumers own the trigger/content styling. Uncontrolled via `defaultOpen` or
+controlled via `open` + `onOpenChange`.
 
 ### Components (NafiOS composites)
 

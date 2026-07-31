@@ -30,6 +30,8 @@ const buttonVariants = cva(
         default:
           "bg-foreground text-background dark:shadow hover:bg-foreground/90 active:bg-foreground/80",
         brand: "bg-brand-darker border border-brand text-fg-100 dark:shadow hover:brightness-125",
+        spotlight:
+          "bg-spotlight-foreground text-spotlight dark:shadow hover:bg-spotlight-foreground/90 active:bg-spotlight-foreground/80",
         destructive: "bg-error-foreground text-error dark:shadow-sm hover:bg-error-foreground/90",
         outline:
           "border border-input bg-background text-foreground dark:shadow-sm hover:bg-border/50 hover:border-foreground/20 active:bg-foreground/10 active:border-foreground/40",
