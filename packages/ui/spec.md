@@ -2,7 +2,7 @@
 title: "@nafios/ui"
 status: active
 version: 1.4.0
-updated: 2026-07-31
+updated: 2026-08-01
 owner: Hanafi
 related_adrs: [0006]
 ---
@@ -20,6 +20,10 @@ components, NafiOS brand theming, and composites built from primitives.
 
 - `@nafios/ui/globals.css` — Tailwind v4 base + NafiOS theme CSS variables.
   Must be imported once in the app root.
+- `spotlight` — teal semantic token (hue 174, bridges brand-green and
+  accent-blue) for featured / recommended / AI-suggested actions. Exposed as the
+  `--spotlight` / `--spotlight-foreground` / `--spotlight-subtle` tokens and as a
+  `spotlight` variant on `Button` and `Badge`.
 
 ### Utilities
 

@@ -1,5 +1,5 @@
-import { Card } from "@nafios/ui/components/ui/card";
 import { Text } from "@nafios/ui/components/typography/text";
+import { Card } from "@nafios/ui/components/ui/card";
 
 /**
  * Placeholder Ledger Detail Card (EF3.10) — the left-column hero when the user
