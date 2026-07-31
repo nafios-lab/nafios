@@ -4,13 +4,13 @@ import { OnboardStepFamily } from "../../src/features/onboarding/components/onbo
 import { OnboardingWizard } from "../../src/features/onboarding/components/onboarding-wizard.tsx";
 import { OnboardingWizardProvider } from "../../src/features/onboarding/context/onboarding-wizard-provider.tsx";
 import type { FamilyMemberValues } from "../../src/features/onboarding/schemas/onboarding-schema.ts";
-import { from, getSession, insertUserProfile, navigate, resetServerFnMocks } from "../setup.ts";
+import { from, getUser, insertUserProfile, navigate, resetServerFnMocks } from "../setup.ts";
 
-/** Steer the completion write to succeed by giving it a session. */
+/** Steer the completion write to succeed by giving it a verified user. */
 function withSession(): void {
-  getSession.mockResolvedValue({
+  getUser.mockResolvedValue({
     error: null,
-    data: { session: { user: { id: "u1" } } },
+    data: { user: { id: "u1" } },
   });
 }
 
@@ -183,7 +183,7 @@ describe("OnboardStepFamily — navigation (full wizard)", () => {
   });
 
   test("surfaces an error and stays on Family when completion is not retryable", async () => {
-    resetServerFnMocks(); // default getSession = no session → completeOnboardingFn → no_session
+    resetServerFnMocks(); // default getUser = no user → completeOnboardingFn → no_session
     await skipToFamily();
 
     fireEvent.click(screen.getByRole("button", { name: /Skip & finish/ }));
@@ -197,7 +197,7 @@ describe("OnboardStepFamily — navigation (full wizard)", () => {
 
   test("retries then surfaces an error when the completion write throws", async () => {
     resetServerFnMocks();
-    getSession.mockRejectedValue(new Error("network down"));
+    getUser.mockRejectedValue(new Error("network down"));
     await skipToFamily();
 
     fireEvent.click(screen.getByRole("button", { name: /Skip & finish/ }));

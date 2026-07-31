@@ -17,11 +17,11 @@ export const Route = createFileRoute("/_protected/_app")({
 
 function AppLayout() {
   // Session is guaranteed here: `_protected` redirects to login when it's null.
-  // Map it onto the rail's minimal user shape. The session only carries the
-  // email; the (signed) account avatar rides along on `_protected`'s profile
-  // read. With no name stored yet, the menu falls back to email-derived initials
-  // whenever the avatar is absent.
-  const { session, avatarUrl } = Route.useRouteContext();
+  // Map it onto the rail's minimal user shape. The user carries the email; the
+  // (signed) account avatar rides along on `_protected`'s profile read. With no
+  // name stored yet, the menu falls back to email-derived initials whenever the
+  // avatar is absent.
+  const { user, avatarUrl } = Route.useRouteContext();
 
   return (
     // The rail is pinned to the collapsed (icon-only) state: `open={false}` with
@@ -34,7 +34,7 @@ function AppLayout() {
     >
       <NavbarProvider>
         <SidebarNavProvider>
-          <Sidebar user={{ email: session.user.email, avatarUrl: avatarUrl ?? undefined }} />
+          <Sidebar user={{ email: user.email, avatarUrl: avatarUrl ?? undefined }} />
           <SidebarInset>
             <Navbar />
             <div className="flex-1 overflow-auto p-6">

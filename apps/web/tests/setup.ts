@@ -52,9 +52,13 @@ export const getSession = mock(
   (..._args: unknown[]): Promise<AuthResult> =>
     Promise.resolve({ error: null, data: { session: null } }),
 );
+// Default = no authenticated user. Real `getUser` signals "signed out" with an
+// error (it validates the JWT with the Auth server), not a null user — the
+// handlers branch on `.error`, and signUpFn's resume check treats "no error" as
+// an existing user. Tests that want a user set an explicit success value.
 export const getUser = mock(
   (..._args: unknown[]): Promise<AuthResult> =>
-    Promise.resolve({ error: null, data: { user: null } }),
+    Promise.resolve({ error: { message: "Auth session missing!" }, data: null }),
 );
 export const signOut = mock(
   (..._args: unknown[]): Promise<AuthResult> => Promise.resolve({ error: null }),
@@ -162,7 +166,7 @@ export function resetServerFnMocks(): void {
   getSession.mockReset();
   getSession.mockResolvedValue({ error: null, data: { session: null } });
   getUser.mockReset();
-  getUser.mockResolvedValue({ error: null, data: { user: null } });
+  getUser.mockResolvedValue({ error: { message: "Auth session missing!" }, data: null });
   signOut.mockReset();
   signOut.mockResolvedValue({ error: null });
   signUp.mockReset();

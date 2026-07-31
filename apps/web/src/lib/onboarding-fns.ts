@@ -1,10 +1,4 @@
-import {
-  type AuthSession,
-  createServerClient,
-  getSession,
-  getUser,
-  updateUserMetadata,
-} from "@nafios/auth-core";
+import { type AuthUser, createServerClient, getUser, updateUserMetadata } from "@nafios/auth-core";
 import {
   createServerDb,
   type FamilyMemberInput,
@@ -63,16 +57,18 @@ export const saveOnboardingProfileFn = createServerFn({ method: "POST" })
     const cookies = await getRequestCookieAdapter();
 
     const authClient = createServerClient(cookies);
-    const sessionResult = await getSession(authClient);
-    const session = sessionResult.error ? null : sessionResult.data.session;
-    if (!session) return { ok: false, code: "no_session" };
+    // Verify the JWT with the Auth server (not the raw cookie) before any write
+    // keyed on the user — `getSession().user` is unauthenticated on the server.
+    const userResult = await getUser(authClient);
+    const user = userResult.error ? null : userResult.data.user;
+    if (!user) return { ok: false, code: "no_session" };
 
     try {
       // 1) Avatar → Storage → profiles.avatar_url (only a freshly-picked data URL).
       if (data.avatar?.startsWith("data:")) {
         const { contentType, bytes } = decodeDataUrl(data.avatar);
         const { path } = await uploadAvatar({
-          uid: session.user.id,
+          uid: user.id,
           scope: "account",
           bytes,
           contentType,
@@ -140,12 +136,14 @@ export const completeOnboardingFn = createServerFn({ method: "POST" })
     const cookies = await getRequestCookieAdapter();
 
     const authClient = createServerClient(cookies);
-    const sessionResult = await getSession(authClient);
-    const session = sessionResult.error ? null : sessionResult.data.session;
-    if (!session) return { ok: false, code: "no_session" };
+    // Verify the JWT with the Auth server (not the raw cookie) before the
+    // completion write — `getSession().user` is unauthenticated on the server.
+    const userResult = await getUser(authClient);
+    const user = userResult.error ? null : userResult.data.user;
+    if (!user) return { ok: false, code: "no_session" };
 
     try {
-      const uid = session.user.id;
+      const uid = user.id;
 
       const familyMembers: FamilyMemberInput[] = [];
       for (const member of data.familyMembers) {
@@ -186,9 +184,9 @@ export const completeOnboardingFn = createServerFn({ method: "POST" })
   });
 
 /**
- * The onboarding gate's view of the current request: is there a session, has
- * that user finished onboarding (`profiles.onboarding_completed_at` set), and
- * what avatar should the shell show?
+ * The onboarding gate's view of the current request: is there an authenticated
+ * user, has that user finished onboarding (`profiles.onboarding_completed_at`
+ * set), and what avatar should the shell show?
  *
  * Route guards use `onboardingCompleted` to keep a signed-in-but-incomplete user
  * out of the app (bounced to `/onboarding`). The wizard always reopens at the
@@ -206,21 +204,24 @@ export const completeOnboardingFn = createServerFn({ method: "POST" })
  */
 export const getOnboardingStatusFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<{
-    session: AuthSession | null;
+    user: AuthUser | null;
     onboardingCompleted: boolean;
     avatarUrl: string | null;
   }> => {
     const cookies = await getRequestCookieAdapter();
 
-    const sessionResult = await getSession(createServerClient(cookies));
-    const session = sessionResult.error ? null : sessionResult.data.session;
-    if (!session) return { session: null, onboardingCompleted: false, avatarUrl: null };
+    // Verified read: this gate runs on every protected navigation, so it must
+    // trust the *authenticated* user (JWT validated by the Auth server), not
+    // `getSession().user`, which is read straight from the cookie on the server.
+    const userResult = await getUser(createServerClient(cookies));
+    const user = userResult.error ? null : userResult.data.user;
+    if (!user) return { user: null, onboardingCompleted: false, avatarUrl: null };
 
     const db = createServerDb(cookies);
     const { data } = await db
       .from("profiles")
       .select("onboarding_completed_at, avatar_url")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .maybeSingle();
 
     let avatarUrl: string | null = null;
@@ -233,7 +234,7 @@ export const getOnboardingStatusFn = createServerFn({ method: "GET" }).handler(
     }
 
     return {
-      session,
+      user,
       onboardingCompleted: Boolean(data?.onboarding_completed_at),
       avatarUrl,
     };

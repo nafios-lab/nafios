@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_protected/_app/app/")({
 });
 
 function AppPlaceholder() {
-  const { session } = Route.useRouteContext();
+  const { user } = Route.useRouteContext();
 
   // The modules surface declares its own rail: the module catalog plus the
   // mounted modules.
@@ -35,7 +35,7 @@ function AppPlaceholder() {
         >
           New module
         </button>
-        <UserMenu email={session.user.email} />
+        <UserMenu email={user.email} />
       </>
     ),
   });

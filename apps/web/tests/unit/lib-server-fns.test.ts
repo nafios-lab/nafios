@@ -75,7 +75,7 @@ describe("signUpFn", () => {
 
   test("resume path: returns the existing user without re-registering", async () => {
     const existingUser = fakeUser({ id: "u-existing" });
-    getSession.mockResolvedValue({ error: null, data: { session: { user: existingUser } } });
+    getUser.mockResolvedValue({ error: null, data: { user: existingUser } });
 
     const result = await signUpFn({ data: input });
 
@@ -84,7 +84,7 @@ describe("signUpFn", () => {
   });
 
   test("registers when there is no existing session and forwards validated data", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: null } });
+    // getUser default errors (no authenticated user) → fresh signup path.
     const user = fakeUser({ id: "u-new", email: input.email });
     signUp.mockResolvedValue({ error: null, data: { user } });
 
@@ -95,8 +95,8 @@ describe("signUpFn", () => {
     expect(signUp).toHaveBeenCalledWith({ __authClient: true }, input);
   });
 
-  test("treats an errored session probe as no session (still attempts signUp)", async () => {
-    getSession.mockResolvedValue({ error: { message: "expired" }, data: { session: null } });
+  test("treats a getUser probe error as no existing user (still attempts signUp)", async () => {
+    getUser.mockResolvedValue({ error: { message: "expired" }, data: null });
     const user = fakeUser({ id: "u-new" });
     signUp.mockResolvedValue({ error: null, data: { user } });
 
@@ -107,7 +107,7 @@ describe("signUpFn", () => {
   });
 
   test("surfaces an auth failure as ok:false data with code and message", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: null } });
+    // getUser default errors (no authenticated user) → fresh signup path.
     signUp.mockResolvedValue({
       error: { code: "user_already_exists", message: "User already registered" },
     });
@@ -159,7 +159,7 @@ describe("completeOnboardingFn", () => {
   });
 
   test("returns no_session and writes nothing when there is no session", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: null } });
+    getUser.mockResolvedValue({ error: { message: "no session" }, data: null });
 
     const result = await completeOnboardingFn({ data: { familyMembers: [member()] } });
 
@@ -169,7 +169,7 @@ describe("completeOnboardingFn", () => {
   });
 
   test("stamps completion with an empty family list (Skip & finish)", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
 
     const result = await completeOnboardingFn({ data: { familyMembers: [] } });
 
@@ -179,7 +179,7 @@ describe("completeOnboardingFn", () => {
   });
 
   test("uploads each family avatar (data URL) and maps avatar→avatarUrl", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
     uploadAvatar.mockResolvedValue({ path: "avatars/u1/family/k.webp" });
 
     const result = await completeOnboardingFn({
@@ -211,7 +211,7 @@ describe("completeOnboardingFn", () => {
   });
 
   test("does not upload for a member without an avatar (avatarUrl stays undefined)", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
 
     const result = await completeOnboardingFn({ data: { familyMembers: [member()] } });
 
@@ -235,7 +235,7 @@ describe("completeOnboardingFn", () => {
   });
 
   test("returns ok:false with the error message when the completion write throws", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
     insertUserProfile.mockRejectedValue(new Error("rpc boom"));
 
     const result = await completeOnboardingFn({ data: { familyMembers: [] } });
@@ -245,60 +245,60 @@ describe("completeOnboardingFn", () => {
 });
 
 describe("getOnboardingStatusFn", () => {
-  test("returns no session / incomplete when there is no session", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: null } });
+  test("returns no user / incomplete when there is no authenticated user", async () => {
+    getUser.mockResolvedValue({ error: { message: "no session" }, data: null });
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session: null, onboardingCompleted: false, avatarUrl: null });
+    expect(result).toEqual({ user: null, onboardingCompleted: false, avatarUrl: null });
     expect(createServerDb).not.toHaveBeenCalled();
     expect(signAvatarUrl).not.toHaveBeenCalled();
   });
 
-  test("treats an errored session probe as no session", async () => {
-    getSession.mockResolvedValue({ error: { message: "expired" }, data: { session: null } });
+  test("treats a getUser error as no authenticated user", async () => {
+    getUser.mockResolvedValue({ error: { message: "expired" }, data: null });
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session: null, onboardingCompleted: false, avatarUrl: null });
+    expect(result).toEqual({ user: null, onboardingCompleted: false, avatarUrl: null });
   });
 
   test("reports incomplete when the profile carries no completion timestamp", async () => {
-    const session = fakeSession("u1");
-    getSession.mockResolvedValue({ error: null, data: { session } });
+    const user = fakeUser({ id: "u1" });
+    getUser.mockResolvedValue({ error: null, data: { user } });
     maybeSingle.mockResolvedValue({ data: { onboarding_completed_at: null } });
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session, onboardingCompleted: false, avatarUrl: null });
+    expect(result).toEqual({ user, onboardingCompleted: false, avatarUrl: null });
     expect(from).toHaveBeenCalledWith("profiles");
     expect(eq).toHaveBeenCalledWith("id", "u1");
   });
 
   test("reports onboardingCompleted=true when the profile carries a timestamp", async () => {
-    const session = fakeSession("u1");
-    getSession.mockResolvedValue({ error: null, data: { session } });
+    const user = fakeUser({ id: "u1" });
+    getUser.mockResolvedValue({ error: null, data: { user } });
     maybeSingle.mockResolvedValue({ data: { onboarding_completed_at: "2026-06-18T00:00:00Z" } });
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session, onboardingCompleted: true, avatarUrl: null });
+    expect(result).toEqual({ user, onboardingCompleted: true, avatarUrl: null });
   });
 
   test("reports incomplete when no profile row exists", async () => {
-    const session = fakeSession("u1");
-    getSession.mockResolvedValue({ error: null, data: { session } });
+    const user = fakeUser({ id: "u1" });
+    getUser.mockResolvedValue({ error: null, data: { user } });
     maybeSingle.mockResolvedValue({ data: null });
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session, onboardingCompleted: false, avatarUrl: null });
+    expect(result).toEqual({ user, onboardingCompleted: false, avatarUrl: null });
     expect(signAvatarUrl).not.toHaveBeenCalled();
   });
 
   test("signs the stored account avatar for the shell on the same profile read", async () => {
-    const session = fakeSession("u1");
-    getSession.mockResolvedValue({ error: null, data: { session } });
+    const user = fakeUser({ id: "u1" });
+    getUser.mockResolvedValue({ error: null, data: { user } });
     maybeSingle.mockResolvedValue({
       data: {
         onboarding_completed_at: "2026-06-18T00:00:00Z",
@@ -311,15 +311,15 @@ describe("getOnboardingStatusFn", () => {
 
     expect(signAvatarUrl).toHaveBeenCalledWith({ path: "avatars/u1/avatar.webp" });
     expect(result).toEqual({
-      session,
+      user,
       onboardingCompleted: true,
       avatarUrl: "https://signed/u1.webp?token=t",
     });
   });
 
   test("degrades to avatarUrl:null when signing throws (a broken path must not block navigation)", async () => {
-    const session = fakeSession("u1");
-    getSession.mockResolvedValue({ error: null, data: { session } });
+    const user = fakeUser({ id: "u1" });
+    getUser.mockResolvedValue({ error: null, data: { user } });
     maybeSingle.mockResolvedValue({
       data: { onboarding_completed_at: null, avatar_url: "avatars/u1/avatar.webp" },
     });
@@ -327,7 +327,7 @@ describe("getOnboardingStatusFn", () => {
 
     const result = await getOnboardingStatusFn();
 
-    expect(result).toEqual({ session, onboardingCompleted: false, avatarUrl: null });
+    expect(result).toEqual({ user, onboardingCompleted: false, avatarUrl: null });
   });
 });
 
@@ -335,7 +335,7 @@ describe("saveOnboardingProfileFn", () => {
   const dataUrl = "data:image/webp;base64,AAAA";
 
   test("returns no_session and writes nothing when there is no session", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: null } });
+    getUser.mockResolvedValue({ error: { message: "no session" }, data: null });
 
     const result = await saveOnboardingProfileFn({
       data: { avatar: dataUrl, mobile: "(+65) 9123 4567" },
@@ -348,8 +348,7 @@ describe("saveOnboardingProfileFn", () => {
   });
 
   test("uploads the avatar, writes its path, and writes the mobile metadata", async () => {
-    const session = fakeSession("u1");
-    getSession.mockResolvedValue({ error: null, data: { session } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
     uploadAvatar.mockResolvedValue({ path: "avatars/u1/avatar.webp" });
 
     const result = await saveOnboardingProfileFn({
@@ -369,7 +368,7 @@ describe("saveOnboardingProfileFn", () => {
   });
 
   test("skips the avatar ops when only a mobile is provided", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
 
     const result = await saveOnboardingProfileFn({ data: { mobile: "(+65) 9123 4567" } });
 
@@ -380,7 +379,7 @@ describe("saveOnboardingProfileFn", () => {
   });
 
   test("skips the mobile write when only an avatar is provided", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
 
     const result = await saveOnboardingProfileFn({ data: { avatar: dataUrl } });
 
@@ -390,7 +389,7 @@ describe("saveOnboardingProfileFn", () => {
   });
 
   test("does nothing but succeeds when both fields are empty (Skip-equivalent)", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
 
     const result = await saveOnboardingProfileFn({ data: {} });
 
@@ -400,7 +399,7 @@ describe("saveOnboardingProfileFn", () => {
   });
 
   test("does not re-upload an already-stored avatar path", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
 
     const result = await saveOnboardingProfileFn({ data: { avatar: "avatars/u1/avatar.webp" } });
 
@@ -410,7 +409,7 @@ describe("saveOnboardingProfileFn", () => {
   });
 
   test("returns ok:false with the error code when the mobile write fails", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
     updateUserMetadata.mockResolvedValue({ error: { code: "weak", message: "nope" }, data: null });
 
     const result = await saveOnboardingProfileFn({ data: { mobile: "(+65) 9123 4567" } });
@@ -419,7 +418,7 @@ describe("saveOnboardingProfileFn", () => {
   });
 
   test("returns ok:false when the avatar upload throws", async () => {
-    getSession.mockResolvedValue({ error: null, data: { session: fakeSession("u1") } });
+    getUser.mockResolvedValue({ error: null, data: { user: fakeUser({ id: "u1" }) } });
     uploadAvatar.mockRejectedValue(new Error("bucket not found"));
 
     const result = await saveOnboardingProfileFn({ data: { avatar: dataUrl } });
