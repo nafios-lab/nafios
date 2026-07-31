@@ -138,12 +138,12 @@ describe("ServiceMenu", () => {
     render(<ServiceMenu />);
 
     const trigger = screen.getByRole("button", { name: "Services Menu" });
-    // Closed → ghost variant: no solid-fill text token.
-    expect(trigger.className).not.toContain("text-fg-100");
+    // Closed → ghost variant: no solid-fill background token.
+    expect(trigger.className).not.toContain("bg-foreground");
 
     await user.click(trigger);
 
-    // Open → default variant carries the solid-fill token.
-    await waitFor(() => expect(trigger.className).toContain("text-fg-100"));
+    // Open → default variant carries the solid-fill background token.
+    await waitFor(() => expect(trigger.className).toContain("bg-foreground"));
   });
 });

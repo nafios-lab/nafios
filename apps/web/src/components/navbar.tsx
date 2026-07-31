@@ -1,3 +1,5 @@
+import { TextInput } from "@nafios/ui/components/text-input";
+import { SidebarTrigger } from "@nafios/ui/components/ui/sidebar";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Search } from "lucide-react";
@@ -80,7 +82,7 @@ export function useNavbar({ leftAside, rightAside }: NavbarContent) {
 /** Consistent module heading, sized to sit beside the search bar. */
 export function NavbarTitle({ children }: { children: ReactNode }) {
   return (
-    <span className="text-xs font-medium tabular-nums tracking-wide text-muted-foreground">
+    <span className="truncate text-xs font-medium tabular-nums tracking-wide text-muted-foreground">
       {children}
     </span>
   );
@@ -110,27 +112,38 @@ function useNow(): Date | null {
   return now;
 }
 
-/** Live date + time building block, e.g. `THU · 15 MAY · 09:42AM`. */
+/**
+ * Live date + time building block, e.g. `THU · 15 MAY · 09:42AM`. Lowest-priority
+ * bar content: hidden below `sm` so the narrow (mobile) bar spends its width on
+ * search + actions rather than the clock.
+ */
 export function NavbarClock() {
   const now = useNow();
 
   return (
-    <span className="text-xs font-medium tabular-nums tracking-wide text-muted-foreground">
+    <span className="hidden whitespace-nowrap text-xs font-medium tabular-nums tracking-wide text-muted-foreground sm:inline">
       {now && format(now, "EEE · d MMM · hh:mma").toUpperCase()}
     </span>
   );
 }
 
-/** Global search building block (display-only prototype). */
+/**
+ * Global search building block (display-only prototype). Composes the shared
+ * `TextInput` so it stays visually identical to every other search field in the
+ * shell (e.g. the welcome bar) across light and dark mode — rather than
+ * re-styling a raw `<input>`.
+ */
 export function SearchBar() {
   return (
-    <div className="relative w-64 max-w-[40vw]">
-      <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-      <input
+    <div className="w-64 max-w-[40vw]">
+      <TextInput
         type="search"
         placeholder="Search…"
         aria-label="Search"
-        className="h-9 w-full rounded-md border border-border bg-muted/40 pr-3 pl-8 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:bg-background"
+        className="bg-secondary border-transparent"
+        iconRight={<Search />}
+        autoComplete="off"
+        autoCorrect="off"
       />
     </div>
   );
@@ -168,9 +181,19 @@ export function Navbar() {
   const { leftAside, rightAside } = useContext(NavbarContentContext);
 
   return (
-    <nav className="flex items-center justify-between gap-4 border-b border-border px-6 py-3">
-      <div className="flex items-center gap-3">{leftAside}</div>
-      <div className="flex items-center gap-4">{rightAside}</div>
+    <nav className="flex items-center gap-2 border-b border-border/50 px-4 py-3 sm:gap-4 sm:px-6">
+      {/* Left slot: takes the slack and yields first. `min-w-0` lets its
+          contents shrink below their intrinsic width instead of overflowing
+          the bar — the flexbox default (`min-width: auto`) would not. */}
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+        {/* Below `md` the rail collapses to an off-canvas sheet; this is the
+            only way to open it, so it's the sole element shown at that width. */}
+        <SidebarTrigger className="md:hidden" />
+        {leftAside}
+      </div>
+      {/* Right slot: intrinsic width, never squeezed — module actions and the
+          user/account chrome stay legible as the bar narrows. */}
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">{rightAside}</div>
     </nav>
   );
 }

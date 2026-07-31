@@ -12,7 +12,7 @@ type Story = StoryObj;
 
 export const Default: Story = {
   render: () => (
-    <Tabs defaultValue="overview" className="w-[400px]">
+    <Tabs defaultValue="overview" className="w-100">
       <TabsList>
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="transactions">Transactions</TabsTrigger>
@@ -33,7 +33,7 @@ export const Default: Story = {
 
 export const TwoTabs: Story = {
   render: () => (
-    <Tabs defaultValue="login" className="w-[300px]">
+    <Tabs defaultValue="login" className="w-75">
       <TabsList className="w-full">
         <TabsTrigger value="login" className="flex-1">
           Login
@@ -54,7 +54,7 @@ export const TwoTabs: Story = {
 
 export const WithIcons: Story = {
   render: () => (
-    <Tabs defaultValue="overview" className="w-[400px]">
+    <Tabs defaultValue="overview" className="w-100">
       <TabsList>
         <TabsTrigger value="overview" className="gap-1.5">
           <LayoutDashboard className="size-4" />
@@ -84,7 +84,7 @@ export const WithIcons: Story = {
 
 export const CustomActiveColor: Story = {
   render: () => (
-    <Tabs defaultValue="overview" className="w-[400px]">
+    <Tabs defaultValue="overview" className="w-100">
       <TabsList>
         <TabsTrigger
           value="overview"
@@ -120,7 +120,7 @@ export const CustomActiveColor: Story = {
 
 export const Disabled: Story = {
   render: () => (
-    <Tabs defaultValue="active" className="w-[400px]">
+    <Tabs defaultValue="active" className="w-100">
       <TabsList>
         <TabsTrigger value="active">Active</TabsTrigger>
         <TabsTrigger value="disabled" disabled>

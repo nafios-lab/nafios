@@ -20,7 +20,7 @@ const radioGroupVariants = cva("grid gap-2", {
 });
 
 const radioItemVariants = cva(
-  "aspect-square rounded-full border shadow-sm transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+  "aspect-square rounded-full border dark:shadow-sm transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {

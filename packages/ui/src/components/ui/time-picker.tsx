@@ -6,7 +6,7 @@ import { cn } from "../../lib/utils.ts";
 import { Label } from "./label.tsx";
 
 const timePickerVariants = cva(
-  "inline-flex items-center gap-1 rounded-full border bg-card text-md shadow-sm transition-colors focus-within:outline-none focus-within:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+  "inline-flex items-center gap-1 rounded-full border bg-card text-md dark:shadow-sm transition-colors focus-within:outline-none focus-within:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
   {
     variants: {
       variant: {

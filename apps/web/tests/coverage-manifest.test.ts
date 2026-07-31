@@ -30,6 +30,8 @@ import "../src/features/onboarding/schemas/onboarding-schema.ts";
 // Hooks, context & feature libs
 import "../src/features/auth/hooks/use-account-signup.ts";
 import "../src/features/auth/hooks/use-sign-in.ts";
+import "../src/features/finance/lib/derive-ledger-home-state.ts";
+import "../src/features/finance/lib/format-month.ts";
 import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";
 import "../src/features/onboarding/hooks/use-complete-onboarding.ts";
 import "../src/features/onboarding/hooks/use-onboarding-profile.ts";
@@ -38,6 +40,11 @@ import "../src/features/onboarding/lib/family-helpers.ts";
 // Feature components
 import "../src/features/auth/components/login-form.tsx";
 import "../src/features/auth/components/signup-form.tsx";
+import "../src/features/finance/components/finance-home.tsx";
+import "../src/features/finance/components/ledger-detail-card.tsx";
+import "../src/features/finance/components/ledger-start-card.tsx";
+import "../src/features/finance/components/pending-reconciliation-section.tsx";
+import "../src/features/finance/components/view-settled-ledgers-button.tsx";
 import "../src/features/onboarding/components/acc-creation-loader.tsx";
 import "../src/features/onboarding/components/family-member-form.tsx";
 import "../src/features/onboarding/components/family-member-list-item.tsx";

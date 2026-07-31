@@ -5,12 +5,12 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 // This file targets the hook's retry model: success, the non-retryable break,
 // retry-exhaustion, recovery after a thrown attempt, and `reset`.
 import { useOnboardingProfile } from "../../src/features/onboarding/hooks/use-onboarding-profile.ts";
-import { getSession, resetServerFnMocks, updateUserMetadata } from "../setup.ts";
+import { getUser, resetServerFnMocks, updateUserMetadata } from "../setup.ts";
 
 const GENERIC_ERROR = "We couldn't save your profile. Please try again.";
 
 function withSession(): void {
-  getSession.mockResolvedValue({ error: null, data: { session: { user: { id: "u1" } } } });
+  getUser.mockResolvedValue({ error: null, data: { user: { id: "u1" } } });
 }
 
 beforeEach(resetServerFnMocks);
@@ -32,7 +32,7 @@ describe("useOnboardingProfile", () => {
   });
 
   test("stops after a single attempt on the non-retryable no_session fault", async () => {
-    // getSession default = no session → saveOnboardingProfileFn returns no_session.
+    // getUser default = no user → saveOnboardingProfileFn returns no_session.
     const onSuccess = mock(() => {});
     const { result } = renderHook(() => useOnboardingProfile({ onSuccess }));
 
@@ -61,13 +61,13 @@ describe("useOnboardingProfile", () => {
   });
 
   test("recovers when an earlier attempt throws but a later one succeeds", async () => {
-    // First getSession rejects → the server fn throws → the hook's catch falls
+    // First getUser rejects → the server fn throws → the hook's catch falls
     // through to the next attempt, which succeeds.
     let calls = 0;
-    getSession.mockImplementation(() => {
+    getUser.mockImplementation(() => {
       calls += 1;
       if (calls < 2) return Promise.reject(new Error("network"));
-      return Promise.resolve({ error: null, data: { session: { user: { id: "u1" } } } });
+      return Promise.resolve({ error: null, data: { user: { id: "u1" } } });
     });
     const onSuccess = mock(() => {});
     const { result } = renderHook(() => useOnboardingProfile({ onSuccess }));

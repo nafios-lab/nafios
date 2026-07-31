@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, renderHook, waitFor } from "@testing-library/react";
 // The hook drives the REAL signUpFn server fn (built against the tests/setup.ts
-// stubs). We steer the outcome through the shared `signUp` spy; `getSession`
-// stays at its no-session default so signUpFn takes the fresh-signup path rather
+// stubs). We steer the outcome through the shared `signUp` spy; `getUser`
+// stays at its no-user default so signUpFn takes the fresh-signup path rather
 // than the resume path. This file targets the hook's own surface: the
 // user/system classification of failures and `reset`.
 import { useAccountSignup } from "../../src/features/auth/hooks/use-account-signup.ts";

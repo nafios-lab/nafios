@@ -8,7 +8,7 @@ import { Label } from "./ui/label.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover.tsx";
 
 const autocompleteVariants = cva(
-  "flex h-9 w-full items-center rounded-full border bg-card px-3 py-1 text-md shadow-sm transition-colors md:text-sm",
+  "flex h-9 w-full items-center rounded-full border bg-card px-3 py-1 text-md dark:shadow-sm transition-colors md:text-sm",
   {
     variants: {
       variant: {

@@ -66,9 +66,11 @@ export const signUpFn = createServerFn({ method: "POST" })
     // but failed at the profile step. The user no longer needs re-registering —
     // return the existing user so the caller proceeds straight to the profile
     // step. Re-running signUp here would fail with "user already registered".
-    const existing = await getSession(client);
-    if (!existing.error && existing.data.session) {
-      return { ok: true, user: existing.data.session.user };
+    // `getUser` validates the JWT with the Auth server (errors when there is no
+    // session); reading `getSession().user` on the server is unauthenticated.
+    const existing = await getUser(client);
+    if (!existing.error) {
+      return { ok: true, user: existing.data.user };
     }
 
     const result = await signUp(client, data);

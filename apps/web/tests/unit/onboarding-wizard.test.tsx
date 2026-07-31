@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 // The wizard renders the Profile step (which drives the REAL
 // saveOnboardingProfileFn via the tests/setup.ts spies) and switches to the
-// Family step on advance. We steer the save outcome through `getSession`.
+// Family step on advance. We steer the save outcome through `getUser`.
 import { OnboardingWizard } from "../../src/features/onboarding/components/onboarding-wizard.tsx";
-import { getSession, resetServerFnMocks, updateUserMetadata } from "../setup.ts";
+import { getUser, resetServerFnMocks, updateUserMetadata } from "../setup.ts";
 
 function withSession(): void {
-  getSession.mockResolvedValue({ error: null, data: { session: { user: { id: "u1" } } } });
+  getUser.mockResolvedValue({ error: null, data: { user: { id: "u1" } } });
 }
 
 beforeEach(resetServerFnMocks);
@@ -82,7 +82,7 @@ describe("OnboardingWizard", () => {
   });
 
   test("a save fault holds the user on Profile with an error alert", async () => {
-    // getSession default = no session → saveOnboardingProfileFn returns no_session.
+    // getUser default = no user → saveOnboardingProfileFn returns no_session.
     render(<OnboardingWizard />);
 
     fireEvent.click(screen.getByRole("button", { name: /Save and continue/ }));

@@ -6,7 +6,7 @@ import { Text } from "./typography/text.tsx";
 import { Label } from "./ui/label.tsx";
 
 const textInputVariants = cva(
-  "flex h-9 w-full rounded-full border bg-card px-3 py-1 text-md shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+  "flex h-9 w-full rounded-full border bg-card px-3 py-1 text-md dark:shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
   {
     variants: {
       variant: {

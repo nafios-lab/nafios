@@ -1,8 +1,8 @@
 ---
 title: "@nafios/ui"
 status: active
-version: 1.2.0
-updated: 2026-07-02
+version: 1.4.0
+updated: 2026-08-01
 owner: Hanafi
 related_adrs: [0006]
 ---
@@ -20,6 +20,10 @@ components, NafiOS brand theming, and composites built from primitives.
 
 - `@nafios/ui/globals.css` — Tailwind v4 base + NafiOS theme CSS variables.
   Must be imported once in the app root.
+- `spotlight` — teal semantic token (hue 174, bridges brand-green and
+  accent-blue) for featured / recommended / AI-suggested actions. Exposed as the
+  `--spotlight` / `--spotlight-foreground` / `--spotlight-subtle` tokens and as a
+  `spotlight` variant on `Button` and `Badge`.
 
 ### Utilities
 
@@ -39,7 +43,13 @@ components, NafiOS brand theming, and composites built from primitives.
 ### Components (shadcn primitives)
 
 Re-exported from `@nafios/ui/components/ui/*`:
-`Button`, `Input`, `Label`, `Dialog` (+ sub-parts), `DropdownMenu` (+ sub-parts), `Separator`.
+`Button`, `Input`, `Label`, `Dialog` (+ sub-parts), `DropdownMenu` (+ sub-parts), `Separator`,
+`Collapsible` (+ `CollapsibleTrigger` / `CollapsibleContent`).
+
+`Collapsible` — unstyled Radix disclosure primitive: a `Collapsible` root with a
+`CollapsibleTrigger` and `CollapsibleContent`. Structural only (open/closed);
+consumers own the trigger/content styling. Uncontrolled via `defaultOpen` or
+controlled via `open` + `onOpenChange`.
 
 ### Components (NafiOS composites)
 
@@ -63,6 +73,12 @@ onSelect?, active? }`) and a `renderTrigger` render-prop; items with an `href`
 render as links, otherwise as buttons. The active row is marked either per-item
 (`active`) or by route via `activeItem` (matched on `id`; `undefined` = none
 active), carries `aria-current="page"`, and shows a trailing brand dot.
+`ThemeToggle` — floating light/dark toggle driven by `useTheme`. Pins itself to
+the bottom-right corner (`position: fixed`) and flips between explicit `light`
+and `dark` based on the resolved theme, so the first click always moves away
+from what the user currently sees. Placement is overridable via `className`
+(merged last through `cn`, so a `bottom-*` / `right-*` utility wins) to clear a
+corner-pinned widget such as a devtools trigger. Mount once at the app root.
 
 ## Invariants
 

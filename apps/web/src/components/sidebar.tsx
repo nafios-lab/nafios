@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   Sidebar as SidebarRoot,
 } from "@nafios/ui/components/ui/sidebar";
+import { TooltipProvider } from "@nafios/ui/components/ui/tooltip";
 import { UserMenu, type UserMenuUser } from "@nafios/ui/components/user-menu";
 import { Link, type LinkProps, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
@@ -124,9 +125,12 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    // `dark` pins the rail to the dark palette regardless of the app theme,
-    // matching the draft. Colors come from the shadcn sidebar theme tokens.
-    <SidebarRoot collapsible="icon" className="dark">
+    // The rail follows the app theme — colors come from the shadcn sidebar
+    // theme tokens (`--sidebar-*`), which are defined for both the light and
+    // dark palettes, so it recolors automatically when the theme switches.
+    // `border-border/50` softens the rail's right edge — same token as the base
+    // border, at half opacity so it reads as a subtle seam, not a bright line.
+    <SidebarRoot collapsible="icon" className="border-border/50">
       <SidebarHeader className="items-center py-3">
         {/* The brand mark doubles as the home affordance — the universal
             click-the-logo-to-go-home convention. It lives in the shared
@@ -144,31 +148,52 @@ export function Sidebar({ user }: SidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="items-center gap-1">
-              {items.map((item) => {
-                const Icon = item.icon;
-                // Shared inner content — an icon plus its (tooltip-surfaced)
-                // label. Rendered directly inside the default button when the
-                // item is inert, or slotted into a <Link> when it navigates.
-                const content = (
-                  <>
-                    <Icon />
-                    <span>{item.label}</span>
-                  </>
-                );
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      asChild={item.to !== undefined}
-                      tooltip={item.label}
-                      isActive={item.active}
-                    >
-                      {item.to !== undefined ? <Link to={item.to}>{content}</Link> : content}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            {/* The shadcn SidebarProvider wraps the whole shell in a
+                `<TooltipProvider delayDuration={0}>`, so rail tooltips fire the
+                instant the cursor grazes an icon — and Radix's default
+                `skipDelayDuration` then machine-guns them on/off as you sweep the
+                rail. Nest our own provider over just the menu to override that
+                (composition, so the primitive stays unforked): require a short
+                deliberate hover before a label appears (`delayDuration`), and
+                make every item re-earn that delay (`skipDelayDuration={0}`) so
+                there's no instant re-pop when moving between items. */}
+            <TooltipProvider delayDuration={500} skipDelayDuration={0}>
+              <SidebarMenu className="items-center gap-1">
+                {items.map((item) => {
+                  const Icon = item.icon;
+                  // Shared inner content — an icon plus its (tooltip-surfaced)
+                  // label. Rendered directly inside the default button when the
+                  // item is inert, or slotted into a <Link> when it navigates.
+                  const content = (
+                    <>
+                      <Icon />
+                      <span>{item.label}</span>
+                    </>
+                  );
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        asChild={item.to !== undefined}
+                        tooltip={item.label}
+                        isActive={item.active}
+                        // The shadcn primitive paints hover *and* active with the
+                        // same neutral `sidebar-accent`, so in this icon-only rail
+                        // the current route is indistinguishable from whatever's
+                        // hovered. Keep hover neutral (per the theme's rule that
+                        // interactive states stay neutral, not accent), but give
+                        // the active item the brand (`sidebar-primary`) — a green
+                        // tint + green glyph reads clearly as "you are here" and
+                        // never collides with the neutral hover. These override the
+                        // primitive's active classes via cn()/tailwind-merge.
+                        className="transition-colors data-[active=true]:bg-sidebar-primary/15 data-[active=true]:text-sidebar-primary data-[active=true]:hover:bg-sidebar-primary/20 data-[active=true]:hover:text-sidebar-primary"
+                      >
+                        {item.to !== undefined ? <Link to={item.to}>{content}</Link> : content}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </TooltipProvider>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

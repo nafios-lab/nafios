@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, setSystemTime, test } from "bun:test";
+import { SidebarProvider } from "@nafios/ui/components/ui/sidebar";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   Navbar,
@@ -26,10 +27,14 @@ function renderNavbar(content: NavbarContent) {
     return null;
   }
   return render(
-    <NavbarProvider>
-      <Navbar />
-      <Route />
-    </NavbarProvider>,
+    // shadcn's SidebarProvider supplies the context the bar's mobile rail
+    // trigger reads — the real shell always mounts the bar inside it.
+    <SidebarProvider>
+      <NavbarProvider>
+        <Navbar />
+        <Route />
+      </NavbarProvider>
+    </SidebarProvider>,
   );
 }
 
@@ -43,11 +48,15 @@ describe("Navbar skeleton", () => {
     expect(screen.getByText("right-content")).toBeDefined();
   });
 
-  test("owns no chrome of its own — empty when a route declares nothing", () => {
+  test("owns only the mobile rail trigger — no route content when a route declares nothing", () => {
     renderNavbar({});
-    // The bar still renders, but holds no default search/title/user content.
+    // The bar's sole inherent chrome is the mobile rail trigger; below `md` it's
+    // the only way to reach the off-canvas rail. It holds no default
+    // search/title/user content of its own.
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /toggle sidebar/i })).toBeDefined();
     expect(screen.queryByText(/@/)).toBeNull();
-    expect(screen.queryByRole("button")).toBeNull();
   });
 });
 

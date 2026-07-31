@@ -109,11 +109,12 @@ export function ServiceMenu({ active }: ServiceMenuProps) {
     return to
       ? {
           ...entry,
-          // Keep the menu up as click feedback while the route resolves, then
-          // close once navigation settles. `Promise.resolve` guards the case
-          // where `navigate` returns void (e.g. under test).
+          // Dismiss the menu immediately on click, then navigate — so the
+          // dropdown disappears the instant a module is chosen rather than
+          // lingering while the route resolves.
           onSelect: () => {
-            void Promise.resolve(navigate({ to })).finally(() => setOpen(false));
+            setOpen(false);
+            void navigate({ to });
           },
         }
       : entry;

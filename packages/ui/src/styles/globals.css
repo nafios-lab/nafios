@@ -12,8 +12,10 @@
  * NafiOS brand theme — mapped to shadcn token names.
  * Tailwind v4 CSS-first: no tailwind.config.ts.
  *
- * Color format: oklch for accuracy, with hsl fallback comments.
- * Values derived from docs/brand-theme/color-palette.png.
+ * Color format: HSL triplets ("H S% L%"), consumed via hsl(var(--token)).
+ * Brand hues derive from docs/brand-theme/color-palette.png (a dark-first
+ * palette). Light-mode shades are tuned per token for WCAG AA contrast —
+ * hues are preserved, only lightness/saturation differ from dark.
  */
 
 @theme inline {
@@ -94,6 +96,11 @@
   --color-note: hsl(var(--note));
   --color-note-foreground: hsl(var(--note-foreground));
   --color-note-subtle: hsl(var(--note-subtle));
+  /* spotlight — teal accent for featured / recommended / AI-suggested actions.
+   * Fills the hue gap between brand-green (120) and accent-blue (214). */
+  --color-spotlight: hsl(var(--spotlight));
+  --color-spotlight-foreground: hsl(var(--spotlight-foreground));
+  --color-spotlight-subtle: hsl(var(--spotlight-subtle));
 
   /* ---- Typography ---- */
   --font-display: "Outfit Variable", "Outfit", ui-rounded, system-ui, sans-serif;
@@ -112,39 +119,41 @@
  * Light theme (`:root`)
  * ────────────────────────────────────────────── */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 8% 7%;
-  --card: 0 0% 98%;
-  --card-foreground: 240 8% 7%;
+  /* Surfaces: gray canvas + white elevated cards, so cards actually read as
+   * "above" the page (old 100% bg / 98% card gave ~1.04 separation). */
+  --background: 240 6% 97%; /* was 0 0% 100% — soft gray canvas */
+  --foreground: 240 10% 8%; /* was 240 8% 7% */
+  --card: 0 0% 100%; /* was 0 0% 98% — white, now elevated above canvas */
+  --card-foreground: 240 10% 8%;
   --popover: 0 0% 100%;
-  --popover-foreground: 240 8% 7%;
-  --primary: 120 20% 41%;
+  --popover-foreground: 240 10% 8%;
+  --primary: 120 32% 34%; /* was 120 20% 41% — richer green, 20%→32% sat (less muddy); white text 5.7:1 */
   --primary-foreground: 0 0% 100%;
-  --secondary: 240 2% 94%;
-  --secondary-foreground: 240 8% 12%;
-  --muted: 240 2% 94%;
-  --muted-foreground: 240 1% 40%;
-  --accent: 214 50% 49%;
+  --secondary: 240 5% 92%; /* was 240 2% 94% */
+  --secondary-foreground: 240 10% 12%;
+  --muted: 240 5% 94%; /* was 240 2% 94% */
+  --muted-foreground: 240 5% 40%; /* was 240 1% 40% — 5.7:1 on canvas (125 uses) */
+  --accent: 214 55% 45%; /* was 214 50% 49% — deeper blue; white text 5.5:1 */
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 62% 50%;
+  --destructive: 0 62% 48%; /* was 0 62% 50% */
   --destructive-foreground: 0 0% 100%;
-  --border: 240 2% 85%;
-  --input: 240 2% 85%;
-  --ring: 120 20% 41%;
+  --border: 240 6% 82%; /* was 240 2% 85% — crisper (was ~1.4:1, near-invisible) */
+  --input: 240 6% 82%;
+  --ring: 120 32% 34%; /* tracks --primary */
   --radius: 0.625rem;
   --chart-1: 120 22% 50%;
   --chart-2: 198 50% 50%;
   --chart-3: 36 60% 50%;
   --chart-4: 270 40% 50%;
   --chart-5: 0 50% 50%;
-  --sidebar-background: 0 0% 98%;
-  --sidebar-foreground: 240 8% 7%;
-  --sidebar-primary: 120 20% 41%;
+  --sidebar-background: 240 5% 95%; /* was 0 0% 98% — distinct rail between canvas and cards */
+  --sidebar-foreground: 240 10% 8%;
+  --sidebar-primary: 120 32% 34%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 2% 94%;
-  --sidebar-accent-foreground: 240 8% 7%;
-  --sidebar-border: 240 2% 85%;
-  --sidebar-ring: 120 20% 41%;
+  --sidebar-accent: 240 5% 87%; /* hover surface — darker than the 95% rail so hover reads as a clear step */
+  --sidebar-accent-foreground: 240 10% 8%;
+  --sidebar-border: 240 6% 82%;
+  --sidebar-ring: 120 32% 34%;
 
   /* NafiOS status colors */
   --status-pending: 36 60% 58%;
@@ -154,7 +163,8 @@
 
   /* Semantic feedback surfaces — derived from brand hues
    * Hue sources: success=primary(120), error=destructive(0),
-   * warning=status-pending(36), info=accent(214), note=chart-4(270) */
+   * warning=status-pending(36), info=accent(214), note=chart-4(270),
+   * spotlight=teal(174) — new, bridges brand-green and accent-blue */
   --success: 120 20% 96%;
   --success-foreground: 120 20% 30%;
   --success-subtle: 120 20% 88%;
@@ -170,17 +180,25 @@
   --note: 270 40% 97%;
   --note-foreground: 270 40% 33%;
   --note-subtle: 270 40% 88%;
+  /* spotlight (teal 174) — foreground doubles as the solid-fill color for the
+   * `spotlight` button variant (deep teal, white text ≈ 6.4:1). */
+  --spotlight: 174 44% 95%;
+  --spotlight-foreground: 178 68% 24%;
+  --spotlight-subtle: 174 40% 84%;
 
-  /** Nafios palettes */
-  --brand: 120 22% 61%;
-  --brand-darker: 120 20% 41%;
-  --accent-darker: 214 50% 49%;
+  /** Nafios palettes — light-mode green ramp (dark→ is inverted: light mode
+   * darkens rather than lightens). Hue stays 120; shades tuned for white bg. */
+  --brand: 120 30% 38%; /* was 120 22% 61% — 61% sage was invisible on white & failed white-text (2.4:1); now 4.9:1 */
+  --brand-darker: 120 32% 29%; /* was 120 20% 41% — now distinct/deeper than --primary */
+  --accent-darker: 214 60% 38%; /* was 214 50% 49% */
+  /* Neutral ramp — unified to hue 240 (was a mix of 0 and 240). fg-100 stays
+   * white: it is used as white text/fill on colored surfaces (text-fg-100). */
   --fg-100: 0 0% 100%;
-  --fg-90: 0 0% 91%;
-  --fg-80: 240 1% 81%;
-  --fg-70: 0 0% 72%;
-  --fg-60: 240 1% 63%;
-  --fg-50: 240 1% 53%;
+  --fg-90: 240 5% 91%;
+  --fg-80: 240 5% 81%;
+  --fg-70: 240 5% 72%;
+  --fg-60: 240 5% 63%;
+  --fg-50: 240 5% 53%;
 }
 
 /* ──────────────────────────────────────────────
@@ -218,10 +236,16 @@
   --sidebar-foreground: 0 0% 91%;
   --sidebar-primary: 120 22% 61%;
   --sidebar-primary-foreground: 240 8% 7%;
-  --sidebar-accent: 240 3% 17%;
-  --sidebar-accent-foreground: 0 0% 91%;
+  --sidebar-accent: 240 4% 21%; /* hover surface — lifted off the 7% rail so hover reads as a clear step */
+  --sidebar-accent-foreground: 0 0% 96%;
   --sidebar-border: 240 2% 21%;
   --sidebar-ring: 120 22% 61%;
+
+  /* NafiOS brand palette — dark-first, restores the original sage. Light mode
+   * (:root) darkens --brand for WCAG contrast on white; dark keeps the source
+   * brand so it doesn't inherit that darkened value. */
+  --brand: 120 24% 61%; /* #84B484 — original brand */
+  --brand-darker: 120 20% 41%; /* #547f54 */
 
   /* NafiOS status colors (same in dark) */
   --status-pending: 36 60% 58%;
@@ -245,6 +269,10 @@
   --note: 270 40% 9%;
   --note-foreground: 270 40% 70%;
   --note-subtle: 270 40% 16%;
+  /* spotlight (teal) — dark-mode fill flips: bright teal surface, dark text */
+  --spotlight: 178 52% 9%;
+  --spotlight-foreground: 174 52% 60%;
+  --spotlight-subtle: 178 45% 18%;
 }
 
 @layer base {

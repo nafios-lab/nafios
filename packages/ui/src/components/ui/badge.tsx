@@ -16,6 +16,7 @@ const badgeVariants = cva(
         warning: "border-warning-subtle bg-warning text-warning-foreground",
         info: "border-info-subtle bg-info text-info-foreground",
         note: "border-note-subtle bg-note text-note-foreground",
+        spotlight: "border-spotlight-subtle bg-spotlight text-spotlight-foreground",
         destructive: "border-error-subtle bg-error text-error-foreground",
       },
     },

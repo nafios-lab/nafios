@@ -3,10 +3,10 @@ import { getOnboardingStatusFn } from "../../lib/onboarding-fns";
 
 export const Route = createFileRoute("/auth")({
   beforeLoad: async () => {
-    const { session } = await getOnboardingStatusFn();
+    const { user } = await getOnboardingStatusFn();
     // Auth pages are for signed-out visitors. A signed-in user has no business
     // here — send them home, which routes them on to the dashboard or onboarding.
-    if (session) {
+    if (user) {
       throw redirect({ to: "/" });
     }
   },
