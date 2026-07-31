@@ -124,11 +124,12 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    // `dark` pins the rail to the dark palette regardless of the app theme,
-    // matching the draft. Colors come from the shadcn sidebar theme tokens.
+    // The rail follows the app theme — colors come from the shadcn sidebar
+    // theme tokens (`--sidebar-*`), which are defined for both the light and
+    // dark palettes, so it recolors automatically when the theme switches.
     // `border-border/50` softens the rail's right edge — same token as the base
     // border, at half opacity so it reads as a subtle seam, not a bright line.
-    <SidebarRoot collapsible="icon" className="dark border-border/50">
+    <SidebarRoot collapsible="icon" className="border-border/50">
       <SidebarHeader className="items-center py-3">
         {/* The brand mark doubles as the home affordance — the universal
             click-the-logo-to-go-home convention. It lives in the shared

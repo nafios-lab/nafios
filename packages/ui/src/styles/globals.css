@@ -230,6 +230,12 @@
   --sidebar-border: 240 2% 21%;
   --sidebar-ring: 120 22% 61%;
 
+  /* NafiOS brand palette — dark-first, restores the original sage. Light mode
+   * (:root) darkens --brand for WCAG contrast on white; dark keeps the source
+   * brand so it doesn't inherit that darkened value. */
+  --brand: 120 24% 61%; /* #84B484 — original brand */
+  --brand-darker: 120 20% 41%; /* #547f54 */
+
   /* NafiOS status colors (same in dark) */
   --status-pending: 36 60% 58%;
   --status-paid: 108 26% 55%;
