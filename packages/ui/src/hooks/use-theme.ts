@@ -6,7 +6,7 @@ const COOKIE_NAME = "nafios-theme";
 const MEDIA_QUERY = "(prefers-color-scheme: dark)";
 
 function getSystemTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   return window.matchMedia(MEDIA_QUERY).matches ? "dark" : "light";
 }
 
@@ -27,7 +27,7 @@ function applyTheme(theme: Theme) {
 }
 
 let listeners: Array<() => void> = [];
-let currentTheme: Theme = "system";
+let currentTheme: Theme = "light";
 
 function subscribe(listener: () => void) {
   listeners = [...listeners, listener];
@@ -41,7 +41,7 @@ function getSnapshot(): Theme {
 }
 
 function getServerSnapshot(): Theme {
-  return "dark";
+  return "light";
 }
 
 function emitChange() {
@@ -53,7 +53,7 @@ function emitChange() {
 function initTheme() {
   if (typeof window === "undefined") return;
   const stored = getCookie();
-  currentTheme = stored ?? "system";
+  currentTheme = stored ?? "light";
   applyTheme(currentTheme);
 }
 
