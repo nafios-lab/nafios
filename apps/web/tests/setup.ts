@@ -101,8 +101,15 @@ export const from = mock(() => ({ select }));
 export const createServerDb = mock((..._args: unknown[]) => ({ from }));
 export const insertUserProfile = mock((..._args: unknown[]) => Promise.resolve(undefined));
 export const saveOnboardingProfile = mock((..._args: unknown[]) => Promise.resolve(undefined));
+// `asDb` is a value export the @nafios/finance barrel links (internal/client.ts)
+// when the finance feature imports the pure domain (resolveCreationState, etc.).
+// Never invoked in these tests — it's only reached via the never-called finance
+// browser/service client factories — so an identity passthrough is enough to
+// satisfy the static import binding.
+export const asDb = mock((client: unknown) => client);
 
 mock.module("@nafios/database", () => ({
+  asDb,
   createServerDb,
   insertUserProfile,
   saveOnboardingProfile,
