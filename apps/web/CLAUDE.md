@@ -13,9 +13,28 @@ behind session gating.
 ## Stack
 
 - TanStack Start (Vite + Nitro SSR) — file-based routing in `src/routes/`
+- TanStack Query — the shell's single client-side data cache (ADR-0026). The one
+  `QueryClient` is created in `router.tsx` and wired to the router (provider + SSR
+  hydration) via `setupRouterSsrQueryIntegration`; `__root` uses
+  `createRootRouteWithContext<{ queryClient }>`. There is **no** hand-mounted
+  `<QueryClientProvider>` — the router integration provides it.
 - `@netlify/vite-plugin-tanstack-start` for Netlify deployment
 - Tailwind CSS v4 via `@tailwindcss/vite`
 - Node >= 20.19 required (Vite 8 dependency — see root `.nvmrc`)
+
+### Domain-module data is client-side (ADR-0026)
+
+Domain modules (Finance included) read and write their own data **directly from
+the browser** via a `@nafios/*` browser client governed by TanStack Query — **not**
+via server functions. Server functions stay the **shell's** (auth, route guards,
+onboarding) and minimal. The finance route (`/finance`) is the canonical example:
+its ledger-state seam is read client-side by `useFinanceHomeState`
+(`features/finance/hooks/`) against the finance browser client
+(`features/finance/lib/finance-client.ts` — a lazy singleton over
+`createBrowserClient()` from `@nafios/finance`, RLS-scoped). Because module routes
+don't SSR their data, such a route owns a mandatory loading state + a generic
+error state. The "no direct `@supabase/*` imports" rule is unchanged — always go
+through `@nafios/*`.
 
 ## Scripts
 
@@ -105,6 +124,10 @@ Not every feature needs all three folders — create them as needed.
 Current features:
 
 - `features/auth/` — login form, signup form, password reset form components
+- `features/finance/` — the finance-home left column: display-decision components
+  (`components/`), the client-side read hook (`hooks/use-finance-home-state`), and
+  the finance browser client + date/format helpers (`lib/`). Reads its data
+  client-side per ADR-0026.
 
 ### `lib/` — server functions and app infrastructure
 
