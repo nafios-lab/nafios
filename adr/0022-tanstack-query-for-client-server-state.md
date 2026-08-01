@@ -1,10 +1,20 @@
 # 0022. TanStack Query for client-side server-state; loaders for SSR
 
-- **Status:** Accepted
+- **Status:** Accepted — superseded **for domain-module data** by [ADR-0026](0026-modules-client-side-data-server-fns-shell-only.md)
 - **Date:** 2026-06-18
 - **Source:** Onboarding/auth work — question of whether to wrap server-function
   calls (loading / error / retry / onSuccess / onError) in a shared helper, and
   whether that helper should be TanStack Query.
+
+> **Amendment (2026-08-01, [ADR-0026](0026-modules-client-side-data-server-fns-shell-only.md)):**
+> This ADR split data-loading on a *first-paint-vs-interactive* axis (rule 1:
+> loaders own SSR / initial-navigation reads). ADR-0026 re-draws the line on a
+> *shell-vs-module* axis: **domain-module** data (reads and writes) is fetched
+> client-side via a Supabase browser client + TanStack Query; server functions /
+> loaders are reserved for the **shell** (auth, route guards, onboarding). Rule 1
+> therefore **no longer governs domain-module reads** — it stands for the shell.
+> Rules 2, 3, and 5 are retained; rule 4's deferral of Query is resolved (adopted).
+> Read this ADR's Decision as historical for module data; ADR-0026 governs.
 
 ## Context
 

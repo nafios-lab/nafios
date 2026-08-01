@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { monthOf } from "@nafios/finance";
+import { type FinanceHomeState, monthOf } from "@nafios/finance";
 import { cleanup, render, screen } from "@testing-library/react";
 import { FinanceHome } from "../../src/features/finance/components/finance-home.tsx";
-import type { LedgerHomeState } from "../../src/features/finance/lib/derive-ledger-home-state.ts";
 
 afterEach(cleanup);
 
 /** Build a seam with sensible defaults (no active ledger, July → August 2026). */
-function makeSeam(overrides: Partial<LedgerHomeState> = {}): LedgerHomeState {
+function makeSeam(overrides: Partial<FinanceHomeState> = {}): FinanceHomeState {
   return {
     hasActiveLedger: false,
     isWithinLeadDay: false,
     currentMonth: monthOf("2026-07-01"),
     nextMonth: monthOf("2026-08-01"),
+    openable: { current: monthOf("2026-07-01"), next: null },
     ...overrides,
   };
 }
@@ -95,11 +95,11 @@ describe("FinanceHome — placeholders rendered in both branches (Scenario 4)", 
   });
 });
 
-describe("FinanceHome — default seam", () => {
-  test("renders the empty state + placeholders when no seam is injected", () => {
-    // Exercises the locally-assembled seam (deriveLedgerHomeState, clock-read
-    // default). hasActiveLedger defaults to false → the empty state shows.
-    render(<FinanceHome />);
+describe("FinanceHome — seam is required (EF3.13)", () => {
+  test("renders the empty state + placeholders from the injected seam", () => {
+    // The seam is now a required prop supplied by the page's read hook
+    // (EF3.13). hasActiveLedger false → the empty state shows.
+    render(<FinanceHome seam={makeSeam()} />);
 
     expect(screen.getByText("Start your first month")).toBeDefined();
     expect(screen.getByText("0 PENDING RECONCILIATION")).toBeDefined();

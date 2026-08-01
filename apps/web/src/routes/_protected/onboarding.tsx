@@ -20,10 +20,7 @@ function RouteComponent() {
 
   return (
     <div className="flex h-screen w-full flex-col gap-0">
-      <div
-        id="page-header"
-        className="flex h-[70px] w-full flex-row items-center justify-start px-6"
-      >
+      <div id="page-header" className="flex h-17.5 w-full flex-row items-center justify-start px-6">
         <Logo variant="word" />
       </div>
 

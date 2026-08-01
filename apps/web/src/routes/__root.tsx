@@ -3,12 +3,16 @@ import { ThemeToggle } from "@nafios/ui/components/theme-toggle";
 import { useTheme } from "@nafios/ui/hooks/use-theme";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
-import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
+import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { DevResetButton } from "../components/dev-reset-button";
 import { RouteProgress } from "../components/route-progress";
 import "../styles.css";
 
-export const Route = createRootRoute({
+// The router context carries the shell's single QueryClient (ADR-0026 §5), set
+// up in `router.tsx` and consumed by client-side module queries.
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -37,7 +41,13 @@ function RootDocument() {
         <DevResetButton />
         <Scripts />
         {import.meta.env.DEV && (
-          <TanStackDevtools config={{ hideUntilHover: true }} plugins={[formDevtoolsPlugin()]} />
+          <TanStackDevtools
+            config={{ hideUntilHover: true }}
+            plugins={[
+              formDevtoolsPlugin(),
+              { name: "TanStack Query", render: <ReactQueryDevtoolsPanel /> },
+            ]}
+          />
         )}
       </body>
     </html>

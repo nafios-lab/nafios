@@ -15,7 +15,7 @@ function OnboardingWizardContent() {
   const StepComponent = STEP_COMPONENTS[activeStep];
 
   return (
-    <div className="flex flex-col gap-8 min-w-[400px] max-w-[480px] w-full">
+    <div className="flex flex-col gap-8 min-w-100 max-w-120 w-full">
       <Stepper
         steps={[...ONBOARDING_STEPS]}
         activeStep={activeStep}

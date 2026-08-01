@@ -1,8 +1,8 @@
 ---
 title: "@nafios/finance"
 status: active
-version: 0.4.0
-updated: 2026-07-09
+version: 0.5.0
+updated: 2026-08-01
 owner: Hanafi
 related_adrs: [0005, 0006, 0014, 0019, 0020, 0021]
 ---
@@ -406,6 +406,47 @@ export function listCategories(client: FinanceClient): Promise<Category[]>;
 export interface ProvisionCategoriesResult {
   readonly seeded: boolean;
   readonly categories: Category[];
+}
+```
+
+### Data layer — Finance-Home read surface (EF3.13)
+
+Barrel-exported: the app-facing **read surface** the EF3.10 Finance Home consumes
+to decide between the empty/fresh state and the Ledger Detail Card from real,
+RLS-scoped data. `createLedgerQueries(client)` returns `getFinanceHomeState(today)`,
+which runs the internal `createLedgerRepository(client).list()` once and feeds the
+result into the pure EF3.4 `resolveCreationState` (`leadDays` fixed at **7**) —
+deriving `hasActiveLedger` from the same list (`status === 'ongoing'` only;
+`reconciling` / `settled` do not count) with **no** second `findOngoing()`
+round-trip. `today` is caller-supplied ("YYYY-MM-DD") and passed straight to the
+pure resolver, so the surface reads **no clock** (the browser caller passes its
+local calendar day per ADR-0026; tests pass a fixed string). Client-agnostic — it
+takes a `FinanceClient`; the runtime caller is the browser client
+(`createBrowserClient()`, RLS applies). `createLedgerRepository` and the mapper
+stay **internal** (import-boundary rule held) — this query is the public read API,
+the repository its private primitive. A repository read failure propagates as
+`FinanceDataError` (EF3.6) unchanged. Full contract + verification matrix:
+[EF3.13](../../boards/finance/EF3/EF3.13.md).
+
+```ts
+export function createLedgerQueries(client: FinanceClient): LedgerQueries;
+
+export interface LedgerQueries {
+  // Finance-Home decision state for the current user, given a caller-supplied
+  // "YYYY-MM-DD" today. Reads no clock (the pure resolver does the day math).
+  getFinanceHomeState(today: string): Promise<FinanceHomeState>;
+}
+
+// A UI-ready SUPERSET of the ticket's { hasActiveLedger, isWithinLeadDay, openable }.
+// currentMonth / nextMonth are the always-present CTA labels EF3.10 renders;
+// openable.current / openable.next are a DIFFERENT concept — the months openable
+// right now (null when already taken / out of window).
+export interface FinanceHomeState {
+  readonly hasActiveLedger: boolean; // ∃ ledger with status === 'ongoing'
+  readonly isWithinLeadDay: boolean; // resolveCreationState(...).isWindowOpen
+  readonly currentMonth: Month; // monthOf(today) — always present
+  readonly nextMonth: Month; // addMonths(currentMonth, 1) — always present
+  readonly openable: { readonly current: Month | null; readonly next: Month | null };
 }
 ```
 

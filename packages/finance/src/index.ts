@@ -61,5 +61,14 @@ export {
   type ProvisionCategoriesResult,
   provisionDefaultCategories,
 } from "./internal/provisioning/provision-default-categories";
+// The app-facing READ surface — Finance-Home decision state (EF3.13). Composes
+// the internal ledger repository + the pure creation-window resolver into the
+// single read EF3.10's Home consumes (`getFinanceHomeState(today)`); the
+// repository + mapper stay internal (import-boundary rule held).
+export {
+  createLedgerQueries,
+  type FinanceHomeState,
+  type LedgerQueries,
+} from "./internal/queries/ledger-queries";
 // The persisted-ledger shape EF3.10's read surface builds on.
 export type { LedgerHeader } from "./internal/repositories/ledger.repo";

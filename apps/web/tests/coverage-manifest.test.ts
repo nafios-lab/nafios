@@ -30,8 +30,10 @@ import "../src/features/onboarding/schemas/onboarding-schema.ts";
 // Hooks, context & feature libs
 import "../src/features/auth/hooks/use-account-signup.ts";
 import "../src/features/auth/hooks/use-sign-in.ts";
-import "../src/features/finance/lib/derive-ledger-home-state.ts";
+import "../src/features/finance/hooks/use-finance-home-state.ts";
+import "../src/features/finance/lib/finance-client.ts";
 import "../src/features/finance/lib/format-month.ts";
+import "../src/features/finance/lib/local-today-iso.ts";
 import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";
 import "../src/features/onboarding/hooks/use-complete-onboarding.ts";
 import "../src/features/onboarding/hooks/use-onboarding-profile.ts";

@@ -37,6 +37,12 @@ _inside_ the package by a **Biome import-boundary rule** (see root
   (`provisioning/provision-default-categories.ts`), which stock a new user's default
   categories idempotently (count-guard) from the pure `src/domain/` catalog.
   `errors.ts` was **not** extended (a category write has no user-supplied FK).
+  The first **read/query** surface (EF3.13): `createLedgerQueries`
+  (`queries/ledger-queries.ts`), which composes the internal `createLedgerRepository`
+  (`list()`) with the pure creation-window resolver into the barrel-exported
+  `getFinanceHomeState(today)` the Finance Home consumes — a read, so it adds no I/O
+  of its own and needed no `errors.ts` change (the repository's `FinanceDataError`
+  propagates unchanged).
 
 Layering is one-way: `src/internal/ (data) → src/domain/ (domain) → (nothing
 app-specific)`. A domain-imports-data violation **fails `bun run check`** via
@@ -73,6 +79,16 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   `foreign_key_violation` / …).
 - `LedgerHeader` — the persisted ledger (a `MonthlyLedger` minus `envelopes`);
   the shape EF3.10's read surface builds on.
+
+- `createLedgerQueries(client)` — the app-facing **read surface** (EF3.13): the
+  single read the Finance Home consumes. `getFinanceHomeState(today)` runs the
+  internal repository's `list()` once and feeds it into the pure creation-window
+  resolver (`leadDays = 7`), returning `FinanceHomeState`
+  (`{ hasActiveLedger, isWithinLeadDay, currentMonth, nextMonth, openable }` — a
+  UI-ready superset of the ticket's `{ hasActiveLedger, isWithinLeadDay, openable }`).
+  `hasActiveLedger` is `status === 'ongoing'` only; `today` is caller-supplied
+  ("YYYY-MM-DD") so the surface reads no clock; a repository failure propagates as
+  `FinanceDataError`. Types: `LedgerQueries`, `FinanceHomeState`.
 
 - `createLedgerCommands(client)` — the app-facing **write surface** (EF3.7): the
   one command path that opens a `MonthlyLedger`. `createLedger(input)` enforces
@@ -142,23 +158,26 @@ operator context):
   `tests/integration/ledger.repo.test.ts`, the EF3.7 create-ledger §6 matrix
   `tests/integration/create-ledger.test.ts`, the EF3.8 envelope §6 matrices
   `tests/integration/envelope.repo.test.ts` + `tests/integration/envelope-commands.test.ts`,
-  and the EF3.9 category §6 matrices
-  `tests/integration/category.repo.test.ts` + `tests/integration/provision-default-categories.test.ts`)
+  the EF3.9 category §6 matrices
+  `tests/integration/category.repo.test.ts` + `tests/integration/provision-default-categories.test.ts`,
+  and the EF3.13 Finance-Home read matrix `tests/integration/ledger-queries.test.ts`)
   live at repo-root `tests/integration/` and run via `bun run test:integration`
   only — never in `bun run check` (no live Supabase in CI, and the per-file
   coverage scoping in
   [ADR-0020](../../adr/0020-test-coverage-scoping-and-gate.md) is why they can't
   load the real cross-package clients inside a package run). All `skipIf` when
-  the Supabase env vars are absent. The EF3.6, EF3.8-repository, and EF3.9-repository
-  matrices import the internal `create*Repository` (and, for EF3.8, the mapper's
-  `carried_over` seam) via a relative path — a documented, test-only exception to
-  the internal-import rule (see each file's header); the EF3.7, EF3.8-commands, and
-  EF3.9-provisioning matrices need **no** such exception — they drive the public,
-  barrel-exported `create*Commands` / `provisionDefaultCategories` / `listCategories`.
+  the Supabase env vars are absent. The EF3.6, EF3.8-repository, EF3.9-repository,
+  and EF3.13 matrices import the internal `create*Repository` (and, for EF3.8, the
+  mapper's `carried_over` seam) via a relative path — a documented, test-only
+  exception to the internal-import rule (see each file's header). EF3.13 reaches in
+  only to **seed** rows; the READ under test is the public, barrel-exported
+  `createLedgerQueries`, so it needs no exception for the assertion path — same as
+  how the EF3.7, EF3.8-commands, and EF3.9-provisioning matrices drive the public
+  `create*Commands` / `provisionDefaultCategories` / `listCategories`.
   The per-file coverage gate for `create-ledger.ts`, `envelope.repo.ts`,
   `envelope.mapper.ts`, `envelope-commands.ts`, `category.mapper.ts`,
-  `category.repo.ts`, and `provision-default-categories.ts` is met by their
-  mocked unit tests under `tests/unit/`.
+  `category.repo.ts`, `provision-default-categories.ts`, and
+  `queries/ledger-queries.ts` is met by their mocked unit tests under `tests/unit/`.
 
 ## Scripts
 
@@ -193,6 +212,8 @@ src/
     commands/
       create-ledger.ts       # createLedgerCommands — the single write path opening a ledger (EF3.7)
       envelope-commands.ts   # createEnvelopeCommands — manual envelope CRUD + set-status (EF3.8)
+    queries/
+      ledger-queries.ts      # createLedgerQueries — the Finance-Home read surface / getFinanceHomeState (EF3.13)
     provisioning/
       provision-default-categories.ts # provisionDefaultCategories + listCategories (EF3.9)
 tests/
