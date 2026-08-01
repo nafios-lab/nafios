@@ -51,7 +51,8 @@ already covers it. If it does, respect it — or write a new ADR that supersedes
 | [0019](0019-app-layer-authz-rls-deferred.md) | App-layer authorization; Postgres RLS deferred | Accepted |
 | [0020](0020-test-coverage-scoping-and-gate.md) | Test-coverage scoping and the 90% gate | Accepted |
 | [0021](0021-supabase-core-connection-foundation.md) | Supabase connection foundation split into `supabase-core` + feature packages | Accepted |
-| [0022](0022-tanstack-query-for-client-server-state.md) | TanStack Query for client-side server-state; loaders for SSR | Accepted |
+| [0022](0022-tanstack-query-for-client-server-state.md) | TanStack Query for client-side server-state; loaders for SSR | Accepted (amended by [0026](0026-modules-client-side-data-server-fns-shell-only.md)) |
 | [0023](0023-rls-for-owned-domain-tables.md) | Row-Level Security for owned domain tables (operationalizes ADR-0019) | Accepted |
 | [0024](0024-rls-for-auth-epic-tables.md) | Row-Level Security for the auth-epic tables | Accepted |
 | [0025](0025-domain-specs-grouped-by-module-with-reference-material.md) | Group domain specs by module, with reference material colocated | Accepted |
+| [0026](0026-modules-client-side-data-server-fns-shell-only.md) | Domain modules fetch data client-side; server functions are the shell's | Accepted |
