@@ -1,5 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { sessionQueryOptions } from "~/lib/auth";
 
 export const Route = createFileRoute("/")({
-  component: () => <div className="p-8 text-2xl">nafios-web SPA is alive ✅</div>,
+  beforeLoad: async ({ context }) => {
+    const session = await context.queryClient.ensureQueryData(sessionQueryOptions);
+    // Signed in → the app home; otherwise the login page. (Onboarding-completion
+    // gating lands in Phase 8 alongside the real shell + /welcome.)
+    throw redirect({ to: session ? "/home" : "/auth/login" });
+  },
 });
