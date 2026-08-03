@@ -39,6 +39,14 @@ jobs:
 
       - name: Build web app
         working-directory: apps/web
+        # Vite inlines these into the CLIENT bundle at build time (vite.config.ts
+        # `define`), because the browser has no process.env. Netlify dashboard
+        # vars can't reach the client bundle — the site is built here in CI, not
+        # on Netlify. Only the PUBLIC anon URL + key belong here; never add
+        # SUPABASE_SERVICE_ROLE_KEY or DATABASE_URL (they would ship to the browser).
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: bun run build
 
       - name: Install Netlify CLI
