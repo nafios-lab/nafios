@@ -59,16 +59,39 @@ to that package later.
 
 ## Route structure
 
-| Group     | File                                | URL           | Guard                                                    |
-| --------- | ----------------------------------- | ------------- | ------------------------------------------------------- |
-| Root      | `routes/index.tsx`                  | `/`           | Redirects: session → `/home`, else → `/auth/login`      |
-| Auth      | `routes/auth/route.tsx` + children  | `/auth/*`     | Redirects to `/` if already signed in                   |
-| Protected | `routes/_protected.tsx` (pathless)  | children only | Redirects to `/auth/login` (with `redirect`) if no session |
+| Group     | File                                | URL            | Guard                                                                       |
+| --------- | ----------------------------------- | -------------- | --------------------------------------------------------------------------- |
+| Root      | `routes/index.tsx`                  | `/`            | No session → `/auth/login`; else onboarded → `/welcome`, unfinished → `/onboarding` |
+| Auth      | `routes/auth/route.tsx` + children  | `/auth/*`      | Redirects to `/` if already signed in                                       |
+| Protected | `routes/_protected.tsx` (pathless)  | children only  | Redirects to `/auth/login` (with `redirect`) if no session                  |
+| Onboarding| `routes/_protected/onboarding.tsx`  | `/onboarding`  | Already onboarded → `/welcome`; loader hydrates the saved Profile step      |
+| Welcome   | `routes/_protected/welcome.tsx`     | `/welcome`     | Not-yet-onboarded → `/onboarding` (the completion gate); minimal landing    |
 
-`/_protected/home` is a **Phase 7 placeholder** that proves the session gate and
-sign-out loop end-to-end. The real shell (navbar, onboarding-completion gate,
-mounted domain modules) is Phase 8 — it replaces `home` and layers the
-onboarding gate below `_protected`.
+`/_protected/home` remains a **Phase 7 placeholder** (no longer linked from
+`index`) proving the session + sign-out loop. The real shell (navbar/sidebar
+rail, mounted domain modules) is still Phase 8; `/welcome` is the current minimal
+landing.
+
+### Onboarding (shell feature, fully client-side)
+
+`features/onboarding/` is the two-step wizard (Profile → Family) ported from
+`apps/web`, rebuilt with **no server functions** (ADR-0026): mobile →
+`updateUserMetadata`, family members + completion → the `insert_user_profile`
+RPC, all via the browser data client (`~/lib/database.ts` → `getDb()`). Avatars
+upload from the browser through `@nafios/storage/browser` under the `avatars`
+owner-isolation storage RLS policies (ADR-0027). The data layer is
+`features/onboarding/lib/onboarding-data.ts`.
+
+The **onboarding-completion gate** is `onboardingStatusQueryOptions(userId)`
+(reads `profiles.onboarding_completed_at`), shared by the `index`, `/onboarding`,
+and `/welcome` guards via `ensureQueryData` (one cached read). Finish clears it
+(`resetOnboardingStatus`) so `/welcome` sees the fresh stamp instead of a cached
+`false` and does not bounce the user back.
+
+> **Manual step (you run it):** apply the avatars storage migration
+> `supabase/migrations/20260803000000_avatars_storage_rls.sql` with
+> `bun run db:migrate` — it (idempotently) creates the private `avatars` bucket
+> and the owner-isolation `storage.objects` policies the browser upload needs.
 
 ## Source structure
 
@@ -77,7 +100,7 @@ src/
   routes/            file-based routing — TanStack Router owns this tree
   features/          frontend feature slices (components, hooks, schemas)
   shared/components/ shell-wide shared UI (error boundaries, error screen, route progress)
-  lib/               client-side app infrastructure (auth.ts: browser client + session query)
+  lib/               client-side app infrastructure (auth.ts: auth browser client + session query; database.ts: data browser client)
   main.tsx           client mount (createRoot + RouterProvider)
   router.tsx         Router + QueryClient wiring
   styles.css         @import "@nafios/ui/globals.css"

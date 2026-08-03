@@ -1,12 +1,7 @@
 import { createServiceRoleClient } from "@nafios/supabase-core";
+import { type AvatarScope, assertContentType, BUCKET, objectKey } from "./internal/avatar-object";
 
-/** The private bucket avatars live in. Provisioned against staging (infra). */
-const BUCKET = "avatars";
-
-/** MIME types the bucket accepts — mirrors the bucket's `allowed_mime_types`. */
-const ALLOWED_CONTENT_TYPES = new Set(["image/webp", "image/jpeg", "image/png"]);
-
-export type AvatarScope = "account" | "family";
+export type { AvatarScope };
 
 export interface UploadAvatarInput {
   /** The owning user id — from the VERIFIED server session, never the client. */
@@ -26,21 +21,6 @@ export interface UploadAvatarResult {
 }
 
 /**
- * The bucket-relative object key. Deterministic per (uid, scope, clientKey) so
- * an upsert retry overwrites the same object instead of creating a new one. The
- * `.webp` extension is fixed (the real encoding travels in `contentType`).
- */
-function objectKey(input: UploadAvatarInput): string {
-  if (input.scope === "family") {
-    if (!input.clientKey) {
-      throw new Error("uploadAvatar: clientKey is required for the 'family' scope");
-    }
-    return `${input.uid}/family/${input.clientKey}.webp`;
-  }
-  return `${input.uid}/avatar.webp`;
-}
-
-/**
  * Upserts an avatar image to the private `avatars` bucket and returns the stored
  * object path. SERVER-ONLY — uses the service-role client (bypasses RLS); the
  * caller must derive `uid` from a verified session and owns the path. Idempotent:
@@ -49,12 +29,13 @@ function objectKey(input: UploadAvatarInput): string {
  * Returns the object path (not a URL) for the caller to write into the relevant
  * `avatar_url` column. Read-time signing is out of scope (profile-display
  * follow-up). Throws on bad input or any Storage error.
+ *
+ * The browser (RLS-scoped) counterpart is `uploadAvatarFromBrowser` in
+ * `@nafios/storage/browser`.
  */
 export async function uploadAvatar(input: UploadAvatarInput): Promise<UploadAvatarResult> {
   if (!input.uid) throw new Error("uploadAvatar: uid is required");
-  if (!ALLOWED_CONTENT_TYPES.has(input.contentType)) {
-    throw new Error(`uploadAvatar: unsupported contentType '${input.contentType}'`);
-  }
+  assertContentType(input.contentType);
 
   const key = objectKey(input);
   const client = createServiceRoleClient();

@@ -1,25 +1,36 @@
 ---
 title: "@nafios/storage"
 status: active
-version: 0.2.0
-updated: 2026-06-23
+version: 0.3.0
+updated: 2026-08-03
 owner: Hanafi
-related_adrs: [0006, 0019, 0021]
+related_adrs: [0006, 0019, 0021, 0024, 0026, 0027]
 ---
 
 # @nafios/storage — Specification
 
 ## Purpose
 
-Sanctioned, server-side access to Supabase Storage for NafiOS. Owns the avatar
-upload path (account holder + family members) so that `apps/web` never imports
-`@supabase/*` directly. Builds on `@nafios/supabase-core`'s service-role client.
+Sanctioned access to Supabase Storage for NafiOS. Owns the avatar upload path
+(account holder + family members) so no app imports `@supabase/*` directly. Two
+surfaces on one path convention:
+
+- **`.` (default barrel) — SERVER-ONLY.** Service-role client (bypasses RLS).
+  Used by the SSR app (`apps/web`) from a server function that derives `uid`
+  from a verified session.
+- **`./browser` — RLS-scoped.** Takes the caller's own session client. Used by
+  the SPA shell (`apps/nafios-web`), which has no server runtime and writes
+  avatars directly from the browser, authorized by the `avatars` owner-isolation
+  storage RLS policies (ADR-0026, ADR-0027).
+
+Both build on `@nafios/supabase-core`.
 
 ## Scope
 
 **In:** uploading avatar objects to the private `avatars` bucket at a
 deterministic, per-user path (returning the stored object path); minting a
-short-lived signed read URL for a stored avatar so a browser can display it.
+short-lived signed read URL for a stored avatar so a browser can display it —
+each via **both** a service-role (server) and an RLS-scoped (browser) surface.
 
 **Out:** image processing (`fitAvatar` lives in `@nafios/ui`, runs in the
 browser), bucket provisioning (infra — done against staging), object deletion,
@@ -81,6 +92,44 @@ function uploadAvatar(input: UploadAvatarInput): Promise<UploadAvatarResult>;
 function signAvatarUrl(input: SignAvatarUrlInput): Promise<SignAvatarUrlResult>;
 ```
 
+### Browser surface — `@nafios/storage/browser` (RLS-scoped)
+
+Same path convention and validation, but each helper takes the caller's own
+Supabase session client (`AvatarStorageClient` = any client with `.storage`,
+e.g. `@nafios/database`'s `createBrowserDb()`) instead of constructing a
+service-role client. Authorization is the `avatars` owner-isolation storage RLS
+policies — a user reaches only objects under their own `auth.uid()` prefix.
+`uid` in the input forms the path only; it is **not** a trust boundary (RLS
+rejects a mismatched prefix).
+
+```ts
+type AvatarStorageClient = Pick<SupabaseClient, "storage">;
+
+interface UploadAvatarFromBrowserInput {
+  uid: string;                    // forms the path; RLS enforces ownership
+  scope: AvatarScope;
+  clientKey?: string;             // required when scope === "family"
+  bytes: Blob | ArrayBuffer | Uint8Array;
+  contentType: string;
+}
+
+/** RLS-scoped counterpart to uploadAvatar. Upserts via the caller's session client. */
+function uploadAvatarFromBrowser(
+  client: AvatarStorageClient,
+  input: UploadAvatarFromBrowserInput,
+): Promise<UploadAvatarResult>;
+
+/** RLS-scoped counterpart to signAvatarUrl. Signs via the caller's session client. */
+function signAvatarUrlFromBrowser(
+  client: AvatarStorageClient,
+  input: SignAvatarUrlInput,
+): Promise<SignAvatarUrlResult>;
+```
+
+Storage upsert needs INSERT + SELECT + UPDATE policies (INSERT alone makes a
+replacement silently fail); the avatars-storage-rls migration grants all of
+INSERT/SELECT/UPDATE/DELETE to owners.
+
 ### Paths
 
 | scope | object path |
@@ -93,16 +142,23 @@ upsert); the true encoding travels in the object's `contentType` metadata.
 
 ## Invariants
 
-1. **SERVER-ONLY.** Uses `createServiceRoleClient()` (service-role key, bypasses
-   RLS). Never import into browser-reachable code.
-2. The `uid` and object path are owned by the caller's verified session — the
-   client never picks the path (ADR-0019, app-layer authz).
+1. **The `.` barrel is SERVER-ONLY** — `createServiceRoleClient()` (service-role
+   key, bypasses RLS); never import it into browser-reachable code. **`./browser`
+   is the browser surface** — it constructs no client, takes the caller's
+   session client, and is authorized by storage RLS. The two surfaces never mix
+   in one import.
+2. The object path is owned by the caller — for the server surface, `uid` comes
+   from a verified session; for the browser surface, `uid` forms the path but
+   the `avatars` owner-isolation RLS policies are the trust boundary (ADR-0026,
+   ADR-0027). The client never picks a path outside its own prefix.
 3. Uploads use `{ upsert: true }` to a deterministic path → idempotent retries.
-4. `uploadAvatar` returns the **object path**, not a URL — the column stores the
-   path. Displaying it is a separate, explicit read: `signAvatarUrl` mints a
+   The browser upsert relies on INSERT + SELECT + UPDATE owner policies.
+4. `uploadAvatar*` returns the **object path**, not a URL — the column stores the
+   path. Displaying it is a separate, explicit read: `signAvatarUrl*` mints a
    short-lived signed URL on demand (no URLs are persisted).
 5. `@supabase/*` is reached only via `@nafios/supabase-core`; this package never
-   imports the SDK directly.
+   imports the SDK directly. The path convention and validation live in
+   `src/internal/avatar-object.ts`, shared by both surfaces.
 6. No build step — consumed as TypeScript source (ADR-0006).
 
 ## Error modes

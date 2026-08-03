@@ -56,3 +56,4 @@ already covers it. If it does, respect it — or write a new ADR that supersedes
 | [0024](0024-rls-for-auth-epic-tables.md) | Row-Level Security for the auth-epic tables | Accepted |
 | [0025](0025-domain-specs-grouped-by-module-with-reference-material.md) | Group domain specs by module, with reference material colocated | Accepted |
 | [0026](0026-modules-client-side-data-server-fns-shell-only.md) | Domain modules fetch data client-side; server functions are the shell's | Accepted |
+| [0027](0027-browser-avatar-uploads-via-storage-rls.md) | Browser avatar uploads via Supabase Storage RLS (extends 0026) | Accepted |

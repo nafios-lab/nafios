@@ -9,6 +9,8 @@ coveragePathIgnorePatterns = [
   # @nafios/supabase-core is loaded transitively (its client factory) but owned
   # and measured by its own package — never counted against this gate.
   "**/supabase-core/**",
+  # Re-export barrels carry no runtime logic.
   "**/index.ts",
+  "**/browser.ts",
   "**/tests/**",
 ]

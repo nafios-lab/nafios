@@ -1,14 +1,5 @@
 import { createServiceRoleClient } from "@nafios/supabase-core";
-
-/** The private bucket avatars live in (mirrors `uploadAvatar`). */
-const BUCKET = "avatars";
-
-/**
- * Default validity window for a signed avatar URL, in seconds (1 hour). Long
- * enough to render an onboarding / profile view, short enough that a leaked URL
- * expires on its own.
- */
-const DEFAULT_EXPIRES_IN = 3600;
+import { BUCKET, DEFAULT_EXPIRES_IN, toBucketRelativeKey } from "./internal/avatar-object";
 
 export interface SignAvatarUrlInput {
   /**
@@ -35,14 +26,12 @@ export interface SignAvatarUrlResult {
  * and strips it to the bucket-relative key the Storage API expects. Throws on a
  * path outside the `avatars` bucket or any Storage error (message prefixed
  * `signAvatarUrl:`).
+ *
+ * The browser (RLS-scoped) counterpart is `signAvatarUrlFromBrowser` in
+ * `@nafios/storage/browser`.
  */
 export async function signAvatarUrl(input: SignAvatarUrlInput): Promise<SignAvatarUrlResult> {
-  const prefix = `${BUCKET}/`;
-  if (!input.path.startsWith(prefix)) {
-    throw new Error(`signAvatarUrl: path must start with '${prefix}' (got '${input.path}')`);
-  }
-
-  const key = input.path.slice(prefix.length);
+  const key = toBucketRelativeKey(input.path);
   const expiresIn = input.expiresIn ?? DEFAULT_EXPIRES_IN;
 
   const client = createServiceRoleClient();

@@ -19,17 +19,33 @@ import { expect, test } from "bun:test";
 
 // Lib
 import "../src/lib/auth.ts";
+import "../src/lib/database.ts";
 // Schemas
 import "../src/features/auth/schemas/login-schema.ts";
 import "../src/features/auth/schemas/signup-schema.ts";
+import "../src/features/onboarding/schemas/onboarding-schema.ts";
+// Onboarding lib
+import "../src/features/onboarding/lib/avatar.ts";
+import "../src/features/onboarding/lib/family-helpers.ts";
+import "../src/features/onboarding/lib/onboarding-data.ts";
+// Onboarding context
+import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";
 // Hooks
 import "../src/features/auth/hooks/use-account-signup.ts";
 import "../src/features/auth/hooks/use-sign-in.ts";
 import "../src/features/auth/hooks/use-sign-out.ts";
+import "../src/features/onboarding/hooks/use-complete-onboarding.ts";
+import "../src/features/onboarding/hooks/use-onboarding-profile.ts";
 // Components
 import "../src/features/auth/components/login-form.tsx";
 import "../src/features/auth/components/sign-out-button.tsx";
 import "../src/features/auth/components/signup-form.tsx";
+import "../src/features/onboarding/components/acc-creation-loader.tsx";
+import "../src/features/onboarding/components/family-member-form.tsx";
+import "../src/features/onboarding/components/family-member-list-item.tsx";
+import "../src/features/onboarding/components/onboard-step-family.tsx";
+import "../src/features/onboarding/components/onboard-step-profile.tsx";
+import "../src/features/onboarding/components/onboarding-wizard.tsx";
 
 test("coverage manifest imports every in-scope module", () => {
   expect(true).toBe(true);
