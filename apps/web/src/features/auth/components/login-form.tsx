@@ -58,7 +58,7 @@ export function LoginForm({ redirectTo = "/" }: LoginFormProps) {
     : null;
 
   return (
-    <div className="flex flex-col min-w-[400px]">
+    <div className="flex flex-col min-w-100">
       <div id="login-form-header" className="flex flex-col">
         <Heading>Welcome back.</Heading>
         <Text size={"sm"} muted>

@@ -50,7 +50,7 @@ export function SignupForm() {
   const showFormError = Boolean(!isLoading && error !== null);
 
   return (
-    <div className="flex flex-col gap-6 min-w-[400px] max-w-[480px] w-full">
+    <div className="flex flex-col gap-6 min-w-100 max-w-120 w-full">
       <div className="flex flex-col">
         <Heading>Create your account.</Heading>
         <Text size="sm" muted>
