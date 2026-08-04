@@ -103,13 +103,13 @@ describe("LoginForm — submission", () => {
   });
 
   test("navigates to the redirectTo target when provided", async () => {
-    renderForm({ redirectTo: "/home" });
+    renderForm({ redirectTo: "/welcome" });
     fillValid();
 
     submitForm();
 
     await waitFor(() => {
-      expect(navigate).toHaveBeenCalledWith({ to: "/home" });
+      expect(navigate).toHaveBeenCalledWith({ to: "/welcome" });
     });
   });
 

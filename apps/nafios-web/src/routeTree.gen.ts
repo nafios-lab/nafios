@@ -12,11 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
-import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
+import { Route as ProtectedAppRouteImport } from './routes/_protected/_app'
 import { Route as ProtectedOnboardingRouteImport } from './routes/_protected/onboarding'
-import { Route as ProtectedWelcomeRouteImport } from './routes/_protected/welcome'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
+import { Route as ProtectedAppWelcomeRouteImport } from './routes/_protected/_app/welcome'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -32,19 +32,13 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProtectedHomeRoute = ProtectedHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
+const ProtectedAppRoute = ProtectedAppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedOnboardingRoute = ProtectedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedWelcomeRoute = ProtectedWelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
@@ -57,65 +51,66 @@ const AuthSignupRoute = AuthSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const ProtectedAppWelcomeRoute = ProtectedAppWelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => ProtectedAppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
-  '/home': typeof ProtectedHomeRoute
   '/onboarding': typeof ProtectedOnboardingRoute
-  '/welcome': typeof ProtectedWelcomeRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/welcome': typeof ProtectedAppWelcomeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
-  '/home': typeof ProtectedHomeRoute
   '/onboarding': typeof ProtectedOnboardingRoute
-  '/welcome': typeof ProtectedWelcomeRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/welcome': typeof ProtectedAppWelcomeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
-  '/_protected/home': typeof ProtectedHomeRoute
+  '/_protected/_app': typeof ProtectedAppRouteWithChildren
   '/_protected/onboarding': typeof ProtectedOnboardingRoute
-  '/_protected/welcome': typeof ProtectedWelcomeRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/_protected/_app/welcome': typeof ProtectedAppWelcomeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
-    | '/home'
     | '/onboarding'
-    | '/welcome'
     | '/auth/login'
     | '/auth/signup'
+    | '/welcome'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
-    | '/home'
     | '/onboarding'
-    | '/welcome'
     | '/auth/login'
     | '/auth/signup'
+    | '/welcome'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/_protected'
-    | '/_protected/home'
+    | '/_protected/_app'
     | '/_protected/onboarding'
-    | '/_protected/welcome'
     | '/auth/login'
     | '/auth/signup'
+    | '/_protected/_app/welcome'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -147,11 +142,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_protected/home': {
-      id: '/_protected/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof ProtectedHomeRouteImport
+    '/_protected/_app': {
+      id: '/_protected/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ProtectedAppRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/onboarding': {
@@ -159,13 +154,6 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof ProtectedOnboardingRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/welcome': {
-      id: '/_protected/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof ProtectedWelcomeRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/auth/login': {
@@ -181,6 +169,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/signup'
       preLoaderRoute: typeof AuthSignupRouteImport
       parentRoute: typeof AuthRouteRoute
+    }
+    '/_protected/_app/welcome': {
+      id: '/_protected/_app/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof ProtectedAppWelcomeRouteImport
+      parentRoute: typeof ProtectedAppRoute
     }
   }
 }
@@ -199,16 +194,26 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
 )
 
+interface ProtectedAppRouteChildren {
+  ProtectedAppWelcomeRoute: typeof ProtectedAppWelcomeRoute
+}
+
+const ProtectedAppRouteChildren: ProtectedAppRouteChildren = {
+  ProtectedAppWelcomeRoute: ProtectedAppWelcomeRoute,
+}
+
+const ProtectedAppRouteWithChildren = ProtectedAppRoute._addFileChildren(
+  ProtectedAppRouteChildren,
+)
+
 interface ProtectedRouteChildren {
-  ProtectedHomeRoute: typeof ProtectedHomeRoute
+  ProtectedAppRoute: typeof ProtectedAppRouteWithChildren
   ProtectedOnboardingRoute: typeof ProtectedOnboardingRoute
-  ProtectedWelcomeRoute: typeof ProtectedWelcomeRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
-  ProtectedHomeRoute: ProtectedHomeRoute,
+  ProtectedAppRoute: ProtectedAppRouteWithChildren,
   ProtectedOnboardingRoute: ProtectedOnboardingRoute,
-  ProtectedWelcomeRoute: ProtectedWelcomeRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

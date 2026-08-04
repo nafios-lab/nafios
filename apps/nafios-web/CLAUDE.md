@@ -65,12 +65,16 @@ to that package later.
 | Auth      | `routes/auth/route.tsx` + children  | `/auth/*`      | Redirects to `/` if already signed in                                       |
 | Protected | `routes/_protected.tsx` (pathless)  | children only  | Redirects to `/auth/login` (with `redirect`) if no session                  |
 | Onboarding| `routes/_protected/onboarding.tsx`  | `/onboarding`  | Already onboarded → `/welcome`; loader hydrates the saved Profile step      |
-| Welcome   | `routes/_protected/welcome.tsx`     | `/welcome`     | Not-yet-onboarded → `/onboarding` (the completion gate); minimal landing    |
+| Shell     | `routes/_protected/_app.tsx` (pathless) | children only | Not-yet-onboarded → `/onboarding` (the completion gate); mounts the shell chrome |
+| Welcome   | `routes/_protected/_app/welcome.tsx` | `/welcome`    | The shell landing — composes the navbar (search + service menu + clock) and rail |
 
-`/_protected/home` remains a **Phase 7 placeholder** (no longer linked from
-`index`) proving the session + sign-out loop. The real shell (navbar/sidebar
-rail, mounted domain modules) is still Phase 8; `/welcome` is the current minimal
-landing.
+The `_protected/_app` layout is the **shell chrome** — the navbar
+(`shared/components/navbar.tsx`) and collapsed navigation rail
+(`shared/components/sidebar.tsx`, with the `service-menu.tsx` product switcher)
+around a page `<Outlet/>` — and it hosts the onboarding-completion gate so every
+module mounted inside it inherits it. `onboarding` sits *outside* `_app` (it's a
+full-screen flow, not a module in the shell). Domain modules (Finance, Calendar,
+…) will mount as children of `_app` as they land.
 
 ### Onboarding (shell feature, fully client-side)
 
