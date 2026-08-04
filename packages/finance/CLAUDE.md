@@ -7,6 +7,15 @@ value types + codecs. Further domain types, repositories, queries, metrics, and
 UI land later as incremental feature tickets — always inside the structure this
 package establishes, never re-architecting it.
 
+> **`Month` moved out (2026-08).** `Month` (the `"YYYY-MM"` value + its codec and
+> month math), the `daysInMonth` calendar helper, and the month formatters were
+> extracted to **[`@nafios/datetime`](../datetime/CLAUDE.md)** — they are a generic
+> temporal primitive (the standard library's `Temporal.PlainYearMonth`), not a
+> finance concept, and other modules need them. Finance now depends on
+> `@nafios/datetime` and **re-exports `Month`** on its own barrel, so
+> `import { Month } from "@nafios/finance"` still works unchanged. The `Money`
+> codec and the creation-window *policy* stay here.
+
 ## Internal layer boundary (the core invariant)
 
 One package, two **internal** layers. The pure-vs-I/O split is enforced
@@ -15,8 +24,11 @@ _inside_ the package by a **Biome import-boundary rule** (see root
 
 - **`src/domain/` — the pure layer.** Framework-agnostic types, enums, and
   codecs. **Zero I/O.** It must **not** import `src/internal/`,
-  `@nafios/database`, `@nafios/supabase-core`, or `@supabase/*`. Holds the
-  `Money`/`Month` value types + codecs (EF3.1); more domain types land later.
+  `@nafios/database`, `@nafios/supabase-core`, or `@supabase/*` (importing the
+  pure sibling `@nafios/datetime` for `Month` **is** allowed). Holds the `Money`
+  value type + codec (EF3.1) and the creation-window resolver; `Month` itself now
+  lives in `@nafios/datetime` (re-exported from the domain barrel). More domain
+  types land later.
 - **`src/internal/` — the data layer.** The **only** place `@nafios/database`
   and `@nafios/supabase-core` appear. It may import `src/domain/`. Holds the
   client factories + auth/session seam (the connection spine); the first
@@ -50,12 +62,16 @@ the scoped Biome override.
 
 ## Dependencies
 
-Exactly two workspace deps, both used only in `src/internal/`:
+Three workspace deps:
 
 - **`@nafios/database`** (`workspace:*`) — `asDb` + the schema-typed `Db` client
-  + generated `Database` types (EF1).
+  + generated `Database` types (EF1). Used only in `src/internal/`.
 - **`@nafios/supabase-core`** (`workspace:*`) — client construction + the
-  `SupabaseClient` type.
+  `SupabaseClient` type. Used only in `src/internal/`.
+- **`@nafios/datetime`** (`workspace:*`) — the pure `Month` primitive + calendar
+  helpers (extracted 2026-08). Imported by the **pure** `src/domain/` layer
+  (`monthly-ledger`, `creation-window`) and the `ledger.mapper`; re-exported on
+  the barrel so `Month` stays part of finance's public surface.
 
 Finance **never** depends on `@supabase/*` directly. Per
 [ADR-0021](../../adr/0021-supabase-core-connection-foundation.md),
@@ -192,12 +208,12 @@ bun run typecheck # tsc --noEmit
 src/
   index.ts              # barrel — the only public export surface
   domain/
-    index.ts            # domain barrel — re-exports the pure types/codecs below
+    index.ts            # domain barrel — pure types/codecs + re-exports Month from @nafios/datetime
     category.ts         # Category domain type (EF3.9)
     default-categories.ts # DefaultCategory + DEFAULT_CATEGORIES catalog (EF3.9)
     money.ts            # Money value type + codec + arithmetic (EF3.1)
-    month.ts            # Month value type + codec + monthOf/addMonths/compareMonths (EF3.1)
-    codec-error.ts      # CodecError thrown by the decode/construct paths (EF3.1)
+    codec-error.ts      # CodecError thrown by the Money decode/construct paths (EF3.1)
+    # Month + calendar helpers now live in @nafios/datetime (extracted 2026-08)
   internal/
     client.ts           # createBrowserClient, createServiceClient, FinanceClient
     errors.ts           # FinanceDataError, FinanceDataErrorCode, mapPostgrestError (EF3.6)

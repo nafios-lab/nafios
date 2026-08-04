@@ -8,9 +8,9 @@
 // Timestamps stay opaque ISO strings: nothing in EF3 does timestamp arithmetic,
 // so no Timestamp codec ships. This module models status; it never transitions it.
 
+import type { Month } from "@nafios/datetime";
 import type { Envelope } from "./envelope";
 import type { Money } from "./money";
-import type { Month } from "./month";
 
 /** A ledger's lifecycle state. `ongoing` (active working month) → `reconciling`
  *  (parked for finalization) → `settled` (locked, immutable). Mirrors the

@@ -6,8 +6,8 @@
 // string outside EF3.1's codecs) is the reusable rule.
 
 import type { Tables, TablesInsert } from "@nafios/database";
+import { decodeMonth, encodeMonth } from "@nafios/datetime";
 import { decodeMoney, encodeMoney } from "../../domain/money";
-import { decodeMonth, encodeMonth } from "../../domain/month";
 import type { LedgerHeader, NewLedger } from "../repositories/ledger.repo";
 
 /**

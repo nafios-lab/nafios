@@ -22,10 +22,10 @@
 // ongoing) then inserts, and compensates (reverts the park) if the insert
 // throws. The index is the hard, unconditional backstop for the invariant.
 
+import { compareMonths, type Month } from "@nafios/datetime";
 import { resolveCreationState } from "../../domain/creation-window";
 import { type MaxCappedGuardrail, validateMaxCapped } from "../../domain/max-capped";
 import { compareMoney, type Money, ZERO_MONEY } from "../../domain/money";
-import { compareMonths, type Month } from "../../domain/month";
 import type { FinanceClient } from "../client";
 import { createLedgerRepository, type LedgerHeader } from "../repositories/ledger.repo";
 

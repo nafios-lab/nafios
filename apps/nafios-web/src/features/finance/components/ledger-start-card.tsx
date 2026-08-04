@@ -1,10 +1,9 @@
-import type { Month } from "@nafios/finance";
+import { formatMonthLong, formatMonthName, type Month } from "@nafios/datetime";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
 import { Badge } from "@nafios/ui/components/ui/badge";
 import { Button } from "@nafios/ui/components/ui/button";
 import { CircleHelp, ExternalLink, NotebookText } from "lucide-react";
-import { formatMonthLong, formatMonthName } from "../lib/format-month";
 
 export interface LedgerStartCardProps {
   /** Lead-Day window (from the seam). Selects the scenario: `false` → single CTA

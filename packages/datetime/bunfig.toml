@@ -6,11 +6,6 @@
 coverageReporter = ["text"]
 coverageThreshold = 0.9
 coveragePathIgnorePatterns = [
-  # @nafios/datetime is loaded transitively (the barrel pulls in the Month codec
-  # + formatters) but owned and measured by its own package — never counted
-  # against this gate. Finance exercises the Month codec, not the formatters, so
-  # without this its per-file gate would flag datetime's format-month.ts.
-  "**/datetime/**",
   "**/index.ts",
   "**/tests/**",
 ]

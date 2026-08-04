@@ -30,7 +30,6 @@ import "../src/features/onboarding/lib/family-helpers.ts";
 import "../src/features/onboarding/lib/onboarding-data.ts";
 // Finance lib
 import "../src/features/finance/lib/finance-client.ts";
-import "../src/features/finance/lib/format-month.ts";
 import "../src/features/finance/lib/local-today-iso.ts";
 // Onboarding context
 import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";

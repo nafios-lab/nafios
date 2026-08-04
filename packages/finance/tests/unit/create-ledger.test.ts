@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
+// A malformed `today` throws the calendar `CodecError` from @nafios/datetime
+// (where the Month codec lives), not finance's own money CodecError.
+import { CodecError, decodeMonth } from "@nafios/datetime";
 import type { PostgrestError } from "@nafios/supabase-core";
-import { CodecError, decodeMoney, decodeMonth } from "../../src/domain";
+import { decodeMoney } from "../../src/domain";
 import type { FinanceClient } from "../../src/internal/client";
 import { createLedgerCommands } from "../../src/internal/commands/create-ledger";
 import { FinanceDataError } from "../../src/internal/errors";

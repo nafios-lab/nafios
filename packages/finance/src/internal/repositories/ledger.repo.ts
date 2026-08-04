@@ -11,8 +11,8 @@
 // resolves and the owner_all RLS policy scopes all reads/writes; inserts NEVER
 // set user_id (the DB default auth.uid() fills it).
 
+import { encodeMonth, type Month } from "@nafios/datetime";
 import type { Money } from "../../domain/money";
-import { encodeMonth, type Month } from "../../domain/month";
 import type { LedgerStatus, MonthlyLedger } from "../../domain/monthly-ledger";
 import type { FinanceClient } from "../client";
 import { mapPostgrestError } from "../errors";

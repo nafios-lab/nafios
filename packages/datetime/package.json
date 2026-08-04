@@ -1,5 +1,5 @@
 {
-  "name": "@nafios/finance",
+  "name": "@nafios/datetime",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,10 +12,5 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test"
-  },
-  "dependencies": {
-    "@nafios/database": "workspace:*",
-    "@nafios/datetime": "workspace:*",
-    "@nafios/supabase-core": "workspace:*"
   }
 }

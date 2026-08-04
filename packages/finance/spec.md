@@ -44,6 +44,14 @@ the sanctioned money-arithmetic helpers, and the `CodecError` they throw. Zero
 I/O, zero dependencies; lives in `src/domain/`. Full contract, behavior rules,
 and verification matrix: [EF3.1](../../issues/EF3.1.md).
 
+> **`Month` extracted (2026-08).** `Month`, its codec/month math, the
+> `daysInMonth` calendar helper, and the month formatters moved to the shared,
+> pure **`@nafios/datetime`** package — they are a generic temporal primitive
+> (the standard library's `Temporal.PlainYearMonth`), not a finance concept.
+> Finance depends on `@nafios/datetime` and **re-exports `Month`** on its barrel,
+> so its public surface is unchanged. The `Money` codec and its `CodecError`
+> (money codes only), and the creation-window *policy*, remain in finance.
+
 **In (EF3.2 / EF3.3):** the first domain **entity** shapes + the derived-metrics
 engine — the `Envelope` and `MonthlyLedger` in-memory shapes, their status
 vocabularies (`EnvelopeStatus` / `LedgerStatus`) and the frozen

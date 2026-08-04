@@ -1,12 +1,11 @@
-// @nafios/finance — domain layer (pure). Zero I/O, zero dependencies, no clock.
+// @nafios/datetime — pure. Zero I/O, zero dependencies, no clock.
 //
-// A ledger is identified by its month. The `monthly_ledger.month` column stores
-// it as a first-of-month DATE ("2026-01-01"), guarded by
-// CHECK (month = date_trunc('month', month)). `Month` represents "a calendar
-// month" as a zero-padded "YYYY-MM" string, so lexicographic order ==
-// chronological order — no Date instance, no time-zone / midnight-UTC drift.
-// This module OWNS the first-of-month invariant: it is enforced here (decode
-// rejects day ≠ 01, encode always emits 01) and relied on everywhere else.
+// `Month` represents "a calendar month" as a zero-padded "YYYY-MM" string, so
+// lexicographic order == chronological order — no Date instance, no time-zone /
+// midnight-UTC drift. (It is the standard library's `Temporal.PlainYearMonth`
+// concept, modelled as a branded string.) This module OWNS the first-of-month
+// invariant used by callers that persist a month as a first-of-month DATE
+// ("2026-01-01"): decode rejects day ≠ 01, encode always emits 01.
 
 import { daysInMonth } from "./calendar";
 import { CodecError } from "./codec-error";
@@ -41,9 +40,9 @@ function toMonth(year: number, month: number): Month {
 }
 
 /**
- * DB READ PATH. Decode a first-of-month DATE as it arrives from the SDK ("2026-01-01")
- * into Month. Throws CodecError if the value is not a valid ISO date OR its day
- * component is not 01 (the first-of-month invariant — mirrors the DB CHECK).
+ * DECODE PATH. Decode a first-of-month DATE ("2026-01-01") into Month. Throws
+ * CodecError if the value is not a valid ISO date OR its day component is not 01
+ * (the first-of-month invariant — mirrors a DB `date_trunc('month', …)` CHECK).
  */
 export function decodeMonth(dbValue: string): Month {
   const { year, month, day } = parseIsoDate(dbValue);
@@ -56,15 +55,15 @@ export function decodeMonth(dbValue: string): Month {
   return toMonth(year, month);
 }
 
-/** DB WRITE PATH. Encode Month to the first-of-month DATE string the column expects:
- *  "2026-01" -> "2026-01-01". */
+/** ENCODE PATH. Encode Month to the first-of-month DATE string a DATE column
+ *  expects: "2026-01" -> "2026-01-01". */
 export function encodeMonth(value: Month): string {
   return `${value}-01`;
 }
 
 /**
  * The Month that CONTAINS a given calendar date. `isoDate` is a "YYYY-MM-DD" string —
- * the CALLER supplies it (e.g. "today"); the codec never reads the clock, so it stays pure.
+ * the CALLER supplies it (e.g. "today"); this never reads the clock, so it stays pure.
  *   monthOf("2026-01-15") -> "2026-01"
  */
 export function monthOf(isoDate: string): Month {

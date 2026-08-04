@@ -6,7 +6,7 @@ import {
   encodeMonth,
   type Month,
   monthOf,
-} from "../../src/domain";
+} from "../../src/month";
 import { codeOf } from "./codec-error.helper";
 
 describe("decodeMonth / encodeMonth", () => {
@@ -68,7 +68,7 @@ describe("compareMonths", () => {
   });
 });
 
-describe("§5 Jan 2027 month anchor", () => {
+describe("§ Jan 2027 month anchor", () => {
   test("round-trips and shifts the anchor month", () => {
     const jan = decodeMonth("2027-01-01");
     expect(encodeMonth(jan)).toBe("2027-01-01");

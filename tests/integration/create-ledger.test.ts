@@ -26,15 +26,17 @@
  */
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { asDb } from "@nafios/database";
+// The `Month` codec + its `CodecError` live in @nafios/datetime (extracted from
+// finance); a malformed `today` throws THIS CodecError, so the row-17 assertion
+// checks against it (finance re-exports `decodeMonth`/`encodeMonth`, but not the
+// calendar `CodecError`).
+import { CodecError, decodeMonth, encodeMonth } from "@nafios/datetime";
 import {
-  CodecError,
   type CreateLedgerResult,
   createLedgerCommands,
   createServiceClient,
   decodeMoney,
-  decodeMonth,
   encodeMoney,
-  encodeMonth,
   type FinanceClient,
   FinanceDataError,
   type LedgerCommands,

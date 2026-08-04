@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { encodeMonth } from "@nafios/datetime";
 // EF3.1 codecs to build fixtures without touching raw money/month strings.
 import { decodeMoney, decodeMonth } from "../../src/domain";
 import { encodeMoney } from "../../src/domain/money";
-import { encodeMonth } from "../../src/domain/month";
 import {
   type LedgerRow,
   newLedgerToInsertRow,

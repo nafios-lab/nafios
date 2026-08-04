@@ -10,6 +10,7 @@
       "devDependencies": {
         "@biomejs/biome": "^2.4.16",
         "@nafios/database": "workspace:*",
+        "@nafios/datetime": "workspace:*",
         "@nafios/finance": "workspace:*",
         "@nafios/supabase-core": "workspace:*",
         "@types/bun": "^1.3.14",
@@ -31,6 +32,7 @@
       "dependencies": {
         "@nafios/auth-core": "workspace:*",
         "@nafios/database": "workspace:*",
+        "@nafios/datetime": "workspace:*",
         "@nafios/finance": "workspace:*",
         "@nafios/storage": "workspace:*",
         "@nafios/ui": "workspace:*",
@@ -124,11 +126,16 @@
         "@nafios/supabase-core": "workspace:*",
       },
     },
+    "packages/datetime": {
+      "name": "@nafios/datetime",
+      "version": "0.0.0",
+    },
     "packages/finance": {
       "name": "@nafios/finance",
       "version": "0.0.0",
       "dependencies": {
         "@nafios/database": "workspace:*",
+        "@nafios/datetime": "workspace:*",
         "@nafios/supabase-core": "workspace:*",
       },
     },
@@ -507,6 +514,8 @@
     "@nafios/core-utils": ["@nafios/core-utils@workspace:packages/core-utils"],
 
     "@nafios/database": ["@nafios/database@workspace:packages/database"],
+
+    "@nafios/datetime": ["@nafios/datetime@workspace:packages/datetime"],
 
     "@nafios/docs": ["@nafios/docs@workspace:apps/docs"],
 
