@@ -67,14 +67,34 @@ to that package later.
 | Onboarding| `routes/_protected/onboarding.tsx`  | `/onboarding`  | Already onboarded → `/welcome`; loader hydrates the saved Profile step      |
 | Shell     | `routes/_protected/_app.tsx` (pathless) | children only | Not-yet-onboarded → `/onboarding` (the completion gate); mounts the shell chrome |
 | Welcome   | `routes/_protected/_app/welcome.tsx` | `/welcome`    | The shell landing — composes the navbar (search + service menu + clock) and rail |
+| Finance   | `routes/_protected/_app/finance/` (`route`/`index`/`accounts`/`transactions`) | `/finance`, `/finance/accounts`, `/finance/transactions` | Inherits the shell + onboarding gate; the first mounted domain module |
 
 The `_protected/_app` layout is the **shell chrome** — the navbar
 (`shared/components/navbar.tsx`) and collapsed navigation rail
 (`shared/components/sidebar.tsx`, with the `service-menu.tsx` product switcher)
 around a page `<Outlet/>` — and it hosts the onboarding-completion gate so every
 module mounted inside it inherits it. `onboarding` sits *outside* `_app` (it's a
-full-screen flow, not a module in the shell). Domain modules (Finance, Calendar,
-…) will mount as children of `_app` as they land.
+full-screen flow, not a module in the shell). **Finance** is the first domain
+module to mount as a child of `_app`; the remaining modules (Calendar, …) follow
+the same shape as they land.
+
+### Finance module (`routes/_protected/_app/finance/` + `features/finance/`)
+
+Ported from `apps/web` (already client-side per ADR-0026, so it moved with only
+the shell import paths rewritten). `finance/route.tsx` is the module layout: it
+re-uses the shared chrome, only *specializing* the rail (Overview / Accounts /
+Transactions via `useSidebarNav`) and the navbar (`FINANCE` title + the
+`ServiceMenu active="finance"` switcher + clock via `useNavbar`), then renders
+its pages through `<Outlet/>`. `finance/index.tsx` (`/finance`) reads the
+Finance-Home decision seam **client-side** via `useFinanceHomeState`
+(`features/finance/hooks/`) against the finance browser client
+(`features/finance/lib/finance-client.ts` — a lazy singleton over
+`createBrowserClient()` from `@nafios/finance`, RLS-scoped, separate from `getDb`
+/ `getAuthClient` but sharing the same persisted session). Because the route
+doesn't SSR its data it owns a mandatory loading state + a generic error state.
+`accounts`/`transactions` are placeholder pages. The `service-menu.tsx`
+`MENU_ROUTES` map now links the Finance entry to `/finance` (Home → `/welcome`);
+ids without a mounted route stay inert.
 
 ### Onboarding (shell feature, fully client-side)
 

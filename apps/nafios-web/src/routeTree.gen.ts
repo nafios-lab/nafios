@@ -16,7 +16,11 @@ import { Route as ProtectedAppRouteImport } from './routes/_protected/_app'
 import { Route as ProtectedOnboardingRouteImport } from './routes/_protected/onboarding'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
+import { Route as ProtectedAppFinanceRouteRouteImport } from './routes/_protected/_app/finance/route'
 import { Route as ProtectedAppWelcomeRouteImport } from './routes/_protected/_app/welcome'
+import { Route as ProtectedAppFinanceIndexRouteImport } from './routes/_protected/_app/finance/index'
+import { Route as ProtectedAppFinanceAccountsRouteImport } from './routes/_protected/_app/finance/accounts'
+import { Route as ProtectedAppFinanceTransactionsRouteImport } from './routes/_protected/_app/finance/transactions'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,11 +55,35 @@ const AuthSignupRoute = AuthSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const ProtectedAppFinanceRouteRoute =
+  ProtectedAppFinanceRouteRouteImport.update({
+    id: '/finance',
+    path: '/finance',
+    getParentRoute: () => ProtectedAppRoute,
+  } as any)
 const ProtectedAppWelcomeRoute = ProtectedAppWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
   getParentRoute: () => ProtectedAppRoute,
 } as any)
+const ProtectedAppFinanceIndexRoute =
+  ProtectedAppFinanceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProtectedAppFinanceRouteRoute,
+  } as any)
+const ProtectedAppFinanceAccountsRoute =
+  ProtectedAppFinanceAccountsRouteImport.update({
+    id: '/accounts',
+    path: '/accounts',
+    getParentRoute: () => ProtectedAppFinanceRouteRoute,
+  } as any)
+const ProtectedAppFinanceTransactionsRoute =
+  ProtectedAppFinanceTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => ProtectedAppFinanceRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -63,7 +91,11 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/finance': typeof ProtectedAppFinanceRouteRouteWithChildren
   '/welcome': typeof ProtectedAppWelcomeRoute
+  '/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
+  '/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
+  '/finance/': typeof ProtectedAppFinanceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -72,6 +104,9 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
   '/welcome': typeof ProtectedAppWelcomeRoute
+  '/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
+  '/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
+  '/finance': typeof ProtectedAppFinanceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -82,7 +117,11 @@ export interface FileRoutesById {
   '/_protected/onboarding': typeof ProtectedOnboardingRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/_protected/_app/finance': typeof ProtectedAppFinanceRouteRouteWithChildren
   '/_protected/_app/welcome': typeof ProtectedAppWelcomeRoute
+  '/_protected/_app/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
+  '/_protected/_app/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
+  '/_protected/_app/finance/': typeof ProtectedAppFinanceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -92,7 +131,11 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/login'
     | '/auth/signup'
+    | '/finance'
     | '/welcome'
+    | '/finance/accounts'
+    | '/finance/transactions'
+    | '/finance/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -101,6 +144,9 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/signup'
     | '/welcome'
+    | '/finance/accounts'
+    | '/finance/transactions'
+    | '/finance'
   id:
     | '__root__'
     | '/'
@@ -110,7 +156,11 @@ export interface FileRouteTypes {
     | '/_protected/onboarding'
     | '/auth/login'
     | '/auth/signup'
+    | '/_protected/_app/finance'
     | '/_protected/_app/welcome'
+    | '/_protected/_app/finance/accounts'
+    | '/_protected/_app/finance/transactions'
+    | '/_protected/_app/finance/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -170,12 +220,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignupRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_protected/_app/finance': {
+      id: '/_protected/_app/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof ProtectedAppFinanceRouteRouteImport
+      parentRoute: typeof ProtectedAppRoute
+    }
     '/_protected/_app/welcome': {
       id: '/_protected/_app/welcome'
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof ProtectedAppWelcomeRouteImport
       parentRoute: typeof ProtectedAppRoute
+    }
+    '/_protected/_app/finance/': {
+      id: '/_protected/_app/finance/'
+      path: '/'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof ProtectedAppFinanceIndexRouteImport
+      parentRoute: typeof ProtectedAppFinanceRouteRoute
+    }
+    '/_protected/_app/finance/accounts': {
+      id: '/_protected/_app/finance/accounts'
+      path: '/accounts'
+      fullPath: '/finance/accounts'
+      preLoaderRoute: typeof ProtectedAppFinanceAccountsRouteImport
+      parentRoute: typeof ProtectedAppFinanceRouteRoute
+    }
+    '/_protected/_app/finance/transactions': {
+      id: '/_protected/_app/finance/transactions'
+      path: '/transactions'
+      fullPath: '/finance/transactions'
+      preLoaderRoute: typeof ProtectedAppFinanceTransactionsRouteImport
+      parentRoute: typeof ProtectedAppFinanceRouteRoute
     }
   }
 }
@@ -194,11 +272,31 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
 )
 
+interface ProtectedAppFinanceRouteRouteChildren {
+  ProtectedAppFinanceAccountsRoute: typeof ProtectedAppFinanceAccountsRoute
+  ProtectedAppFinanceTransactionsRoute: typeof ProtectedAppFinanceTransactionsRoute
+  ProtectedAppFinanceIndexRoute: typeof ProtectedAppFinanceIndexRoute
+}
+
+const ProtectedAppFinanceRouteRouteChildren: ProtectedAppFinanceRouteRouteChildren =
+  {
+    ProtectedAppFinanceAccountsRoute: ProtectedAppFinanceAccountsRoute,
+    ProtectedAppFinanceTransactionsRoute: ProtectedAppFinanceTransactionsRoute,
+    ProtectedAppFinanceIndexRoute: ProtectedAppFinanceIndexRoute,
+  }
+
+const ProtectedAppFinanceRouteRouteWithChildren =
+  ProtectedAppFinanceRouteRoute._addFileChildren(
+    ProtectedAppFinanceRouteRouteChildren,
+  )
+
 interface ProtectedAppRouteChildren {
+  ProtectedAppFinanceRouteRoute: typeof ProtectedAppFinanceRouteRouteWithChildren
   ProtectedAppWelcomeRoute: typeof ProtectedAppWelcomeRoute
 }
 
 const ProtectedAppRouteChildren: ProtectedAppRouteChildren = {
+  ProtectedAppFinanceRouteRoute: ProtectedAppFinanceRouteRouteWithChildren,
   ProtectedAppWelcomeRoute: ProtectedAppWelcomeRoute,
 }
 

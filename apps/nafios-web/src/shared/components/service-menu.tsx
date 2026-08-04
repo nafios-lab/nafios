@@ -81,11 +81,12 @@ type MenuId = ProductId | typeof HOME_ITEM.id;
  * Menu ids with a mounted route today. Selecting one navigates there via SPA
  * nav; Home always routes to the welcome dashboard. Ids absent from this map
  * stay inert until their module mounts — so the switcher never links to a route
- * that would 404. In this SPA only the shell's `/welcome` exists yet; Finance,
- * Calendar, and the rest join this map as each module mounts.
+ * that would 404. Finance is the first domain module to mount (`/finance`);
+ * Calendar and the rest join this map as each module lands.
  */
 const MENU_ROUTES: Partial<Record<MenuId, LinkProps["to"]>> = {
   home: "/welcome",
+  finance: "/finance",
 };
 
 type ServiceMenuProps = {

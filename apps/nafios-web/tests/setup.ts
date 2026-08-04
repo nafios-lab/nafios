@@ -93,8 +93,15 @@ export const insertUserProfile = mock((..._args: unknown[]): Promise<void> => Pr
 export const saveOnboardingProfile = mock(
   (..._args: unknown[]): Promise<void> => Promise.resolve(),
 );
+// `asDb` is a value export the @nafios/finance barrel links (internal/client.ts)
+// when a finance feature imports it. Never invoked in these tests — it's only
+// reached via the finance browser/service client factories, and the finance
+// hook test stubs `createBrowserClient` directly — so an identity passthrough is
+// enough to satisfy the static import binding.
+export const asDb = mock((client: unknown) => client);
 
 mock.module("@nafios/database", () => ({
+  asDb,
   createBrowserDb,
   insertUserProfile,
   saveOnboardingProfile,
