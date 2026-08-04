@@ -114,7 +114,9 @@ export function ServiceMenu({ active }: ServiceMenuProps) {
           // lingering while the route resolves.
           onSelect: () => {
             setOpen(false);
-            void navigate({ to });
+            // Delayed nav to avoid UI flicker during transition
+            // to next route
+            setTimeout(() => void navigate({ to }), 100);
           },
         }
       : entry;

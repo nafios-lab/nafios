@@ -86,7 +86,7 @@ function UserMenu({
   onProfile,
   onSettings,
   onLogout,
-  avatarSize = "default",
+  avatarSize = "sm",
   align = "end",
   side = "bottom",
   contentClassName,
@@ -101,7 +101,7 @@ function UserMenu({
         <button
           type="button"
           aria-label={user.name ? `Open user menu for ${user.name}` : "Open user menu"}
-          className="rounded-full outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className={`rounded-full outline-none transition-shadow hover:ring-2 hover:ring-border hover:ring-offset-2 hover:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-[state=open]:ring-2 data-[state=open]:ring-ring data-[state=open]:ring-offset-2 data-[state=open]:ring-offset-background cursor-pointer`}
         >
           <UserAvatar user={user} size={avatarSize} />
         </button>
