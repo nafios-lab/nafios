@@ -1,7 +1,9 @@
 import { SidebarInset, SidebarProvider } from "@nafios/ui/components/ui/sidebar";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
 import { onboardingStatusQueryOptions } from "~/features/onboarding/lib/onboarding-data";
+import { profileQueryOptions } from "~/lib/profile";
 import { Navbar, NavbarProvider } from "~/shared/components/navbar";
 import { Sidebar, SidebarNavProvider } from "~/shared/components/sidebar";
 
@@ -30,10 +32,13 @@ export const Route = createFileRoute("/_protected/_app")({
 
 function AppLayout() {
   // Session is guaranteed here: `_protected` redirects to login when it's null.
-  // Map it onto the rail's minimal user shape — the email carries the account,
-  // and with no name/avatar stored on the session the menu falls back to
-  // email-derived initials. (Surfacing the signed profile avatar is a follow-up.)
+  // The email carries the account; the display avatar lives in `profiles`, not
+  // on the session, so it is a separate signed read. Non-blocking `useQuery` (not
+  // a route guard): the shell paints instantly with email-derived initials and
+  // swaps in the photo when it arrives — the avatar never gates navigation, and
+  // the menu falls back to initials whenever it is absent.
   const { session } = Route.useRouteContext();
+  const { data: profile } = useQuery(profileQueryOptions(session.user.id));
 
   return (
     // The rail is pinned to the collapsed (icon-only) state: `open={false}` with
@@ -46,7 +51,7 @@ function AppLayout() {
     >
       <NavbarProvider>
         <SidebarNavProvider>
-          <Sidebar user={{ email: session.user.email }} />
+          <Sidebar user={{ email: session.user.email, avatarUrl: profile?.avatarUrl }} />
           <SidebarInset>
             <Navbar />
             <div className="flex-1 overflow-auto p-6">
