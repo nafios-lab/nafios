@@ -134,7 +134,7 @@ export function SearchBar() {
   return (
     <div className="w-64 max-w-[40vw]">
       <TextInput
-        type="search"
+        type="text"
         placeholder="Search…"
         aria-label="Search"
         className="bg-secondary border-transparent"
