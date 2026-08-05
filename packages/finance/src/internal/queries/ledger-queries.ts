@@ -18,7 +18,7 @@
 
 // import { addMonths, type Month, resolveCreationState } from "../../domain";
 import { addMonths, type Month } from "@nafios/datetime";
-import { resolveCreationState } from "../../domain";
+import { type LedgerSummaryCard, resolveCreationState } from "../../domain";
 import type { FinanceClient } from "../client";
 import { createLedgerRepository } from "../repositories/ledger.repo";
 
@@ -41,6 +41,8 @@ export interface FinanceHomeState {
   /** `true` ⟺ the user has a ledger with `status === 'ongoing'` (the single
    *  active working surface). `reconciling` / `settled` do NOT count. */
   readonly hasActiveLedger: boolean;
+  /** The summary data of an active / ongoing ledger (if available) */
+  readonly activeLedgerSummary: LedgerSummaryCard | null;
   /** `true` ⟺ `today` falls in the Lead-Day window — `resolveCreationState(...).isWindowOpen`. */
   readonly isWithinLeadDay: boolean;
   /** The current calendar month (`monthOf(today)`) — always present. */
@@ -80,9 +82,17 @@ export function createLedgerQueries(client: FinanceClient): LedgerQueries {
       const list = await ledgers.list();
       const state = resolveCreationState({ today, leadDays: LEAD_DAYS, ledgers: list });
 
+      // 'ongoing' only — reconciling / settled are not the active working surface.
+      // At most one can be ongoing (uq_one_ongoing_ledger), so a single find
+      // both answers hasActiveLedger and gives us the id to summarise.
+      const ongoing = list.find((ledger) => ledger.status === "ongoing");
+      const activeLedgerSummary: LedgerSummaryCard | null = ongoing
+        ? await ledgers.getLedgerSummary(ongoing.id)
+        : null;
+
       return {
-        // 'ongoing' only — reconciling / settled are not the active working surface.
-        hasActiveLedger: list.some((ledger) => ledger.status === "ongoing"),
+        hasActiveLedger: ongoing !== undefined,
+        activeLedgerSummary,
         isWithinLeadDay: state.isWindowOpen,
         currentMonth: state.currentMonth,
         nextMonth: addMonths(state.currentMonth, 1),

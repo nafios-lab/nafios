@@ -14,17 +14,41 @@ import type { LedgerRow } from "../../src/internal/repositories/ledger.repo";
 
 type QueryResult = { data: unknown; error: PostgrestError | null };
 
+/** The `get_ledger_summary` jsonb payload (money as text, counts as integers,
+ *  carried_over in the DB's snake_case label) that the RPC returns for the
+ *  ongoing ledger. The mapper's decoding is covered in ledger.repo.test.ts; here
+ *  we only need a valid shape to prove it reaches `activeLedgerSummary`. */
+const summaryPayload = {
+  id: "id-2026-06-01-ongoing",
+  month: "2026-06-01",
+  status: "ongoing",
+  opening_balance: "1000.00",
+  max_capped: "1500.00",
+  col: "800.00",
+  asm_contribution: "200.00",
+  health_margin: "500.00",
+  is_asm_negative: false,
+  outstanding: { count: 1, total: "100.00" },
+  envelope_counts: { total: 4, paid: 2, pending: 1, skipped: 1, carried_over: 0 },
+};
+
 /** A supabase-js-shaped, thenable query-builder stub — the `ledger.repo.test.ts`
  *  idiom. `list()` chains `from().select().order()`; awaiting any terminal
- *  resolves to the pre-configured `{ data, error }`. */
-function makeClient(result: QueryResult): FinanceClient {
+ *  resolves to the pre-configured `{ data, error }`. `getLedgerSummary` reads
+ *  through `.rpc(...)` (thenable the same way), which resolves to `summary`. */
+function makeClient(result: QueryResult, summary: QueryResult = { data: null, error: null }) {
   const builder: Record<string, unknown> = {};
   for (const method of ["select", "order", "eq", "maybeSingle", "single", "insert", "update"]) {
     builder[method] = () => builder;
   }
   // biome-ignore lint/suspicious/noThenProperty: deliberate query-builder stub
   builder.then = (resolve: (v: QueryResult) => void) => resolve(result);
-  return { from: () => builder } as unknown as FinanceClient;
+
+  const rpcResult: Record<string, unknown> = {
+    // biome-ignore lint/suspicious/noThenProperty: deliberate rpc-result stub
+    then: (resolve: (v: QueryResult) => void) => resolve(summary),
+  };
+  return { from: () => builder, rpc: () => rpcResult } as unknown as FinanceClient;
 }
 
 /** A monthly_ledger row for a given month/status (numeric columns arrive as
@@ -41,8 +65,8 @@ function ledgerRow(month: string, status: LedgerRow["status"]): LedgerRow {
   };
 }
 
-function withLedgers(rows: LedgerRow[]): FinanceClient {
-  return makeClient({ data: rows, error: null });
+function withLedgers(rows: LedgerRow[], summary: QueryResult = { data: null, error: null }) {
+  return makeClient({ data: rows, error: null }, summary);
 }
 
 describe("getFinanceHomeState — hasActiveLedger", () => {
@@ -58,22 +82,31 @@ describe("getFinanceHomeState — hasActiveLedger", () => {
     // Current month is free → openable; next is null outside the window.
     expect(state.openable.current).toBe(monthOf("2026-07-01"));
     expect(state.openable.next).toBeNull();
+    // No ongoing ledger → no summary, and the RPC is never consulted.
+    expect(state.activeLedgerSummary).toBeNull();
   });
 
-  test("S2: a status:'ongoing' ledger → hasActiveLedger true", async () => {
+  test("S2: a status:'ongoing' ledger → hasActiveLedger true + its summary card", async () => {
     const state = await createLedgerQueries(
-      withLedgers([ledgerRow("2026-06-01", "ongoing")]),
+      withLedgers([ledgerRow("2026-06-01", "ongoing")], { data: summaryPayload, error: null }),
     ).getFinanceHomeState("2026-07-10");
 
     expect(state.hasActiveLedger).toBe(true);
+    // The ongoing ledger's get_ledger_summary payload is awaited and mapped onto
+    // the state (the forEach-vs-await regression: it must NOT be null here).
+    expect(state.activeLedgerSummary).not.toBeNull();
+    expect(state.activeLedgerSummary?.id).toBe(summaryPayload.id);
+    expect(state.activeLedgerSummary?.metrics.isAsmNegative).toBe(false);
+    expect(state.activeLedgerSummary?.counts.paid).toBe(2);
   });
 
-  test("S3: only non-ongoing ledgers (reconciling / settled) → hasActiveLedger false", async () => {
+  test("S3: only non-ongoing ledgers (reconciling / settled) → hasActiveLedger false, no summary", async () => {
     const state = await createLedgerQueries(
       withLedgers([ledgerRow("2026-05-01", "reconciling"), ledgerRow("2026-06-01", "settled")]),
     ).getFinanceHomeState("2026-07-10");
 
     expect(state.hasActiveLedger).toBe(false);
+    expect(state.activeLedgerSummary).toBeNull();
   });
 });
 

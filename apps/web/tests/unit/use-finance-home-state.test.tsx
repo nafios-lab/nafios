@@ -19,8 +19,31 @@ type QueryResult = { data: unknown; error: unknown };
 // The result the fake browser client resolves to — swapped per test. Read at
 // await-time, so the memoized `getFinanceClient()` singleton stays correct.
 let nextResult: QueryResult = { data: [], error: null };
+// The `get_ledger_summary` RPC payload for the ongoing ledger — swapped per test
+// the same way. Defaults to a NULL summary (no ongoing ledger consults it).
+let nextSummary: QueryResult = { data: null, error: null };
 
-/** A supabase-js-shaped, thenable builder — the shared repo-test idiom. */
+/** The `get_ledger_summary` jsonb payload (money as text, carried_over in the
+ *  DB's snake_case label) the RPC returns for an ongoing ledger. The mapping is
+ *  covered in the finance package; here we only need a valid shape to prove it
+ *  reaches the hook's `activeLedgerSummary`. */
+const summaryPayload = {
+  id: "id-2026-06-01",
+  month: "2026-06-01",
+  status: "ongoing",
+  opening_balance: "1000.00",
+  max_capped: "1500.00",
+  col: "800.00",
+  asm_contribution: "200.00",
+  health_margin: "500.00",
+  is_asm_negative: false,
+  outstanding: { count: 1, total: "100.00" },
+  envelope_counts: { total: 4, paid: 2, pending: 1, skipped: 1, carried_over: 0 },
+};
+
+/** A supabase-js-shaped, thenable builder — the shared repo-test idiom. `list()`
+ *  chains `from().select().order()`; `getLedgerSummary` reads through `.rpc(...)`
+ *  (thenable the same way), resolving to `nextSummary`. */
 function fakeBrowserClient() {
   const builder: Record<string, unknown> = {};
   for (const m of [
@@ -37,7 +60,11 @@ function fakeBrowserClient() {
   }
   // biome-ignore lint/suspicious/noThenProperty: deliberate query-builder stub
   builder.then = (resolve: (v: QueryResult) => void) => resolve(nextResult);
-  return { from: () => builder };
+  const rpcResult: Record<string, unknown> = {
+    // biome-ignore lint/suspicious/noThenProperty: deliberate rpc-result stub
+    then: (resolve: (v: QueryResult) => void) => resolve(nextSummary),
+  };
+  return { from: () => builder, rpc: () => rpcResult };
 }
 
 mock.module("@nafios/finance", () => ({
@@ -76,6 +103,7 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   nextResult = { data: [], error: null };
+  nextSummary = { data: null, error: null };
 });
 afterEach(cleanup);
 
@@ -94,12 +122,18 @@ describe("useFinanceHomeState", () => {
     expect(typeof result.current.data?.isWithinLeadDay).toBe("boolean");
   });
 
-  test("an ongoing ledger → hasActiveLedger true", async () => {
+  test("an ongoing ledger → hasActiveLedger true with its summary card", async () => {
     nextResult = { data: [ledgerRow("2026-06-01", "ongoing")], error: null };
+    nextSummary = { data: summaryPayload, error: null };
     const { result } = renderHook(() => useFinanceHomeState(), { wrapper: Wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.hasActiveLedger).toBe(true);
+    // The ongoing ledger's get_ledger_summary payload is awaited and mapped
+    // through onto the hook state (not left null).
+    expect(result.current.data?.activeLedgerSummary).not.toBeNull();
+    expect(result.current.data?.activeLedgerSummary?.id).toBe(summaryPayload.id);
+    expect(result.current.data?.activeLedgerSummary?.counts.paid).toBe(2);
   });
 
   test("only non-ongoing ledgers → hasActiveLedger false", async () => {

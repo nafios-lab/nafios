@@ -33,6 +33,7 @@ export interface FinanceHomeProps {
  * Ledgers` render below the hero in BOTH branches (Scenario 4).
  */
 export function FinanceHome({ seam: state }: FinanceHomeProps) {
+  console.log(state.activeLedgerSummary);
   return (
     <section className={FINANCE_LEFT_COLUMN_CLASS}>
       {/* Hero — swapped by the display decision. */}
