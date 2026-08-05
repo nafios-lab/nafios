@@ -56,7 +56,8 @@ Rationale: native ordering (`<`, `<=`, `max`), trivial cursor advance (`next_due
 **Rejected:** `char(7)`/`text` `'YYYY-MM'` — lexical ordering happens to work but date math doesn't, and it invites malformed values. **Rejected:** `int` (`year*12+month`) — compact and orderable but unreadable in psql and awkward for humans debugging.
 
 ### D4 — Native Postgres `ENUM` types
-One `CREATE TYPE … AS ENUM` per closed set (`ledger_status`, `envelope_status`, `template_type`, `recurring_template_status`, `account_type`, `person_relationship`, `max_capped_mode`, `max_capped_behavior`, `obligation_kind`, `carry_over_status`). Drizzle's `pgEnum` maps directly.
+One `CREATE TYPE … AS ENUM` per closed set (`ledger_status`, `envelope_status`, `template_type`, `recurring_template_status`, `account_type`, `max_capped_mode`, `max_capped_behavior`, `obligation_kind`, `carry_over_status`). Drizzle's `pgEnum` maps directly.
+> **EF1.4 update:** `person_relationship` was dropped — the `person` table was deprecated in favour of reusing the auth-epic `public.family_members` (whose `relationship` is a `text` CHECK, not a finance enum). Nine enums, not ten.
 Rationale: storage-efficient, self-documenting, rejects invalid values at the DB boundary. These sets are stable; the one foreseeable growth (`obligation_kind` in Phase 2) only ever *adds* members (`ALTER TYPE … ADD VALUE`, which is online).
 **Naming seam:** the `'carried-over'` domain literal becomes the `carried_over` enum label (Postgres identifiers forbid hyphens). The E2 mapping layer owns the translation — flagged in E1.2 §3.
 **Rejected:** `text` + `CHECK (col in (…))` — easier to mutate but loses the named-type self-documentation and is more error-prone across tables.
@@ -103,7 +104,7 @@ user_id uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CAS
 - `NOT NULL` is a safety net: a `service_role` insert with no auth context yields `auth.uid() = NULL` and **fails**, forcing explicit ownership in headless paths (seeds, jobs).
 - `ON DELETE CASCADE` from `auth.users` means deleting an account cleans up all their finance data.
 
-**Ownership is denormalized onto child tables** (`envelope`, `carry_over`, `ledger_settlement_summary`, `opening_balance_adjustment`) too — not just the roots. Rationale: RLS policies on child tables then read a local `user_id` column instead of a join/subquery to the parent, which is the [Supabase-recommended pattern](https://supabase.com/docs/guides/database/postgres/row-level-security) for fast, index-friendly policies. Cross-row consistency (child `user_id` = parent `user_id`) holds by construction because every insert stamps `auth.uid()`; the composite-FK hardening option is noted in §7.
+**Ownership is denormalized onto child tables** (`envelope`, `carry_over`, `ledger_settlement_summary`, `opening_balance_adjustment`) too — not just the roots. Rationale: RLS policies on child tables then read a local `user_id` column instead of a join/subquery to the parent, which is the [Supabase-recommended pattern](https://supabase.com/docs/guides/database/postgres/row-level-security) for fast, index-friendly policies. Cross-row consistency (child `user_id` = parent `user_id`) holds by construction because every insert stamps `auth.uid()`, and is now DB-enforced via composite `(child_col, user_id)` FKs (EF1.11 hardening — see §7.7).
 
 **Uniqueness becomes per-user:** `UNIQUE(user_id, month)` on `monthly_ledger`, the one-ongoing partial index partitions by `user_id`, and `finance_settings` is `UNIQUE(user_id)` (D8). See §4.
 
@@ -135,7 +136,7 @@ Full policy SQL in **§8**.
 
 > 📄 **The model lives in [`finance-schema.dbml`](./finance-schema.dbml)** — the single source of truth for the schema. Paste it into [dbdiagram.io](https://dbdiagram.io) to render the ERD.
 >
-> 10 tables (`category`, `account`, `person`, `template`, `monthly_ledger`, `envelope`, `carry_over`, `ledger_settlement_summary`, `finance_settings`, `opening_balance_adjustment`) and 10 enums. `Ref` lines commented `[soft]` are for ERD readability only — per **D9** they are generated WITHOUT a DB foreign-key constraint. CHECKs and the partial unique index that DBML can't express are in §4 below.
+> 9 finance tables (`category`, `account`, `template`, `monthly_ledger`, `envelope`, `carry_over`, `ledger_settlement_summary`, `finance_settings`, `opening_balance_adjustment`) and 9 enums, plus the reused auth-epic `family_members` (shown as a stub). **EF1.4:** the planned `person` table was never built — linked-member defaults reuse `public.family_members` (`template.default_linked_member_id`, `envelope.linked_member_id`). `Ref` lines commented `[soft]` are for ERD readability only — per **D9** they are generated WITHOUT a DB foreign-key constraint. CHECKs and the partial unique index that DBML can't express are in §4 below.
 
 ---
 
@@ -224,9 +225,9 @@ All access is RLS-filtered on `user_id` (D13), so the hot-path indexes **lead wi
 | `idx_adhoc_library (user_id, type, archived, last_used_month)` | flat adhoc library, most-recently-used first | template §8; E6.6 |
 | `idx_envelope_ledger (user_id, ledger_id)` | all envelopes for a ledger (the working surface) | ledger §1; E11.1 |
 | `idx_envelope_template_status (user_id, template_id, status)` | paid-count for `occurrencesRemaining` (D10); outstanding COs | template §3; E6.4 |
-| `idx_envelope_person (user_id, linked_person_id)` | annual outflow tied to a Person | domain §4; E13.3 |
+| `idx_envelope_member (user_id, linked_member_id)` | annual outflow tied to a family member (EF1.4; was `idx_envelope_person`) | domain §4; E13.3 |
 | `idx_carryover_template_status (user_id, template_id, status)` | a template's outstanding-CO panel | template §6; E7.2 |
-| `(user_id)` on `account`, `person`, `ledger_settlement_summary`, `opening_balance_adjustment` | RLS predicate + per-user listing | D13 |
+| `(user_id)` on `account`, `ledger_settlement_summary`, `opening_balance_adjustment` | RLS predicate + per-user listing | D13 |
 
 ---
 
@@ -263,7 +264,7 @@ All access is RLS-filtered on `user_id` (D13), so the hot-path indexes **lead wi
 4. **`updated_at` maintenance** — DB trigger vs Drizzle `$onUpdate`. Lean Drizzle-side for portability; confirm.
 5. **`carry_over` vs envelope-derived panel (D6)** — sanity-check the first-class table against the E7 implementation once that engine is built; collapse it if the kill-reason/lock turn out to live elsewhere.
 6. **Audit scope** — is `opening_balance_adjustment` enough, or do we want a general `finance_audit_log` (kills, terminations, maxCapped edits)? MVP-minimal for now; revisit if PA-layer needs a unified history feed.
-7. **Cross-owner integrity hardening (D12)** — denormalized `user_id` on children stays consistent by construction (every insert stamps `auth.uid()`), but nothing *forces* `envelope.user_id = ledger.user_id` at the DB. Optional hardening: composite FK `envelope (ledger_id, user_id) → monthly_ledger (id, user_id)` (needs `UNIQUE(id, user_id)` on the parent). Worth it, or trust the insert path? **Decide before E2.**
+7. **Cross-owner integrity hardening (D12)** — ✅ **RESOLVED — hardening adopted (EF1.11).** Migration `20260701000004_finance_ownership_hardening.sql` added `UNIQUE (id, user_id)` on each owner-rooted parent and converted every hard child FK to a composite `(child_col, user_id) → parent (id, user_id)`, so a child can only reference a same-owner parent (`ON DELETE SET NULL` uses the PG15+ column-list form to null only the link column, not `user_id`). **Known gap:** the two `family_members` FKs (`envelope.linked_member_id`, `template.default_linked_member_id`) stay single-column — `family_members` is owned via `profile_id`, has no `user_id`, and RLS-disabled (ADR-0019); closing that needs `family_members` to gain a `user_id` or a trigger-based owner check (tracked separately).
 8. **`auth.uid()` under `service_role`** — confirm seeds/jobs always set `user_id` explicitly (the `NOT NULL` default will otherwise reject the row — intended, but the seed script must comply, E2.5).
 9. **PA-layer access** — when the NafiOS PA writes finance data on the user's behalf, does it act as the user (user-scoped JWT, RLS applies) or via `service_role` (bypasses RLS, must self-scope)? Likely the former; confirm when the PA integration is specced (domain §6.5).
 
@@ -276,8 +277,9 @@ Ownership (D12) + RLS (D13) together guarantee the database **physically cannot*
 ### 8.1 Ownership column (every table)
 
 ```sql
--- Applied to: category, account, person, template, monthly_ledger, envelope,
+-- Applied to: category, account, template, monthly_ledger, envelope,
 --             carry_over, ledger_settlement_summary, finance_settings, opening_balance_adjustment
+-- NOT family_members — reused from the auth epic (EF1.4), owned via profile_id, RLS-disabled (ADR-0019).
 ALTER TABLE <t>
   ADD COLUMN user_id uuid NOT NULL DEFAULT auth.uid()
     REFERENCES auth.users (id) ON DELETE CASCADE;
@@ -313,5 +315,6 @@ RLS is row-visibility only. It does **not** enforce the behavioral invariants �
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.3 | 2026-08-06 | NafiOS Foundation | **Reconciled to shipped migrations.** EF1.4: dropped the `person` table + `person_relationship` enum — linked-member defaults reuse the auth-epic `public.family_members` (`template.default_linked_member_id`, `envelope.linked_member_id`; index `idx_envelope_member`). §7.7 (cross-owner hardening) marked **RESOLVED** — EF1.11 adopted composite `(child_col, user_id)` FKs (migration `20260701000004`), with the two `family_members` FKs a known single-column gap. Now 9 finance tables + 9 enums. DBML + layout updated to match. |
 | 0.2 | 2026-06-26 | NafiOS Foundation | **Ownership & RLS for Supabase.** Reworked D12 from "single-user, no `user_id`" to ownership on every table (`user_id → auth.users(id)`, `DEFAULT auth.uid()`, `ON DELETE CASCADE`), denormalized onto child tables for fast RLS. Added D13 (RLS enabled + owner-isolation policy). Made uniqueness per-user (`UNIQUE(user_id, month)`; one-ongoing partial index per user; `finance_settings` `UNIQUE(user_id)`, dropping the `singleton` column). New §8 (migration recipe), updated §1 conventions, §4 constraints, §5 indexes (lead with `user_id`), §6 invariant map (+ row-isolation), §7 open questions. Schema bumped to D1–D13. |
 | 0.1 | 2026-06-26 | NafiOS Foundation | Initial DB design brainstorm. Postgres conventions; decisions D1–D12; full DBML model (10 tables, 10 enums); CHECK/partial-index constraint appendix; index→query and invariant→enforcement maps; open questions. Storage counterpart to E1.2. |

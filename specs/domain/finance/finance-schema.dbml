@@ -7,6 +7,17 @@
 //  defaulting to auth.uid(). RLS is enabled per table; the owner-isolation
 //  policy + per-user uniqueness indexes live in finance-db-design.md §4/§8.
 //  Ref lines marked "[soft]" are ERD-only — per D9 they get NO FK constraint.
+//
+//  Person reuse (EF1.4): the `person` table was deprecated before build; the
+//  linked-member defaults reuse the auth-epic public.family_members instead
+//  (a stub below, like auth.users). The person_relationship enum was dropped.
+//
+//  Ownership hardening (EF1.11): hard child FKs to owner-rooted parents are
+//  COMPOSITE — (child_col, user_id) -> parent (id, user_id) — so a child can
+//  only reference a same-owner parent. DBML can't express composite FKs, so
+//  the Ref lines below show them single-column; see finance-db-design.md §7.
+//  The two family_members FKs stay single-column (KNOWN GAP — family_members
+//  has no user_id and RLS-disabled; owned via profile_id, ADR-0019).
 // ─────────────────────────────────────────────
 
 Project nafios_finance {
@@ -52,12 +63,8 @@ Enum account_type {
   other
 }
 
-Enum person_relationship {
-  spouse
-  parent
-  child
-  other
-}
+// person_relationship: DROPPED (EF1.4). family_members.relationship is a
+// text CHECK (spouse|child|parent|sibling|other), not a finance enum.
 
 Enum max_capped_mode {
   hard_amount
@@ -119,19 +126,17 @@ Table account {
 }
 Ref: account.user_id > auth.users.id [delete: cascade]
 
-Table person {
-  id           uuid                [pk, default: `gen_random_uuid()`]
-  user_id      uuid                [not null, default: `auth.uid()`, note: 'owner (D12, RLS)']
-  name         varchar(120)        [not null]
-  relationship person_relationship [not null]
-  created_at   timestamptz         [not null, default: `now()`]
-  updated_at   timestamptz         [not null, default: `now()`]
-
-  indexes {
-    (user_id)
-  }
+// Managed by the auth/profile epic — stub for FK/ERD reference ONLY. Do NOT
+// create or migrate this table here; it already exists (see the
+// create_family_members migration). Owned via profile_id (NOT user_id), RLS
+// DISABLED (app-layer auth, ADR-0019). Reused by finance for linked-member
+// defaults (EF1.4), replacing the deprecated `person` table.
+Table family_members {
+  id           uuid [pk]
+  profile_id   uuid [not null, note: 'owner via profiles(id); NOT user_id']
+  name         text [not null]
+  relationship text [not null, note: "CHECK: spouse|child|parent|sibling|other"]
 }
-Ref: person.user_id > auth.users.id [delete: cascade]
 
 // ===== Template (D5 — single discriminated table) =====
 Table template {
@@ -144,7 +149,7 @@ Table template {
   default_amount            numeric(12,2) [not null]
   default_remark            text
   default_payment_source_id uuid
-  default_linked_person_id  uuid
+  default_linked_member_id  uuid          [note: 'reuses family_members (EF1.4); was default_linked_person_id']
 
   // recurring-only (NULL for adhoc) — presence enforced by CHECK (see finance-db-design.md §4)
   next_due_month            date          [note: 'first-of-month (D3); cursor']
@@ -168,8 +173,8 @@ Table template {
 }
 Ref: template.user_id                   > auth.users.id [delete: cascade]
 Ref: template.category_id               > category.id   [delete: restrict]
-Ref: template.default_payment_source_id > account.id    [delete: set null]
-Ref: template.default_linked_person_id  > person.id     [delete: set null]
+Ref: template.default_payment_source_id > account.id           [delete: set null]
+Ref: template.default_linked_member_id  > family_members.id     [delete: set null]
 
 // ===== Monthly Ledger =====
 // NOTE: derived metrics (COL/HM/ASM/Outstanding/Amendments) are NOT stored (D11).
@@ -203,7 +208,7 @@ Table envelope {
   paid_at                  timestamptz     [note: 'non-null iff status=paid']
   payment_source_id        uuid
   remark                   text
-  linked_person_id         uuid
+  linked_member_id         uuid            [note: 'reuses family_members (EF1.4); was linked_person_id']
   sort_order               integer         [not null, default: 0]
   template_id              uuid            [note: 'soft ref (D9); NULL=manual; may be orphaned']
   carried_from_envelope_id uuid            [note: 'soft ref (D9); set => dirty/carried-over origin']
@@ -215,15 +220,15 @@ Table envelope {
   indexes {
     (user_id, ledger_id)            [name: 'idx_envelope_ledger']
     (user_id, template_id, status)  [name: 'idx_envelope_template_status']
-    (user_id, linked_person_id)     [name: 'idx_envelope_person']
+    (user_id, linked_member_id)     [name: 'idx_envelope_member']
     (category_id)
   }
 }
 Ref: envelope.user_id           > auth.users.id     [delete: cascade]
 Ref: envelope.ledger_id         > monthly_ledger.id [delete: cascade]
 Ref: envelope.category_id       > category.id       [delete: restrict]
-Ref: envelope.payment_source_id > account.id        [delete: set null]
-Ref: envelope.linked_person_id  > person.id         [delete: set null]
+Ref: envelope.payment_source_id > account.id            [delete: set null]
+Ref: envelope.linked_member_id  > family_members.id      [delete: set null]
 // soft refs (D9) — NO FK constraint generated:
 //   envelope.template_id              -> template.id
 //   envelope.carried_from_envelope_id -> envelope.id
