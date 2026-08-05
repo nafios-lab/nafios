@@ -70,5 +70,7 @@ export {
   type FinanceHomeState,
   type LedgerQueries,
 } from "./internal/queries/ledger-queries";
-// The persisted-ledger shape EF3.10's read surface builds on.
+// The persisted-ledger shape EF3.10's read surface builds on. The summary-card
+// read shape (`LedgerSummaryCard`) + its `EnvelopeStatusCounts` breakdown are pure
+// domain types — exported via the domain barrel above, not from here.
 export type { LedgerHeader } from "./internal/repositories/ledger.repo";

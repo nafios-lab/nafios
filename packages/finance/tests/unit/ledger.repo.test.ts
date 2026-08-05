@@ -3,8 +3,10 @@ import type { PostgrestError } from "@nafios/supabase-core";
 import { decodeMoney, decodeMonth } from "../../src/domain";
 import type { FinanceClient } from "../../src/internal/client";
 import { FinanceDataError } from "../../src/internal/errors";
-import type { LedgerRow } from "../../src/internal/mappers/ledger.mapper";
-import { createLedgerRepository } from "../../src/internal/repositories/ledger.repo";
+import {
+  createLedgerRepository,
+  type LedgerRow,
+} from "../../src/internal/repositories/ledger.repo";
 
 // These are UNIT tests over the repository's call-shaping and error-mapping
 // against a FAKE client — no live DB. The full §6 behavior (real RLS, real
@@ -45,6 +47,12 @@ function makeClient(result: QueryResult) {
   const client = {
     from: (...args: unknown[]) => {
       calls.push(["from", ...args]);
+      return builder;
+    },
+    // `.rpc(...)` is thenable like the query builder — awaiting it resolves to the
+    // configured result (the get_ledger_summary path uses this, not `.from`).
+    rpc: (...args: unknown[]) => {
+      calls.push(["rpc", ...args]);
       return builder;
     },
   };
@@ -156,6 +164,49 @@ describe("findById / findByMonth / findOngoing — null on no row, error mapped"
       error: pgError({ code: "42501", message: "denied" }),
     });
     await expect(createLedgerRepository(client).findById("x")).rejects.toBeInstanceOf(
+      FinanceDataError,
+    );
+  });
+});
+
+describe("getLedgerSummary — RPC-backed summary card, null on missing", () => {
+  // The get_ledger_summary jsonb payload (money as text, counts as integers,
+  // carried_over in the DB's snake_case label). The mapper's exact decoding is
+  // covered in ledger-summary.mapper.test.ts; here we assert the call-shaping.
+  const summaryPayload = {
+    id: "11111111-1111-1111-1111-111111111111",
+    month: "2027-01-01",
+    status: "ongoing",
+    opening_balance: "7152.35",
+    max_capped: "6415.00",
+    col: "4307.28",
+    asm_contribution: "2845.07",
+    health_margin: "2107.72",
+    is_asm_negative: false,
+    outstanding: { count: 3, total: "1200.00" },
+    envelope_counts: { total: 12, paid: 5, pending: 3, skipped: 2, carried_over: 2 },
+  };
+
+  test("calls the get_ledger_summary RPC with p_ledger_id and maps the payload", async () => {
+    const { client, calls } = makeClient({ data: summaryPayload, error: null });
+    const card = await createLedgerRepository(client).getLedgerSummary("id-1");
+    expect(argsOf(calls, "rpc")).toEqual(["get_ledger_summary", { p_ledger_id: "id-1" }]);
+    expect(card?.id).toBe("11111111-1111-1111-1111-111111111111");
+    expect(card?.metrics.isAsmNegative).toBe(false);
+    expect(card?.counts.carriedOver).toBe(2);
+  });
+
+  test("returns null when the RPC yields no payload (missing / not owned)", async () => {
+    const { client } = makeClient({ data: null, error: null });
+    expect(await createLedgerRepository(client).getLedgerSummary("missing")).toBeNull();
+  });
+
+  test("maps an RPC failure to FinanceDataError", async () => {
+    const { client } = makeClient({
+      data: null,
+      error: pgError({ code: "42501", message: "denied" }),
+    });
+    await expect(createLedgerRepository(client).getLedgerSummary("x")).rejects.toBeInstanceOf(
       FinanceDataError,
     );
   });

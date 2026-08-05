@@ -33,7 +33,7 @@ import type { LedgerStatus } from "./monthly-ledger";
  * so the repository (EF3.6/EF3.10) can pass its ledgers directly and test fixtures
  * stay minimal — same "accepts a minimal shape" discipline as computeLedgerMetrics.
  */
-export interface LedgerSummary {
+export interface LedgerMonthStatus {
   readonly month: Month; // EF3.1
   readonly status: LedgerStatus; // EF3.2
 }
@@ -133,7 +133,7 @@ export function isWithinCreationWindow(today: string, leadDays: number): boolean
 export function resolveCreationState(input: {
   readonly today: string; // caller-supplied "YYYY-MM-DD"; no clock read
   readonly leadDays: number; // EF3 passes 7; clamped to 1–7 (fractional floored)
-  readonly ledgers: readonly LedgerSummary[]; // all of the user's existing ledgers, any status/order
+  readonly ledgers: readonly LedgerMonthStatus[]; // all of the user's existing ledgers, any status/order
 }): CreationState {
   const { today, leadDays, ledgers } = input;
 

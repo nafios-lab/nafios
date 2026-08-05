@@ -5,22 +5,16 @@
 // envelope mapper (EF3.8) copies; the discipline (never touch a raw money/date
 // string outside EF3.1's codecs) is the reusable rule.
 
-import type { Tables, TablesInsert } from "@nafios/database";
+import type { TablesInsert } from "@nafios/database";
 import { decodeMonth, encodeMonth } from "@nafios/datetime";
+import type { LedgerSummaryCard } from "../../domain";
 import { decodeMoney, encodeMoney } from "../../domain/money";
-import type { LedgerHeader, NewLedger } from "../repositories/ledger.repo";
-
-/**
- * The monthly_ledger columns a LedgerHeader is built from — every column except
- * `user_id` (RLS-scoped, never surfaced to the domain). The repository selects
- * exactly these. numeric(12,2) columns arrive from the SDK as strings despite
- * the generated `number` type (see the column comment in the EF1.1 migration);
- * the mapper is where that reality is reconciled.
- */
-export type LedgerRow = Pick<
-  Tables<"monthly_ledger">,
-  "id" | "month" | "opening_balance" | "max_capped" | "status" | "created_at" | "settled_at"
->;
+import type {
+  LedgerHeader,
+  LedgerRow,
+  LedgerSummaryDTO,
+  NewLedger,
+} from "../repositories/ledger.repo";
 
 /**
  * READ: monthly_ledger row → LedgerHeader. Decodes money via decodeMoney and the
@@ -61,5 +55,42 @@ export function newLedgerToInsertRow(input: NewLedger): TablesInsert<"monthly_le
     opening_balance: encodeMoney(input.openingBalance) as unknown as number,
     max_capped: encodeMoney(input.maxCapped) as unknown as number,
     status: input.status ?? "ongoing",
+  };
+}
+
+/**
+ * READ: `get_ledger_summary` payload → LedgerSummaryCard. Decodes every money
+ * field via decodeMoney (col / asm_contribution / health_margin /
+ * outstanding.total — asm & health MAY be negative, which decodeMoney handles)
+ * and the first-of-month DATE via decodeMonth (EF3.1); `status` maps 1:1 (the DB
+ * enum values ARE LedgerStatus). `envelope_counts.carried_over` (DB snake_case)
+ * becomes `carriedOver` — the summary card's counterpart to the envelope mapper's
+ * `carried_over ↔ carried-over` seam. A malformed value throws EF3.1's CodecError
+ * here, NOT a FinanceDataError (that is strictly for query failures).
+ */
+export function ledgerSummaryDTOToCard(payload: LedgerSummaryDTO): LedgerSummaryCard {
+  return {
+    id: payload.id,
+    month: decodeMonth(payload.month),
+    status: payload.status,
+    openingBalance: decodeMoney(payload.opening_balance),
+    maxCapped: decodeMoney(payload.max_capped),
+    metrics: {
+      col: decodeMoney(payload.col),
+      healthMargin: decodeMoney(payload.health_margin),
+      asmContribution: decodeMoney(payload.asm_contribution),
+      outstanding: {
+        count: payload.outstanding.count,
+        total: decodeMoney(payload.outstanding.total),
+      },
+      isAsmNegative: payload.is_asm_negative,
+    },
+    counts: {
+      total: payload.envelope_counts.total,
+      paid: payload.envelope_counts.paid,
+      pending: payload.envelope_counts.pending,
+      skipped: payload.envelope_counts.skipped,
+      carriedOver: payload.envelope_counts.carried_over,
+    },
   };
 }

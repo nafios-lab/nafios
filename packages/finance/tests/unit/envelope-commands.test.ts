@@ -5,7 +5,7 @@ import type { FinanceClient } from "../../src/internal/client";
 import { createEnvelopeCommands } from "../../src/internal/commands/envelope-commands";
 import { FinanceDataError } from "../../src/internal/errors";
 import type { EnvelopeRow } from "../../src/internal/mappers/envelope.mapper";
-import type { LedgerRow } from "../../src/internal/mappers/ledger.mapper";
+import type { LedgerRow } from "../../src/internal/repositories/ledger.repo";
 
 // UNIT tests over the envelope commands' COMPOSITION + the shared mutability gate
 // against a FAKE client — no live DB. They pin every pre-write rejection (no

@@ -6,7 +6,7 @@
 // migration:
 //   • the internal `createLedgerRepository(client).list()` (EF3.6) — the user's
 //     ledgers, RLS-scoped, chronological (a `LedgerHeader[]`, structurally the
-//     resolver's `LedgerSummary[]`), and
+//     resolver's `LedgerMonthStatus[]`), and
 //   • the pure `resolveCreationState` / `addMonths` (EF3.4/EF3.1) — the Lead-Day
 //     window + openable-month math.
 //

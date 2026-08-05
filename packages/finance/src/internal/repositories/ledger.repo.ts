@@ -11,12 +11,17 @@
 // resolves and the owner_all RLS policy scopes all reads/writes; inserts NEVER
 // set user_id (the DB default auth.uid() fills it).
 
+import type { Tables } from "@nafios/database";
 import { encodeMonth, type Month } from "@nafios/datetime";
 import type { Money } from "../../domain/money";
-import type { LedgerStatus, MonthlyLedger } from "../../domain/monthly-ledger";
+import type { LedgerStatus, LedgerSummaryCard, MonthlyLedger } from "../../domain/monthly-ledger";
 import type { FinanceClient } from "../client";
 import { mapPostgrestError } from "../errors";
-import { type LedgerRow, newLedgerToInsertRow, rowToLedgerHeader } from "../mappers/ledger.mapper";
+import {
+  ledgerSummaryDTOToCard,
+  newLedgerToInsertRow,
+  rowToLedgerHeader,
+} from "../mappers/ledger.mapper";
 
 /**
  * The PERSISTED ledger — a MonthlyLedger WITHOUT its envelopes. Everything the
@@ -26,6 +31,49 @@ import { type LedgerRow, newLedgerToInsertRow, rowToLedgerHeader } from "../mapp
  * it makes it a TYPE ERROR to run computeLedgerMetrics on a bare header read.
  */
 export type LedgerHeader = Omit<MonthlyLedger, "envelopes">;
+
+/**
+ * The monthly_ledger columns a LedgerHeader is built from — every column except
+ * `user_id` (RLS-scoped, never surfaced to the domain). The repository selects
+ * exactly these. numeric(12,2) columns arrive from the SDK as strings despite
+ * the generated `number` type (see the column comment in the EF1.1 migration);
+ * the mapper is where that reality is reconciled.
+ */
+export type LedgerRow = Pick<
+  Tables<"monthly_ledger">,
+  "id" | "month" | "opening_balance" | "max_capped" | "status" | "created_at" | "settled_at"
+>;
+
+/**
+ * The exact jsonb shape `get_ledger_summary` emits. Money fields are TEXT
+ * (numeric(12,2) cast ::text in SQL); counts are plain integers; `month` is the
+ * first-of-month DATE string; `status` is the raw enum label; and
+ * `envelope_counts.carried_over` uses the DB snake_case label (this mapper
+ * translates it to the domain's `carriedOver`). The generated bindings only know
+ * the return as `Json`, so the RPC's real contract is pinned here.
+ */
+export interface LedgerSummaryDTO {
+  readonly id: string;
+  readonly month: string; // 'YYYY-MM-01' DATE
+  readonly status: LedgerStatus; // raw enum label
+  readonly opening_balance: string;
+  readonly max_capped: string;
+  readonly col: string;
+  readonly asm_contribution: string; // may be negative
+  readonly health_margin: string; // may be negative
+  readonly is_asm_negative: boolean;
+  readonly outstanding: {
+    readonly count: number;
+    readonly total: string;
+  };
+  readonly envelope_counts: {
+    readonly total: number;
+    readonly paid: number;
+    readonly pending: number;
+    readonly skipped: number;
+    readonly carried_over: number; // DB snake_case label
+  };
+}
 
 /**
  * The header fields a caller supplies to create a ledger. No `id`
@@ -55,6 +103,16 @@ export interface LedgerRepository {
   /** Fetch by id, RLS-scoped to the caller. null when not found OR not owned. */
   findById(id: string): Promise<LedgerHeader | null>;
 
+  /**
+   * The ledger's SUMMARY-CARD payload — header + COL / ASM Contribution / Health
+   * Margin / Outstanding + the per-status envelope counts — in ONE round-trip,
+   * aggregated server-side by the `get_ledger_summary` RPC and RLS-scoped to the
+   * caller. null when the ledger is missing or not owned (mirrors `findById`).
+   * Throws FinanceDataError on a DB failure. The metrics match the pure
+   * `computeLedgerMetrics` to the cent (the migration's DUPLICATION SEAM).
+   */
+  getLedgerSummary(id: string): Promise<LedgerSummaryCard | null>;
+
   /** The caller's ledger for a given month, or null — the uniqueness/conflict
    *  probe EF3.7 uses before opening a month. */
   findByMonth(month: Month): Promise<LedgerHeader | null>;
@@ -64,7 +122,7 @@ export interface LedgerRepository {
   findOngoing(): Promise<LedgerHeader | null>;
 
   /** All the caller's ledgers, chronological by month (ascending). [] when none.
-   *  Satisfies EF3.4's LedgerSummary[] input directly (month + status). */
+   *  Satisfies EF3.4's LedgerMonthStatus[] input directly (month + status). */
   list(): Promise<LedgerHeader[]>;
 
   /**
@@ -107,6 +165,17 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
         throw mapPostgrestError(error);
       }
       return data ? rowToLedgerHeader(data as LedgerRow) : null;
+    },
+
+    async getLedgerSummary(id) {
+      // The RPC aggregates in SQL and returns a single jsonb payload (typed `Json`
+      // by the generated bindings). It returns SQL NULL — surfacing as `data:
+      // null` — when the ledger is missing or not owned, exactly like findById.
+      const { data, error } = await client.rpc("get_ledger_summary", { p_ledger_id: id });
+      if (error) {
+        throw mapPostgrestError(error);
+      }
+      return data ? ledgerSummaryDTOToCard(data as unknown as LedgerSummaryDTO) : null;
     },
 
     async findByMonth(month) {

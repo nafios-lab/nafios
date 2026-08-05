@@ -146,7 +146,7 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
 
       // 3. Openable-month (needs the single list() read — EF3.4). The caller's
       //    ledgers (a LedgerHeader[], which structurally satisfies EF3.4's
-      //    LedgerSummary[]) feed the resolver; `month` must equal an openable
+      //    LedgerMonthStatus[]) feed the resolver; `month` must equal an openable
       //    month (compared via compareMonths). Rejects far-future, back-fill, and
       //    — because a taken month is never offered — any month already taken. A
       //    malformed `today` throws CodecError from the resolver here (§4.3).

@@ -3,12 +3,8 @@ import { encodeMonth } from "@nafios/datetime";
 // EF3.1 codecs to build fixtures without touching raw money/month strings.
 import { decodeMoney, decodeMonth } from "../../src/domain";
 import { encodeMoney } from "../../src/domain/money";
-import {
-  type LedgerRow,
-  newLedgerToInsertRow,
-  rowToLedgerHeader,
-} from "../../src/internal/mappers/ledger.mapper";
-import type { NewLedger } from "../../src/internal/repositories/ledger.repo";
+import { newLedgerToInsertRow, rowToLedgerHeader } from "../../src/internal/mappers/ledger.mapper";
+import type { LedgerRow, NewLedger } from "../../src/internal/repositories/ledger.repo";
 
 // A monthly_ledger row as supabase-js hands it back: numeric(12,2) arrives as a
 // STRING at runtime (the generated Row type lossily says `number`), so the

@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   decodeMonth,
   isWithinCreationWindow,
+  type LedgerMonthStatus,
   type LedgerStatus,
-  type LedgerSummary,
   type Month,
   resolveCreationState,
 } from "../../src/domain";
@@ -15,7 +15,7 @@ const jun = decodeMonth("2026-06-01");
 const jul = decodeMonth("2026-07-01");
 const aug = decodeMonth("2026-08-01");
 
-const ledger = (month: Month, status: LedgerStatus): LedgerSummary => ({ month, status });
+const ledger = (month: Month, status: LedgerStatus): LedgerMonthStatus => ({ month, status });
 
 describe("isWithinCreationWindow — the window boundary (§6 rows 1–10)", () => {
   test("#1 first window day of a 31-day month (31−25=6 < 7)", () => {

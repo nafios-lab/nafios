@@ -7,7 +7,7 @@ import { decodeMoney } from "../../src/domain";
 import type { FinanceClient } from "../../src/internal/client";
 import { createLedgerCommands } from "../../src/internal/commands/create-ledger";
 import { FinanceDataError } from "../../src/internal/errors";
-import type { LedgerRow } from "../../src/internal/mappers/ledger.mapper";
+import type { LedgerRow } from "../../src/internal/repositories/ledger.repo";
 
 // UNIT tests over the create-ledger command's COMPOSITION + ORDERING against a
 // FAKE client — no live DB. They pin the three pre-write rejections (no write),

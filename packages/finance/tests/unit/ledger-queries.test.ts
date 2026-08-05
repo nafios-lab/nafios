@@ -3,8 +3,8 @@ import type { PostgrestError } from "@nafios/supabase-core";
 import { addMonths, isWithinCreationWindow, monthOf } from "../../src/domain";
 import type { FinanceClient } from "../../src/internal/client";
 import { FinanceDataError } from "../../src/internal/errors";
-import type { LedgerRow } from "../../src/internal/mappers/ledger.mapper";
 import { createLedgerQueries } from "../../src/internal/queries/ledger-queries";
+import type { LedgerRow } from "../../src/internal/repositories/ledger.repo";
 
 // UNIT tests over the Finance-Home read surface against a FAKE client — no live
 // DB. The read runs the real internal repository (`list()`) + the pure resolver;

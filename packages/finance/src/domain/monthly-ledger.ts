@@ -10,6 +10,7 @@
 
 import type { Month } from "@nafios/datetime";
 import type { Envelope } from "./envelope";
+import type { LedgerMetrics } from "./ledger-metrics";
 import type { Money } from "./money";
 
 /** A ledger's lifecycle state. `ongoing` (active working month) → `reconciling`
@@ -37,6 +38,47 @@ export interface MonthlyLedger {
   readonly envelopes: readonly Envelope[]; // all line items (EF3.3)
   readonly createdAt: string; // ISO-8601 timestamptz, opaque
   readonly settledAt: string | null; // set iff status === 'settled'
+}
+
+/**
+ * The per-status envelope tally on a ledger — the summary card's status chips
+ * plus the paid/total progress bar. Domain camelCase: the DB's `carried_over`
+ * enum label becomes `carriedOver` here (the mapper owns that seam, the way the
+ * envelope mapper owns `carried_over ↔ carried-over`). `total` counts EVERY
+ * envelope regardless of status, so `paid + pending + skipped + carriedOver === total`.
+ */
+export interface EnvelopeStatusCounts {
+  readonly total: number;
+  readonly paid: number;
+  readonly pending: number;
+  readonly skipped: number;
+  readonly carriedOver: number;
+}
+
+/**
+ * The ledger SUMMARY-CARD read shape — the header + the four headline metrics +
+ * the envelope status breakdown, WITHOUT the envelope rows. Produced by
+ * `getLedgerSummary`, which delegates the aggregation to the `get_ledger_summary`
+ * RPC (the sums/counts are computed server-side, in one round-trip).
+ *
+ * `metrics` reuses the domain `LedgerMetrics` verbatim: the RPC mirrors
+ * `computeLedgerMetrics` to the cent (the DUPLICATION SEAM the migration
+ * documents), so a summary read and the pure engine yield the SAME type — a
+ * consumer treats server-computed and client-computed metrics identically. This
+ * carries no `createdAt` / `settledAt` (the card never shows them and the RPC
+ * omits them), so it is deliberately NOT a `LedgerHeader`.
+ *
+ * Distinct from creation-window's `LedgerMonthStatus` (`{ month, status }`, the
+ * resolver's input row) — a different, unrelated shape.
+ */
+export interface LedgerSummaryCard {
+  readonly id: string;
+  readonly month: Month;
+  readonly status: LedgerStatus;
+  readonly openingBalance: Money;
+  readonly maxCapped: Money;
+  readonly metrics: LedgerMetrics;
+  readonly counts: EnvelopeStatusCounts;
 }
 
 /** True while the ledger's envelopes/amounts may still change (`ongoing` or
