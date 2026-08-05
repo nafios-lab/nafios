@@ -31,7 +31,7 @@ function FinanceHomePage() {
 
       {/* Right — TEMPLATES panel. Presentational placeholder only (out of scope
           for EF3.10): no data, no handlers. */}
-      <Card className="flex min-h-[45vh] flex-1 flex-col lg:min-h-0">
+      <Card className="flex min-h-[45vh] flex-1 flex-col lg:min-h-0 lg:flex-2">
         <CardHeader className="flex-row items-center gap-2 border-b border-border pb-4">
           <LayoutTemplate className="size-4 text-muted-foreground" />
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

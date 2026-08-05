@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { type FinanceHomeState, monthOf } from "@nafios/finance";
+import {
+  type FinanceHomeState,
+  type LedgerSummaryCard,
+  moneyFromCents,
+  monthOf,
+} from "@nafios/finance";
 import { cleanup, render, screen } from "@testing-library/react";
 import { FinanceHome } from "../../src/features/finance/components/finance-home.tsx";
 
@@ -9,6 +14,7 @@ afterEach(cleanup);
 function makeSeam(overrides: Partial<FinanceHomeState> = {}): FinanceHomeState {
   return {
     hasActiveLedger: false,
+    activeLedgerSummary: null,
     isWithinLeadDay: false,
     currentMonth: monthOf("2026-07-01"),
     nextMonth: monthOf("2026-08-01"),
@@ -17,14 +23,58 @@ function makeSeam(overrides: Partial<FinanceHomeState> = {}): FinanceHomeState {
   };
 }
 
+/**
+ * Build an active-ledger summary — the shape the detail-card hero renders when
+ * `hasActiveLedger` is true. Only the fields the card reads matter; the money
+ * figures are illustrative but internally consistent (the card formats them, it
+ * never re-derives). Pair it with `hasActiveLedger: true` on the seam.
+ */
+function makeSummary(overrides: Partial<LedgerSummaryCard> = {}): LedgerSummaryCard {
+  return {
+    id: "led_july_2026",
+    month: monthOf("2026-07-01"),
+    status: "ongoing",
+    openingBalance: moneyFromCents(715235), // $7,152.35
+    maxCapped: moneyFromCents(500000), // $5,000.00
+    metrics: {
+      col: moneyFromCents(430030), // $4,300.30
+      healthMargin: moneyFromCents(69970), // maxCapped − col
+      asmContribution: moneyFromCents(285205), // opening − col
+      outstanding: { count: 1, total: moneyFromCents(12000) },
+      isAsmNegative: false,
+    },
+    counts: { total: 4, paid: 2, pending: 1, skipped: 1, carriedOver: 0 },
+    ...overrides,
+  };
+}
+
+/** The seam for an active ledger — `hasActiveLedger` + its summary, in step. */
+function activeSeam(summaryOverrides: Partial<LedgerSummaryCard> = {}): Partial<FinanceHomeState> {
+  return { hasActiveLedger: true, activeLedgerSummary: makeSummary(summaryOverrides) };
+}
+
 describe("FinanceHome — display decision (hasActiveLedger)", () => {
-  test("hasActiveLedger true → renders the Ledger Detail Card placeholder, not the empty state", () => {
-    const { container } = render(<FinanceHome seam={makeSeam({ hasActiveLedger: true })} />);
+  test("hasActiveLedger true (+ summary) → renders the Ledger Detail Card, not the empty state", () => {
+    const { container } = render(<FinanceHome seam={makeSeam(activeSeam())} />);
 
     expect(container.querySelector("[data-slot='ledger-detail-card']")).not.toBeNull();
+    // The summary is wired through — the lifecycle pill + a headline metric show.
+    expect(screen.getByText("On-going")).toBeDefined();
+    expect(screen.getByText("Cost of Living")).toBeDefined();
     // The empty state + creation CTAs are absent.
     expect(screen.queryByText("Start your first month")).toBeNull();
     expect(screen.queryByText(/Open .* ledger/)).toBeNull();
+  });
+
+  test("hasActiveLedger true but no summary → falls back to the empty state", () => {
+    // The card only shows when a summary is actually present (the read couples
+    // the two, but the component guards the null case rather than crashing).
+    const { container } = render(
+      <FinanceHome seam={makeSeam({ hasActiveLedger: true, activeLedgerSummary: null })} />,
+    );
+
+    expect(container.querySelector("[data-slot='ledger-detail-card']")).toBeNull();
+    expect(screen.getByText("Start your first month")).toBeDefined();
   });
 
   test("hasActiveLedger false → renders the empty state, not the detail card", () => {
@@ -38,7 +88,7 @@ describe("FinanceHome — display decision (hasActiveLedger)", () => {
     // Even with the window open, an active ledger still shows the detail card
     // and never the creation CTAs.
     const { container } = render(
-      <FinanceHome seam={makeSeam({ hasActiveLedger: true, isWithinLeadDay: true })} />,
+      <FinanceHome seam={makeSeam({ ...activeSeam(), isWithinLeadDay: true })} />,
     );
     expect(container.querySelector("[data-slot='ledger-detail-card']")).not.toBeNull();
     expect(screen.queryByText(/Recommended/)).toBeNull();
@@ -83,11 +133,11 @@ describe("FinanceHome — empty-state scenarios (Lead-Day)", () => {
 });
 
 describe("FinanceHome — placeholders rendered in both branches (Scenario 4)", () => {
-  test.each([
-    ["empty state", false],
-    ["detail card", true],
-  ])("Pending Reconciliation + View Settled Ledgers render with the %s", (_label, hasActiveLedger) => {
-    render(<FinanceHome seam={makeSeam({ hasActiveLedger })} />);
+  test.each<[string, Partial<FinanceHomeState>]>([
+    ["empty state", {}],
+    ["detail card", activeSeam()],
+  ])("Pending Reconciliation + View Settled Ledgers render with the %s", (_label, seamOverrides) => {
+    render(<FinanceHome seam={makeSeam(seamOverrides)} />);
 
     expect(screen.getByText("0 PENDING RECONCILIATION")).toBeDefined();
     expect(screen.getByText("All caught up")).toBeDefined();
