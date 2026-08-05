@@ -588,6 +588,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      get_ledger_summary: { Args: { p_ledger_id: string }; Returns: Json };
       insert_user_profile: {
         Args: {
           p_avatar_url?: string;

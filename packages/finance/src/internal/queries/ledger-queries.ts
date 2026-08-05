@@ -16,7 +16,9 @@
 // the surface reads no clock and stays testable; the browser caller passes its
 // local calendar day (ADR-0026), tests pass a fixed string.
 
-import { addMonths, type Month, resolveCreationState } from "../../domain";
+// import { addMonths, type Month, resolveCreationState } from "../../domain";
+import { addMonths, type Month } from "@nafios/datetime";
+import { resolveCreationState } from "../../domain";
 import type { FinanceClient } from "../client";
 import { createLedgerRepository } from "../repositories/ledger.repo";
 
@@ -77,6 +79,7 @@ export function createLedgerQueries(client: FinanceClient): LedgerQueries {
       // One RLS-scoped read of the user's ledgers; FinanceDataError propagates.
       const list = await ledgers.list();
       const state = resolveCreationState({ today, leadDays: LEAD_DAYS, ledgers: list });
+
       return {
         // 'ongoing' only — reconciling / settled are not the active working surface.
         hasActiveLedger: list.some((ledger) => ledger.status === "ongoing"),
