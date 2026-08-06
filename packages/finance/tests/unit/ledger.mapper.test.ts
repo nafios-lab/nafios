@@ -3,8 +3,16 @@ import { encodeMonth } from "@nafios/datetime";
 // EF3.1 codecs to build fixtures without touching raw money/month strings.
 import { decodeMoney, decodeMonth } from "../../src/domain";
 import { encodeMoney } from "../../src/domain/money";
-import { newLedgerToInsertRow, rowToLedgerHeader } from "../../src/internal/mappers/ledger.mapper";
-import type { LedgerRow, NewLedger } from "../../src/internal/repositories/ledger.repo";
+import {
+  newLedgerToInsertRow,
+  reconPendingLedgerDTOToDomain,
+  rowToLedgerHeader,
+} from "../../src/internal/mappers/ledger.mapper";
+import type {
+  LedgerRow,
+  NewLedger,
+  ReconPendingLedgerDTO,
+} from "../../src/internal/repositories/ledger.repo";
 
 // A monthly_ledger row as supabase-js hands it back: numeric(12,2) arrives as a
 // STRING at runtime (the generated Row type lossily says `number`), so the
@@ -83,5 +91,48 @@ describe("newLedgerToInsertRow — encodes, defaults status, omits DB-owned colu
   test("passes an explicit non-settled status through", () => {
     const insert = newLedgerToInsertRow({ ...base, status: "reconciling" });
     expect(insert.status).toBe("reconciling");
+  });
+});
+
+describe("reconPendingLedgerDTOToDomain — one get_pending_recon_ledgers row → domain", () => {
+  // The RPC row shape: money crosses the wire as TEXT (numeric(12,2) ::text),
+  // month as the first-of-month DATE, counts as plain integers, status always
+  // the raw 'reconciling' enum label.
+  function dto(overrides: Partial<ReconPendingLedgerDTO> = {}): ReconPendingLedgerDTO {
+    return {
+      id: "11111111-1111-1111-1111-111111111111",
+      month: "2027-01-01",
+      status: "reconciling",
+      pending_env_counts: 3,
+      pending_sum_amount: "1200.00",
+      ...overrides,
+    };
+  }
+
+  test("decodes month + money and passes counts/status through (money never floated)", () => {
+    const domain = reconPendingLedgerDTOToDomain(dto());
+    expect(domain.id).toBe("11111111-1111-1111-1111-111111111111");
+    expect(encodeMonth(domain.month)).toBe("2027-01-01");
+    expect(encodeMoney(domain.pendingSumAmount)).toBe("1200.00");
+    expect(domain.pendingEnvCounts).toBe(3);
+    expect(domain.status).toBe("reconciling");
+  });
+
+  test("handles the fully-resolved-but-unsettled row (LEFT JOIN LATERAL → 0 / '0.00')", () => {
+    const domain = reconPendingLedgerDTOToDomain(
+      dto({ pending_env_counts: 0, pending_sum_amount: "0.00" }),
+    );
+    expect(domain.pendingEnvCounts).toBe(0);
+    expect(encodeMoney(domain.pendingSumAmount)).toBe("0.00");
+  });
+
+  test("a malformed month surfaces EF3.1's CodecError (not a FinanceDataError)", () => {
+    expect(() => reconPendingLedgerDTOToDomain(dto({ month: "2027-01-15" }))).toThrow(
+      "month must be the first of the month",
+    );
+  });
+
+  test("a malformed money value surfaces CodecError", () => {
+    expect(() => reconPendingLedgerDTOToDomain(dto({ pending_sum_amount: "not-money" }))).toThrow();
   });
 });

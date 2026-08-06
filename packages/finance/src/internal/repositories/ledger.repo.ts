@@ -14,12 +14,18 @@
 import type { Tables } from "@nafios/database";
 import { encodeMonth, type Month } from "@nafios/datetime";
 import type { Money } from "../../domain/money";
-import type { LedgerStatus, LedgerSummaryCard, MonthlyLedger } from "../../domain/monthly-ledger";
+import type {
+  LedgerStatus,
+  LedgerSummaryCard,
+  MonthlyLedger,
+  ReconPendingLedger,
+} from "../../domain/monthly-ledger";
 import type { FinanceClient } from "../client";
 import { mapPostgrestError } from "../errors";
 import {
   ledgerSummaryDTOToCard,
   newLedgerToInsertRow,
+  reconPendingLedgerDTOToDomain,
   rowToLedgerHeader,
 } from "../mappers/ledger.mapper";
 
@@ -76,6 +82,24 @@ export interface LedgerSummaryDTO {
 }
 
 /**
+ * The exact row shape `get_pending_recon_ledgers` emits — one per `reconciling`
+ * ledger. `pending_sum_amount` is TEXT (numeric(12,2) cast ::text) so money
+ * crosses the wire as a string the Money codec decodes — NEVER a JS float; the
+ * counts are plain integers; `month` is the first-of-month DATE string; `status`
+ * is the raw enum label (always 'reconciling' from this RPC). Mirrors the
+ * money-as-string contract of `LedgerSummaryDTO` above. The RPC returns a SET
+ * (typed as an array by the generated bindings), so the repo reads `data` as
+ * `ReconPendingLedgerDTO[]`.
+ */
+export interface ReconPendingLedgerDTO {
+  readonly id: string;
+  readonly month: string; // 'YYYY-MM-01' DATE
+  readonly status: LedgerStatus; // raw enum label ('reconciling')
+  readonly pending_env_counts: number;
+  readonly pending_sum_amount: string; // numeric(12,2) ::text — decode via decodeMoney
+}
+
+/**
  * The header fields a caller supplies to create a ledger. No `id`
  * (DB gen_random_uuid), no `user_id` (DB default auth.uid() — NEVER set on the
  * authed path), no `createdAt` (DB default now()), no `settledAt` (EF3 never
@@ -112,6 +136,17 @@ export interface LedgerRepository {
    * `computeLedgerMetrics` to the cent (the migration's DUPLICATION SEAM).
    */
   getLedgerSummary(id: string): Promise<LedgerSummaryCard | null>;
+
+  /**
+   * The reconciliation worklist: every `reconciling` ledger for the caller, each
+   * with its unresolved (still 'pending') envelope count + Σ amount, aggregated
+   * server-side by the `get_pending_recon_ledgers` RPC in ONE round-trip and
+   * RLS-scoped to the caller. [] when nothing is reconciling. Throws
+   * FinanceDataError on a DB failure. The 'pending'-only subset mirrors
+   * `getLedgerSummary`'s Outstanding, so a worklist row and that ledger's summary
+   * card agree to the cent (the migration's DUPLICATION SEAM).
+   */
+  listPendingRecon(): Promise<ReconPendingLedger[]>;
 
   /** The caller's ledger for a given month, or null — the uniqueness/conflict
    *  probe EF3.7 uses before opening a month. */
@@ -176,6 +211,19 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
         throw mapPostgrestError(error);
       }
       return data ? ledgerSummaryDTOToCard(data as unknown as LedgerSummaryDTO) : null;
+    },
+
+    async listPendingRecon() {
+      // The RPC aggregates in SQL and returns a SET of rows (typed as an array by
+      // the generated bindings). No arguments: RLS scopes to the caller and the
+      // function filters status = 'reconciling' internally. Empty set → [].
+      const { data, error } = await client.rpc("get_pending_recon_ledgers");
+      if (error) {
+        throw mapPostgrestError(error);
+      }
+      return ((data ?? []) as unknown as ReconPendingLedgerDTO[]).map(
+        reconPendingLedgerDTOToDomain,
+      );
     },
 
     async findByMonth(month) {

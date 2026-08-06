@@ -7,13 +7,14 @@
 
 import type { TablesInsert } from "@nafios/database";
 import { decodeMonth, encodeMonth } from "@nafios/datetime";
-import type { LedgerSummaryCard } from "../../domain";
+import type { LedgerSummaryCard, ReconPendingLedger } from "../../domain";
 import { decodeMoney, encodeMoney } from "../../domain/money";
 import type {
   LedgerHeader,
   LedgerRow,
   LedgerSummaryDTO,
   NewLedger,
+  ReconPendingLedgerDTO,
 } from "../repositories/ledger.repo";
 
 /**
@@ -61,6 +62,7 @@ export function newLedgerToInsertRow(input: NewLedger): TablesInsert<"monthly_le
 /**
  * READ: `get_ledger_summary` payload → LedgerSummaryCard. Decodes every money
  * field via decodeMoney (col / asm_contribution / health_margin /
+ *
  * outstanding.total — asm & health MAY be negative, which decodeMoney handles)
  * and the first-of-month DATE via decodeMonth (EF3.1); `status` maps 1:1 (the DB
  * enum values ARE LedgerStatus). `envelope_counts.carried_over` (DB snake_case)
@@ -92,5 +94,24 @@ export function ledgerSummaryDTOToCard(payload: LedgerSummaryDTO): LedgerSummary
       skipped: payload.envelope_counts.skipped,
       carriedOver: payload.envelope_counts.carried_over,
     },
+  };
+}
+
+/**
+ * READ: one `get_pending_recon_ledgers` row → ReconPendingLedger. Decodes the
+ * first-of-month DATE via decodeMonth and `pending_sum_amount` (numeric(12,2)
+ * cast ::text) via decodeMoney (EF3.1); `status` maps 1:1 (always 'reconciling'
+ * from this RPC) and `pending_env_counts` passes through as a plain integer. The
+ * repo runs each row of the RPC's SET through this. A malformed value throws
+ * EF3.1's CodecError here, NOT a FinanceDataError (that is strictly for query
+ * failures) — the same discipline as ledgerSummaryDTOToCard.
+ */
+export function reconPendingLedgerDTOToDomain(payload: ReconPendingLedgerDTO): ReconPendingLedger {
+  return {
+    id: payload.id,
+    month: decodeMonth(payload.month),
+    status: payload.status,
+    pendingEnvCounts: payload.pending_env_counts,
+    pendingSumAmount: decodeMoney(payload.pending_sum_amount),
   };
 }

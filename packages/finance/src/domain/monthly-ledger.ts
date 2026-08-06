@@ -81,6 +81,14 @@ export interface LedgerSummaryCard {
   readonly counts: EnvelopeStatusCounts;
 }
 
+/** The pending reconciliation ledger derived data  */
+export interface ReconPendingLedger extends Pick<LedgerSummaryCard, "id" | "month" | "status"> {
+  /** Number of pending envs that waiting to be closed or resolved */
+  readonly pendingEnvCounts: number;
+  /** The grand total currency amount of the pending envelopes sum*/
+  readonly pendingSumAmount: Money;
+}
+
 /** True while the ledger's envelopes/amounts may still change (`ongoing` or
  *  `reconciling`); false once `settled` (locked, immutable — monthly-ledger.md §3).
  *  Part of the status model. Does NOT perform transitions — those are command

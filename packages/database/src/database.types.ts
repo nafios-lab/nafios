@@ -589,6 +589,16 @@ export type Database = {
     };
     Functions: {
       get_ledger_summary: { Args: { p_ledger_id: string }; Returns: Json };
+      get_pending_recon_ledgers: {
+        Args: never;
+        Returns: {
+          id: string;
+          month: string;
+          pending_env_counts: number;
+          pending_sum_amount: string;
+          status: Database["public"]["Enums"]["ledger_status"];
+        }[];
+      };
       insert_user_profile: {
         Args: {
           p_avatar_url?: string;

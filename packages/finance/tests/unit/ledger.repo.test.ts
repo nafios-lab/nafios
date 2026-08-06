@@ -212,6 +212,53 @@ describe("getLedgerSummary — RPC-backed summary card, null on missing", () => 
   });
 });
 
+describe("listPendingRecon — RPC-backed worklist, [] on empty, error-mapped", () => {
+  // One get_pending_recon_ledgers row: money as TEXT, counts as integers, month
+  // the first-of-month DATE, status the raw 'reconciling' label. The mapper's
+  // exact decoding is covered in ledger.mapper.test.ts; here we assert the
+  // no-arg RPC call-shaping + the empty-set → [] contract.
+  const reconRow = {
+    id: "11111111-1111-1111-1111-111111111111",
+    month: "2027-01-01",
+    status: "reconciling",
+    pending_env_counts: 3,
+    pending_sum_amount: "1200.00",
+  };
+
+  test("calls the get_pending_recon_ledgers RPC with no args and maps every row", async () => {
+    const { client, calls } = makeClient({
+      data: [reconRow, { ...reconRow, id: "2", month: "2027-02-01" }],
+      error: null,
+    });
+    const rows = await createLedgerRepository(client).listPendingRecon();
+    expect(argsOf(calls, "rpc")).toEqual(["get_pending_recon_ledgers"]);
+    expect(rows.map((r) => r.id)).toEqual(["11111111-1111-1111-1111-111111111111", "2"]);
+    expect(rows[0]?.pendingEnvCounts).toBe(3);
+    expect(rows[0]?.status).toBe("reconciling");
+    expect(rows[0]?.pendingSumAmount).toEqual(decodeMoney("1200.00"));
+  });
+
+  test("returns [] when nothing is reconciling (empty set)", async () => {
+    const { client } = makeClient({ data: [], error: null });
+    expect(await createLedgerRepository(client).listPendingRecon()).toEqual([]);
+  });
+
+  test("returns [] when the RPC yields a null payload", async () => {
+    const { client } = makeClient({ data: null, error: null });
+    expect(await createLedgerRepository(client).listPendingRecon()).toEqual([]);
+  });
+
+  test("maps an RPC failure to FinanceDataError", async () => {
+    const { client } = makeClient({
+      data: null,
+      error: pgError({ code: "42501", message: "denied" }),
+    });
+    await expect(createLedgerRepository(client).listPendingRecon()).rejects.toBeInstanceOf(
+      FinanceDataError,
+    );
+  });
+});
+
 describe("list — chronological, mapped, error-aware", () => {
   test("orders by month ascending and maps every row", async () => {
     const { client, calls } = makeClient({
