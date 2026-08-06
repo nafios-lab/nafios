@@ -424,9 +424,10 @@ to decide between the empty/fresh state and the Ledger Detail Card from real,
 RLS-scoped data. `createLedgerQueries(client)` returns `getFinanceHomeState(today)`,
 which runs the internal `createLedgerRepository(client).list()` once and feeds the
 result into the pure EF3.4 `resolveCreationState` (`leadDays` fixed at **7**) —
-deriving `hasActiveLedger` from the same list (`status === 'ongoing'` only;
-`reconciling` / `settled` do not count) with **no** second `findOngoing()`
-round-trip. `today` is caller-supplied ("YYYY-MM-DD") and passed straight to the
+deriving `fresh_start_ledger` (`list.length === 0`) from the same list. When a
+ledger is `ongoing` (`status === 'ongoing'` only; `reconciling` / `settled` do not
+count) it then reads that ledger's `get_ledger_summary` card into
+`activeLedgerSummary` (`null` otherwise). `today` is caller-supplied ("YYYY-MM-DD") and passed straight to the
 pure resolver, so the surface reads **no clock** (the browser caller passes its
 local calendar day per ADR-0026; tests pass a fixed string). Client-agnostic — it
 takes a `FinanceClient`; the runtime caller is the browser client
@@ -445,12 +446,13 @@ export interface LedgerQueries {
   getFinanceHomeState(today: string): Promise<FinanceHomeState>;
 }
 
-// A UI-ready SUPERSET of the ticket's { hasActiveLedger, isWithinLeadDay, openable }.
-// currentMonth / nextMonth are the always-present CTA labels EF3.10 renders;
-// openable.current / openable.next are a DIFFERENT concept — the months openable
-// right now (null when already taken / out of window).
+// A UI-ready shape the EF3.10 Home consumes. currentMonth / nextMonth are the
+// always-present CTA labels EF3.10 renders; openable.current / openable.next are
+// a DIFFERENT concept — the months openable right now (null when already taken /
+// out of window).
 export interface FinanceHomeState {
-  readonly hasActiveLedger: boolean; // ∃ ledger with status === 'ongoing'
+  readonly fresh_start_ledger: boolean; // list.length === 0 — user never opened a ledger
+  readonly activeLedgerSummary: LedgerSummaryCard | null; // the ongoing ledger's card, else null
   readonly isWithinLeadDay: boolean; // resolveCreationState(...).isWindowOpen
   readonly currentMonth: Month; // monthOf(today) — always present
   readonly nextMonth: Month; // addMonths(currentMonth, 1) — always present

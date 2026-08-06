@@ -29,7 +29,6 @@
 // `/` or `\`, absolute or relative); `setup` is resolved relative to THIS file
 // (tooling/scripts/).
 const PACKAGE_SETUPS = [
-  { match: /(?:^|[\\/])apps[\\/]web[\\/]/, setup: "../../apps/web/tests/setup.ts" },
   { match: /(?:^|[\\/])packages[\\/]ui[\\/]/, setup: "../../packages/ui/tests/setup.ts" },
 ] as const;
 

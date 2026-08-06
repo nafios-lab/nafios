@@ -100,9 +100,10 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   single read the Finance Home consumes. `getFinanceHomeState(today)` runs the
   internal repository's `list()` once and feeds it into the pure creation-window
   resolver (`leadDays = 7`), returning `FinanceHomeState`
-  (`{ hasActiveLedger, isWithinLeadDay, currentMonth, nextMonth, openable }` — a
-  UI-ready superset of the ticket's `{ hasActiveLedger, isWithinLeadDay, openable }`).
-  `hasActiveLedger` is `status === 'ongoing'` only; `today` is caller-supplied
+  (`{ fresh_start_ledger, activeLedgerSummary, isWithinLeadDay, currentMonth, nextMonth, openable }`).
+  `fresh_start_ledger` is `list.length === 0` (the user has never opened a ledger);
+  `activeLedgerSummary` is the ongoing ledger's `get_ledger_summary` card (read only
+  when a ledger is `status === 'ongoing'`, else `null`); `today` is caller-supplied
   ("YYYY-MM-DD") so the surface reads no clock; a repository failure propagates as
   `FinanceDataError`. Types: `LedgerQueries`, `FinanceHomeState`.
 

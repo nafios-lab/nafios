@@ -69,12 +69,13 @@ function withLedgers(rows: LedgerRow[], summary: QueryResult = { data: null, err
   return makeClient({ data: rows, error: null }, summary);
 }
 
-describe("getFinanceHomeState — hasActiveLedger", () => {
-  test("S1: no ledgers → hasActiveLedger false; window + openable per the Lead-Day rule", async () => {
+describe("getFinanceHomeState — fresh start & active ledger summary", () => {
+  test("S1: no ledgers → fresh_start_ledger true, no active summary; window + openable per the Lead-Day rule", async () => {
     // 2026-07-10 is OUTSIDE July's Lead-Day window (31 − 10 = 21, not < 7).
     const state = await createLedgerQueries(withLedgers([])).getFinanceHomeState("2026-07-10");
 
-    expect(state.hasActiveLedger).toBe(false);
+    // Zero ledgers ever created → the user starts fresh.
+    expect(state.fresh_start_ledger).toBe(true);
     expect(state.isWithinLeadDay).toBe(isWithinCreationWindow("2026-07-10", 7));
     expect(state.isWithinLeadDay).toBe(false);
     expect(state.currentMonth).toBe(monthOf("2026-07-01"));
@@ -86,12 +87,13 @@ describe("getFinanceHomeState — hasActiveLedger", () => {
     expect(state.activeLedgerSummary).toBeNull();
   });
 
-  test("S2: a status:'ongoing' ledger → hasActiveLedger true + its summary card", async () => {
+  test("S2: a status:'ongoing' ledger → not fresh start + its summary card", async () => {
     const state = await createLedgerQueries(
       withLedgers([ledgerRow("2026-06-01", "ongoing")], { data: summaryPayload, error: null }),
     ).getFinanceHomeState("2026-07-10");
 
-    expect(state.hasActiveLedger).toBe(true);
+    // A ledger exists → the user is not starting fresh.
+    expect(state.fresh_start_ledger).toBe(false);
     // The ongoing ledger's get_ledger_summary payload is awaited and mapped onto
     // the state (the forEach-vs-await regression: it must NOT be null here).
     expect(state.activeLedgerSummary).not.toBeNull();
@@ -100,12 +102,13 @@ describe("getFinanceHomeState — hasActiveLedger", () => {
     expect(state.activeLedgerSummary?.counts.paid).toBe(2);
   });
 
-  test("S3: only non-ongoing ledgers (reconciling / settled) → hasActiveLedger false, no summary", async () => {
+  test("S3: only non-ongoing ledgers (reconciling / settled) → not fresh start, no active summary", async () => {
     const state = await createLedgerQueries(
       withLedgers([ledgerRow("2026-05-01", "reconciling"), ledgerRow("2026-06-01", "settled")]),
     ).getFinanceHomeState("2026-07-10");
 
-    expect(state.hasActiveLedger).toBe(false);
+    // Ledgers exist (just none ongoing) → not a fresh start, yet no active summary.
+    expect(state.fresh_start_ledger).toBe(false);
     expect(state.activeLedgerSummary).toBeNull();
   });
 });

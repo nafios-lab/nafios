@@ -1,0 +1,34 @@
+{
+  "fresh_start_ledger": true,
+  "activeLedgerSummary": {
+    "id": "led_2026_08",
+    "month": "2026-08",
+    "status": "ongoing",
+    "openingBalance": 850000,
+    "maxCapped": 600000,
+    "metrics": {
+      "col": 487550,
+      "healthMargin": 112450,
+      "asmContribution": 362450,
+      "outstanding": {
+        "count": 2,
+        "total": 64000
+      },
+      "isAsmNegative": false
+    },
+    "counts": {
+      "total": 8,
+      "paid": 5,
+      "pending": 2,
+      "skipped": 1,
+      "carriedOver": 0
+    }
+  },
+  "isWithinLeadDay": true,
+  "currentMonth": "2026-08",
+  "nextMonth": "2026-09",
+  "openable": {
+    "current": null,
+    "next": "2026-09"
+  }
+}

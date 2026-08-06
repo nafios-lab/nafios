@@ -27,21 +27,26 @@ import { createLedgerRepository } from "../repositories/ledger.repo";
 const LEAD_DAYS = 7;
 
 /**
- * The Finance-Home decision state for the current user — a UI-ready superset of
- * the ticket's `{ hasActiveLedger, isWithinLeadDay, openable }`. It also carries
- * the always-present `currentMonth` / `nextMonth` CTA labels the EF3.10 Home
- * consumes, so this one shape replaces EF3.10's local `LedgerHomeState` verbatim
- * (one source of truth, no field drift).
+ * The Finance-Home decision state for the current user — a UI-ready shape the
+ * EF3.10 Home consumes. In place of the ticket's raw `hasActiveLedger` flag it
+ * exposes `fresh_start_ledger` (the user has never opened a ledger) plus the
+ * ongoing ledger's `activeLedgerSummary` (null when none is ongoing). It also
+ * carries the always-present `currentMonth` / `nextMonth` CTA labels, so this one
+ * shape replaces EF3.10's local `LedgerHomeState` verbatim (one source of truth,
+ * no field drift).
  *
  * `currentMonth` / `nextMonth` are the always-present labels for the creation
  * CTAs; `openable.current` / `openable.next` are a DIFFERENT concept — the months
  * the user may actually open right now (null when already taken / out of window).
  */
 export interface FinanceHomeState {
-  /** `true` ⟺ the user has a ledger with `status === 'ongoing'` (the single
-   *  active working surface). `reconciling` / `settled` do NOT count. */
-  readonly hasActiveLedger: boolean;
-  /** The summary data of an active / ongoing ledger (if available) */
+  /** `true` ⟺ the user has NEVER opened a ledger (`list.length === 0`) — the
+   *  brand-new-user "fresh start" state. Distinct from "no ongoing ledger": a
+   *  user with only `reconciling` / `settled` ledgers is NOT a fresh start. */
+  readonly fresh_start_ledger: boolean;
+  /** The `ongoing` ledger's summary card, or `null` when none is ongoing. When
+   *  this is `null` and `fresh_start_ledger` is `false`, ledgers exist but none
+   *  is active (all reconciling / settled). */
   readonly activeLedgerSummary: LedgerSummaryCard | null;
   /** `true` ⟺ `today` falls in the Lead-Day window — `resolveCreationState(...).isWindowOpen`. */
   readonly isWithinLeadDay: boolean;
@@ -61,7 +66,8 @@ export interface LedgerQueries {
   /**
    * The Finance-Home decision state for the current user, given a caller-supplied
    * "YYYY-MM-DD" `today`. Reads no clock — the pure resolver does the day math.
-   * Runs one `list()` and derives `hasActiveLedger` from it (no second round-trip).
+   * Runs one `list()`, derives `fresh_start_ledger` from it, and — only when a
+   * ledger is `ongoing` — reads that ledger's `get_ledger_summary` card.
    * Propagates `FinanceDataError` from the repository unchanged.
    */
   getFinanceHomeState(today: string): Promise<FinanceHomeState>;
@@ -84,14 +90,14 @@ export function createLedgerQueries(client: FinanceClient): LedgerQueries {
 
       // 'ongoing' only — reconciling / settled are not the active working surface.
       // At most one can be ongoing (uq_one_ongoing_ledger), so a single find
-      // both answers hasActiveLedger and gives us the id to summarise.
+      // both tells us whether a ledger is active and gives us the id to summarise.
       const ongoing = list.find((ledger) => ledger.status === "ongoing");
       const activeLedgerSummary: LedgerSummaryCard | null = ongoing
         ? await ledgers.getLedgerSummary(ongoing.id)
         : null;
 
       return {
-        hasActiveLedger: ongoing !== undefined,
+        fresh_start_ledger: list.length === 0,
         activeLedgerSummary,
         isWithinLeadDay: state.isWindowOpen,
         currentMonth: state.currentMonth,

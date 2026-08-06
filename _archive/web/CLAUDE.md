@@ -1,5 +1,13 @@
 # @nafios/web
 
+> **⚠️ ARCHIVED (2026-08-06).** This app is deprecated and no longer part of the
+> Bun workspace. It was the original TanStack **Start** SSR shell, superseded by
+> the Vite + React SPA in [`apps/nafios-web`](../../apps/nafios-web/) (the SPA
+> cutover — see that app's `CLAUDE.md` and ADR-0026). It is kept here, git-tracked,
+> for reference until a hard cleanup. **Do not build, deploy, or extend it.** It
+> is excluded from `bun --filter '*'`, Biome, and `verify-workspace`. See
+> [`../README.md`](../README.md).
+
 The single NafiOS shell application (ADR-0018). All domain modules mount into
 this TanStack Start app. Currently minimal — staging deployment target that will
 grow into the main user-facing app.

@@ -10,10 +10,10 @@ import { FinanceHome } from "../../src/features/finance/components/finance-home.
 
 afterEach(cleanup);
 
-/** Build a seam with sensible defaults (no active ledger, July → August 2026). */
+/** Build a seam with sensible defaults (fresh-start user, July → August 2026). */
 function makeSeam(overrides: Partial<FinanceHomeState> = {}): FinanceHomeState {
   return {
-    hasActiveLedger: false,
+    fresh_start_ledger: true,
     activeLedgerSummary: null,
     isWithinLeadDay: false,
     currentMonth: monthOf("2026-07-01"),
@@ -24,10 +24,10 @@ function makeSeam(overrides: Partial<FinanceHomeState> = {}): FinanceHomeState {
 }
 
 /**
- * Build an active-ledger summary — the shape the detail-card hero renders when
- * `hasActiveLedger` is true. Only the fields the card reads matter; the money
- * figures are illustrative but internally consistent (the card formats them, it
- * never re-derives). Pair it with `hasActiveLedger: true` on the seam.
+ * Build an active-ledger summary — the shape the detail-card hero renders when a
+ * ledger is active. Only the fields the card reads matter; the money figures are
+ * illustrative but internally consistent (the card formats them, it never
+ * re-derives). Pair it with `fresh_start_ledger: false` on the seam.
  */
 function makeSummary(overrides: Partial<LedgerSummaryCard> = {}): LedgerSummaryCard {
   return {
@@ -48,13 +48,13 @@ function makeSummary(overrides: Partial<LedgerSummaryCard> = {}): LedgerSummaryC
   };
 }
 
-/** The seam for an active ledger — `hasActiveLedger` + its summary, in step. */
+/** The seam for an active ledger — not a fresh start + its summary, in step. */
 function activeSeam(summaryOverrides: Partial<LedgerSummaryCard> = {}): Partial<FinanceHomeState> {
-  return { hasActiveLedger: true, activeLedgerSummary: makeSummary(summaryOverrides) };
+  return { fresh_start_ledger: false, activeLedgerSummary: makeSummary(summaryOverrides) };
 }
 
-describe("FinanceHome — display decision (hasActiveLedger)", () => {
-  test("hasActiveLedger true (+ summary) → renders the Ledger Detail Card, not the empty state", () => {
+describe("FinanceHome — display decision (fresh_start_ledger)", () => {
+  test("active ledger (+ summary) → renders the Ledger Detail Card, not the empty state", () => {
     const { container } = render(<FinanceHome seam={makeSeam(activeSeam())} />);
 
     expect(container.querySelector("[data-slot='ledger-detail-card']")).not.toBeNull();
@@ -66,19 +66,21 @@ describe("FinanceHome — display decision (hasActiveLedger)", () => {
     expect(screen.queryByText(/Open .* ledger/)).toBeNull();
   });
 
-  test("hasActiveLedger true but no summary → falls back to the empty state", () => {
-    // The card only shows when a summary is actually present (the read couples
-    // the two, but the component guards the null case rather than crashing).
+  test("not fresh start but no summary → renders neither card (defensive null-guard)", () => {
+    // e.g. only reconciling / settled ledgers: not a fresh start, yet no ongoing
+    // summary. The detail card only shows when a summary is present, and it is
+    // NOT a fresh start, so the empty/fresh state does not show either (the
+    // non-fresh branch still renders the NextLedgerAlert, but neither card).
     const { container } = render(
-      <FinanceHome seam={makeSeam({ hasActiveLedger: true, activeLedgerSummary: null })} />,
+      <FinanceHome seam={makeSeam({ fresh_start_ledger: false, activeLedgerSummary: null })} />,
     );
 
     expect(container.querySelector("[data-slot='ledger-detail-card']")).toBeNull();
-    expect(screen.getByText("Start your first month")).toBeDefined();
+    expect(screen.queryByText("Start your first month")).toBeNull();
   });
 
-  test("hasActiveLedger false → renders the empty state, not the detail card", () => {
-    const { container } = render(<FinanceHome seam={makeSeam({ hasActiveLedger: false })} />);
+  test("fresh start → renders the empty state, not the detail card", () => {
+    const { container } = render(<FinanceHome seam={makeSeam({ fresh_start_ledger: true })} />);
 
     expect(screen.getByText("Start your first month")).toBeDefined();
     expect(container.querySelector("[data-slot='ledger-detail-card']")).toBeNull();
@@ -148,7 +150,7 @@ describe("FinanceHome — placeholders rendered in both branches (Scenario 4)", 
 describe("FinanceHome — seam is required (EF3.13)", () => {
   test("renders the empty state + placeholders from the injected seam", () => {
     // The seam is now a required prop supplied by the page's read hook
-    // (EF3.13). hasActiveLedger false → the empty state shows.
+    // (EF3.13). fresh_start_ledger true → the empty state shows.
     render(<FinanceHome seam={makeSeam()} />);
 
     expect(screen.getByText("Start your first month")).toBeDefined();

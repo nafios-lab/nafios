@@ -108,12 +108,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("useFinanceHomeState", () => {
-  test("no ledgers → success with hasActiveLedger false and a resolved month pair", async () => {
+  test("no ledgers → success with fresh_start_ledger true and a resolved month pair", async () => {
     nextResult = { data: [], error: null };
     const { result } = renderHook(() => useFinanceHomeState(), { wrapper: Wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.hasActiveLedger).toBe(false);
+    expect(result.current.data?.fresh_start_ledger).toBe(true);
     // Months resolve from the browser-local clock; assert shape (the exact
     // Lead-Day boundary is pinned deterministically in the BE unit test).
     expect(result.current.data?.currentMonth).toMatch(/^\d{4}-\d{2}$/);
@@ -122,13 +122,13 @@ describe("useFinanceHomeState", () => {
     expect(typeof result.current.data?.isWithinLeadDay).toBe("boolean");
   });
 
-  test("an ongoing ledger → hasActiveLedger true with its summary card", async () => {
+  test("an ongoing ledger → not fresh start with its summary card", async () => {
     nextResult = { data: [ledgerRow("2026-06-01", "ongoing")], error: null };
     nextSummary = { data: summaryPayload, error: null };
     const { result } = renderHook(() => useFinanceHomeState(), { wrapper: Wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.hasActiveLedger).toBe(true);
+    expect(result.current.data?.fresh_start_ledger).toBe(false);
     // The ongoing ledger's get_ledger_summary payload is awaited and mapped
     // through onto the hook state (not left null).
     expect(result.current.data?.activeLedgerSummary).not.toBeNull();
@@ -136,7 +136,7 @@ describe("useFinanceHomeState", () => {
     expect(result.current.data?.activeLedgerSummary?.counts.paid).toBe(2);
   });
 
-  test("only non-ongoing ledgers → hasActiveLedger false", async () => {
+  test("only non-ongoing ledgers → not fresh start, no active summary", async () => {
     nextResult = {
       data: [ledgerRow("2026-05-01", "reconciling"), ledgerRow("2026-06-01", "settled")],
       error: null,
@@ -144,7 +144,9 @@ describe("useFinanceHomeState", () => {
     const { result } = renderHook(() => useFinanceHomeState(), { wrapper: Wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.hasActiveLedger).toBe(false);
+    // Ledgers exist (just none ongoing) → not a fresh start, yet no summary.
+    expect(result.current.data?.fresh_start_ledger).toBe(false);
+    expect(result.current.data?.activeLedgerSummary).toBeNull();
   });
 
   test("a repository read failure surfaces isError with a FinanceDataError", async () => {

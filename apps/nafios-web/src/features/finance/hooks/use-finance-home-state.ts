@@ -17,6 +17,6 @@ export function useFinanceHomeState() {
   return useQuery<FinanceHomeState>({
     queryKey: ["finance", "home", today],
     queryFn: () => createLedgerQueries(getFinanceClient()).getFinanceHomeState(today),
-    staleTime: 10000,
+    staleTime: Infinity,
   });
 }

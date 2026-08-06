@@ -1,6 +1,7 @@
 import type { FinanceHomeState } from "@nafios/finance";
 import { LedgerDetailCard } from "./ledger-detail-card";
 import { LedgerStartCard } from "./ledger-start-card";
+import { NextLedgerAlert } from "./next-ledger-alert";
 import { PendingReconciliationSection } from "./pending-reconciliation-section";
 import { ViewSettledLedgersButton } from "./view-settled-ledgers-button";
 
@@ -28,24 +29,29 @@ export interface FinanceHomeProps {
  * Finance Home — the left (primary) content column (EF3.10).
  *
  * Owns the DISPLAY DECISION: it branches the hero region on the seam's
- * `hasActiveLedger` — `true` → the placeholder `LedgerDetailCard`, `false` → the
- * empty/fresh `LedgerStartCard` (which itself picks Scenario 1 vs 2 from the
- * Lead-Day flag). The Pending Reconciliation placeholder + `View Settled
- * Ledgers` render below the hero in BOTH branches (Scenario 4).
+ * `fresh_start_ledger` — `true` → the empty/fresh `LedgerStartCard` (which itself
+ * picks Scenario 1 vs 2 from the Lead-Day flag); `false` → the `NextLedgerAlert`
+ * plus the `LedgerDetailCard` whenever an `activeLedgerSummary` is present (a
+ * non-fresh user with no ongoing ledger — e.g. only reconciling / settled —
+ * still gets the alert, just no detail card). The Pending Reconciliation
+ * placeholder + `View Settled Ledgers` render below the hero in ALL branches
+ * (Scenario 4).
  */
 export function FinanceHome({ seam: state }: FinanceHomeProps) {
   return (
     <section className={FINANCE_LEFT_COLUMN_CLASS}>
-      {/* Hero — swapped by the display decision. */}
-      <div className="flex  items-start justify-center">
-        {state.hasActiveLedger && state.activeLedgerSummary !== null ? (
-          <LedgerDetailCard {...state.activeLedgerSummary} />
-        ) : (
+      <div className="flex flex-col items-center justify-start w-full">
+        {state.fresh_start_ledger ? (
           <LedgerStartCard
             isWithinLeadDay={state.isWithinLeadDay}
             currentMonth={state.currentMonth}
             nextMonth={state.nextMonth}
           />
+        ) : (
+          <>
+            <NextLedgerAlert {...state} />
+            {state.activeLedgerSummary && <LedgerDetailCard {...state.activeLedgerSummary} />}
+          </>
         )}
       </div>
 
