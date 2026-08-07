@@ -18,7 +18,11 @@
 
 // import { addMonths, type Month, resolveCreationState } from "../../domain";
 import { addMonths, type Month } from "@nafios/datetime";
-import { type LedgerSummaryCard, resolveCreationState } from "../../domain";
+import {
+  type LedgerSummaryCard,
+  type ReconPendingLedger,
+  resolveCreationState,
+} from "../../domain";
 import type { FinanceClient } from "../client";
 import { createLedgerRepository } from "../repositories/ledger.repo";
 
@@ -71,6 +75,11 @@ export interface LedgerQueries {
    * Propagates `FinanceDataError` from the repository unchanged.
    */
   getFinanceHomeState(today: string): Promise<FinanceHomeState>;
+
+  /**
+   * The list of all the pending reconciliation ledgers
+   */
+  getReconPendingLedgers(): Promise<ReconPendingLedger[]>;
 }
 
 /**
@@ -104,6 +113,10 @@ export function createLedgerQueries(client: FinanceClient): LedgerQueries {
         nextMonth: addMonths(state.currentMonth, 1),
         openable: state.openable,
       };
+    },
+
+    async getReconPendingLedgers() {
+      return await ledgers.listPendingRecon();
     },
   };
 }
