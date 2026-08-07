@@ -1,4 +1,4 @@
-import { createLedgerQueries, type ReconPendingLedger } from "@nafios/finance";
+import { createLedgerQueries, type ReconPendingLedgersQueryResp } from "@nafios/finance";
 import { useQuery } from "@tanstack/react-query";
 import { getFinanceClient } from "../lib/finance-client";
 
@@ -7,7 +7,7 @@ import { getFinanceClient } from "../lib/finance-client";
  * @returns
  */
 export function useReconPendingLedgers() {
-  return useQuery<ReconPendingLedger[]>({
+  return useQuery<ReconPendingLedgersQueryResp>({
     queryKey: ["finance", "recon-pending-ledgers"],
     queryFn: () => createLedgerQueries(getFinanceClient()).getReconPendingLedgers(),
     staleTime: Infinity,

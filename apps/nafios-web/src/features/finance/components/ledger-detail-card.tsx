@@ -1,5 +1,5 @@
 import { formatMonthLong, formatMonthName } from "@nafios/datetime";
-import { type LedgerStatus, type LedgerSummaryCard, type Money, toCents } from "@nafios/finance";
+import { formatMoney, type LedgerStatus, type LedgerSummaryCard } from "@nafios/finance";
 import { Heading } from "@nafios/ui/components/typography/heading";
 import { Text } from "@nafios/ui/components/typography/text";
 import { Badge } from "@nafios/ui/components/ui/badge";
@@ -28,13 +28,6 @@ const STATUS_PILL: Record<LedgerStatus, { readonly label: string; readonly class
   },
   settled: { label: "Settled", className: "border-border bg-muted text-muted-foreground" },
 };
-
-/** Display-only money formatter — `$7,152.35`, `-$1,430.30`. Cents are exact
- *  (EF3.1); the divide-by-100 is a presentation-layer concern only (Intl rounds
- *  to 2 dp), never a re-derivation of a stored amount. */
-function formatMoney(value: Money): string {
-  return (toCents(value) / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-}
 
 /** One headline metric — an overline label over a large exact-money figure. */
 function MetricTile({

@@ -69,6 +69,7 @@ export {
   createLedgerQueries,
   type FinanceHomeState,
   type LedgerQueries,
+  type ReconPendingLedgersQueryResp,
 } from "./internal/queries/ledger-queries";
 // The persisted-ledger shape EF3.10's read surface builds on. The summary-card
 // read shape (`LedgerSummaryCard`) + its `EnvelopeStatusCounts` breakdown are pure

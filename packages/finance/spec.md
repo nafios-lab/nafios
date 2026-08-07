@@ -176,6 +176,7 @@ export type Money = number & { readonly __brand: "Money" };
 export const ZERO_MONEY: Money;
 export function decodeMoney(dbValue: string): Money; // numeric(12,2) string -> Money
 export function encodeMoney(value: Money): string; // Money -> canonical numeric(12,2) string
+export function formatMoney(value: Money): string; // Money -> localized display string ("$7,152.35"); DISPLAY only, not persistence
 export function moneyFromCents(cents: number): Money;
 export function toCents(value: Money): number;
 export function addMoney(a: Money, b: Money): Money;

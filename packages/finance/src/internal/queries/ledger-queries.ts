@@ -66,6 +66,10 @@ export interface FinanceHomeState {
   };
 }
 
+export interface ReconPendingLedgersQueryResp {
+  ledgers: ReconPendingLedger[];
+}
+
 export interface LedgerQueries {
   /**
    * The Finance-Home decision state for the current user, given a caller-supplied
@@ -79,7 +83,7 @@ export interface LedgerQueries {
   /**
    * The list of all the pending reconciliation ledgers
    */
-  getReconPendingLedgers(): Promise<ReconPendingLedger[]>;
+  getReconPendingLedgers(): Promise<ReconPendingLedgersQueryResp>;
 }
 
 /**
@@ -116,7 +120,10 @@ export function createLedgerQueries(client: FinanceClient): LedgerQueries {
     },
 
     async getReconPendingLedgers() {
-      return await ledgers.listPendingRecon();
+      const data = await ledgers.listPendingRecon();
+      return {
+        ledgers: data,
+      };
     },
   };
 }

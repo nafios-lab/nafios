@@ -4,6 +4,7 @@ import {
   compareMoney,
   decodeMoney,
   encodeMoney,
+  formatMoney,
   isNegativeMoney,
   moneyFromCents,
   subtractMoney,
@@ -49,6 +50,20 @@ describe("decodeMoney / toCents / encodeMoney", () => {
 
   test("accepts the boundary magnitude", () => {
     expect(encodeMoney(decodeMoney("-9999999999.99"))).toBe("-9999999999.99");
+  });
+});
+
+describe("formatMoney", () => {
+  test("formats a positive amount with thousands separator + $ symbol", () => {
+    expect(formatMoney(decodeMoney("7152.35"))).toBe("$7,152.35");
+  });
+
+  test("formats a negative amount", () => {
+    expect(formatMoney(decodeMoney("-1430.30"))).toBe("-$1,430.30");
+  });
+
+  test("formats zero with 2 decimal places", () => {
+    expect(formatMoney(ZERO_MONEY)).toBe("$0.00");
   });
 });
 

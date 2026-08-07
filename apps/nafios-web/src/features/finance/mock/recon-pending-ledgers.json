@@ -1,0 +1,23 @@
+[
+  {
+    "id": "8f14e45f-ceea-4e0c-a1b2-3c4d5e6f7a01",
+    "month": "2026-05",
+    "status": "reconciling",
+    "pendingEnvCounts": 3,
+    "pendingSumAmount": 128450
+  },
+  {
+    "id": "a3b8c9d0-1e2f-4a5b-8c7d-9e0f1a2b3c04",
+    "month": "2026-06",
+    "status": "reconciling",
+    "pendingEnvCounts": 7,
+    "pendingSumAmount": 542199
+  },
+  {
+    "id": "c7d6e5f4-3b2a-4109-8f7e-6d5c4b3a2115",
+    "month": "2026-07",
+    "status": "reconciling",
+    "pendingEnvCounts": 1,
+    "pendingSumAmount": 8000
+  }
+]

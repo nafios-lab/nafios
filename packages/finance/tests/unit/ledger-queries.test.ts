@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { PostgrestError } from "@nafios/supabase-core";
-import { addMonths, isWithinCreationWindow, monthOf } from "../../src/domain";
+import { addMonths, isWithinCreationWindow, moneyFromCents, monthOf } from "../../src/domain";
 import type { FinanceClient } from "../../src/internal/client";
 import { FinanceDataError } from "../../src/internal/errors";
 import { createLedgerQueries } from "../../src/internal/queries/ledger-queries";
@@ -144,5 +144,57 @@ describe("getFinanceHomeState — error propagation", () => {
     await expect(
       createLedgerQueries(client).getFinanceHomeState("2026-07-10"),
     ).rejects.toBeInstanceOf(FinanceDataError);
+  });
+});
+
+// One row the `get_pending_recon_ledgers` RPC emits (money as text, counts as
+// integers) — the repo decodes it via reconPendingLedgerDTOToDomain. In the stub
+// the RPC leg resolves to `makeClient`'s second (`summary`) argument, so we feed
+// the worklist rows there; `getReconPendingLedgers` never runs `list()`.
+const reconRow = {
+  id: "id-2026-05-01-reconciling",
+  month: "2026-05-01",
+  status: "reconciling",
+  pending_env_counts: 3,
+  pending_sum_amount: "1284.50",
+};
+
+describe("getReconPendingLedgers — reconciliation worklist", () => {
+  test("wraps the repository's worklist in { ledgers } and decodes each row", async () => {
+    const resp = await createLedgerQueries(
+      withLedgers([], { data: [reconRow], error: null }),
+    ).getReconPendingLedgers();
+
+    expect(resp.ledgers).toHaveLength(1);
+    expect(resp.ledgers[0]?.id).toBe(reconRow.id);
+    expect(resp.ledgers[0]?.month).toBe(monthOf("2026-05-01"));
+    expect(resp.ledgers[0]?.status).toBe("reconciling");
+    expect(resp.ledgers[0]?.pendingEnvCounts).toBe(3);
+    // Money crosses the wire as text and decodes to exact cents (EF3.1).
+    expect(resp.ledgers[0]?.pendingSumAmount).toBe(moneyFromCents(128450));
+  });
+
+  test("nothing reconciling → { ledgers: [] }", async () => {
+    const resp = await createLedgerQueries(
+      withLedgers([], { data: [], error: null }),
+    ).getReconPendingLedgers();
+
+    expect(resp.ledgers).toEqual([]);
+  });
+
+  test("a repository read failure rejects with FinanceDataError (propagated unchanged)", async () => {
+    const client = withLedgers([], {
+      data: null,
+      error: {
+        name: "PostgrestError",
+        message: "denied",
+        details: "",
+        hint: "",
+        code: "42501",
+      } as PostgrestError,
+    });
+    await expect(createLedgerQueries(client).getReconPendingLedgers()).rejects.toBeInstanceOf(
+      FinanceDataError,
+    );
   });
 });
