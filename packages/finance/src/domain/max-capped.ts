@@ -75,7 +75,7 @@ export function evaluateMaxCapped(openingBalance: Money, maxCapped: Money): MaxC
 
 /** Why validateMaxCapped rejected a proposed maxCapped. */
 export type MaxCappedRejectionReason =
-  | "requires_confirmation" // amber zone, but `confirmed` was false
+  | "requires_confirmation" // amber zone, but `acknowledgedOverspend` was false
   | "exceeds_hard_cap"; // blocked zone — above 2×opening; NEVER overridable
 
 /**
@@ -97,33 +97,33 @@ export type MaxCappedValidation =
  * USER input, not a programming error — so it returns a result, unlike EF3.1's codecs
  * which throw on malformed DB values).
  *
- *   zone 'ok'                    → { ok: true }                              (confirmed ignored)
- *   zone 'amber' & confirmed     → { ok: true }
- *   zone 'amber' & !confirmed    → { ok: false, reason: 'requires_confirmation' }
- *   zone 'blocked' (any confirm) → { ok: false, reason: 'exceeds_hard_cap' }  (NO override)
+ *   zone 'ok'                             → { ok: true }                              (acknowledgedOverspend ignored)
+ *   zone 'amber' & acknowledgedOverspend  → { ok: true }
+ *   zone 'amber' & !acknowledgedOverspend → { ok: false, reason: 'requires_confirmation' }
+ *   zone 'blocked' (any acknowledgement)  → { ok: false, reason: 'exceeds_hard_cap' }  (NO override)
  *
- * `confirmed` is the user's explicit amber-zone acknowledgement ("Yes, I understand" —
- * monthly-ledger.md §2 / RFC-022). It can only lift the amber gate; it can NEVER rescue
- * a blocked value.
+ * `acknowledgedOverspend` is the user's explicit amber-zone acknowledgement ("Yes, I
+ * understand I'm setting my ceiling above income" — monthly-ledger.md §2 / RFC-022). It
+ * can only lift the amber gate; it can NEVER rescue a blocked value.
  */
 export function validateMaxCapped(input: {
   readonly openingBalance: Money;
   readonly maxCapped: Money;
-  readonly confirmed: boolean;
+  readonly acknowledgedOverspend: boolean;
 }): MaxCappedValidation {
   const guardrail = evaluateMaxCapped(input.openingBalance, input.maxCapped);
 
   switch (guardrail.zone) {
     case "ok":
-      // Green needs no confirmation — `confirmed` is ignored.
+      // Green needs no confirmation — `acknowledgedOverspend` is ignored.
       return { ok: true, guardrail };
     case "amber":
-      // `confirmed` lifts amber, and ONLY amber.
-      return input.confirmed
+      // `acknowledgedOverspend` lifts amber, and ONLY amber.
+      return input.acknowledgedOverspend
         ? { ok: true, guardrail }
         : { ok: false, reason: "requires_confirmation", guardrail };
     case "blocked":
-      // No override — a blocked value rejects even with confirmed: true.
+      // No override — a blocked value rejects even with acknowledgedOverspend: true.
       return { ok: false, reason: "exceeds_hard_cap", guardrail };
   }
 }

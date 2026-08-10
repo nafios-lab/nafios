@@ -120,7 +120,12 @@ const NEGATIVE = decodeMoney("-1.00");
 const CURRENT_DAY = "2027-01-15"; // current Jan; next Feb NOT in window
 const IN_WINDOW = "2027-01-28"; // next Feb IN window (31−28=3 < 7)
 
-const BASE = { month: JAN, openingBalance: OPENING, maxCapped: MAXCAP, confirmed: false } as const;
+const BASE = {
+  month: JAN,
+  openingBalance: OPENING,
+  maxCapped: MAXCAP,
+  acknowledgedOverspend: false,
+} as const;
 
 // ─────────────────── Pre-write rejections — no write ───────────────────
 
@@ -154,7 +159,7 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     const result = await createLedgerCommands(client).createLedger({
       ...BASE,
       maxCapped: AMBER,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: CURRENT_DAY,
     });
     if (result.ok) throw new Error("expected rejection");
@@ -163,12 +168,12 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     expect(ops).toEqual([]);
   });
 
-  test("blocked maxCapped, confirmed:true → exceeds_hard_cap, NO override", async () => {
+  test("blocked maxCapped, acknowledgedOverspend:true → exceeds_hard_cap, NO override", async () => {
     const { client } = makeClient({});
     const result = await createLedgerCommands(client).createLedger({
       ...BASE,
       maxCapped: BLOCKED,
-      confirmed: true,
+      acknowledgedOverspend: true,
       today: CURRENT_DAY,
     });
     if (result.ok) throw new Error("expected rejection");

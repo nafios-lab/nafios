@@ -50,9 +50,10 @@ export interface CreateLedgerInput {
   readonly month: Month; // EF3.1
   readonly openingBalance: Money; // EF3.1 — manual; must be ≥ 0
   readonly maxCapped: Money; // EF3.1 — manual; must be ≥ 0 and pass the EF3.5 guardrail
-  /** The user's explicit amber-zone acknowledgement (EF3.5). Lifts the amber gate
-   *  only; never overrides a blocked (> 2× opening) value. */
-  readonly confirmed: boolean;
+  /** The user's explicit amber-zone acknowledgement (EF3.5) — "yes, I know I'm setting
+   *  maxCapped above income and will draw from savings". Lifts the amber gate only;
+   *  never overrides a blocked (> 2× opening) value. */
+  readonly acknowledgedOverspend: boolean;
   /** Caller-supplied "YYYY-MM-DD" (the web loader has it — EF3.4 discipline: no
    *  clock in the command's decision path). Validated via EF3.1 through the EF3.4
    *  resolver; a malformed value throws CodecError. */
@@ -67,7 +68,7 @@ export interface CreateLedgerInput {
 export type CreateLedgerRejectionReason =
   | "month_not_openable" // month ∉ EF3.4 openable set: far-future, back-fill, or already has a ledger
   | "negative_amount" // openingBalance or maxCapped < 0 (EF3.5 does not police sign; DB ck_balances_nonneg backstops)
-  | "requires_confirmation" // EF3.5 amber zone, confirmed === false
+  | "requires_confirmation" // EF3.5 amber zone, acknowledgedOverspend === false
   | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — NO override
 
 // ───────────────────────────── Result ─────────────────────────────
@@ -123,7 +124,7 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
 
   return {
     async createLedger(input) {
-      const { month, openingBalance, maxCapped, confirmed, today } = input;
+      const { month, openingBalance, maxCapped, acknowledgedOverspend, today } = input;
 
       // ── §4.1 pre-write validation — all deterministic, all before any write ──
 
@@ -139,7 +140,7 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       //    exactly EF3.5's `requires_confirmation` / `exceeds_hard_cap`, and the
       //    guardrail (savingsDraw / hardCap) travels so EF3.12 renders the sheet /
       //    message. The command does NOT re-derive the zones.
-      const validation = validateMaxCapped({ openingBalance, maxCapped, confirmed });
+      const validation = validateMaxCapped({ openingBalance, maxCapped, acknowledgedOverspend });
       if (!validation.ok) {
         return { ok: false, reason: validation.reason, guardrail: validation.guardrail };
       }

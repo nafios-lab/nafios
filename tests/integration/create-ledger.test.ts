@@ -197,7 +197,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false, // green zone — confirmed irrelevant
+      acknowledgedOverspend: false, // green zone — confirmed irrelevant
       today: JAN_CURRENT,
     });
     assertOk(result);
@@ -215,7 +215,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_CURRENT,
     });
     assertOk(jan);
@@ -224,7 +224,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: FEB,
       openingBalance: OPENING2,
       maxCapped: MAXCAP2,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_IN_WINDOW,
     });
     assertOk(feb);
@@ -244,7 +244,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_EARLY,
     });
     assertOk(result);
@@ -261,7 +261,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
         month: JAN,
         openingBalance: OPENING,
         maxCapped: MAXCAP,
-        confirmed: false,
+        acknowledgedOverspend: false,
         today: JAN_CURRENT,
       }),
     );
@@ -269,7 +269,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: FEB,
       openingBalance: OPENING2,
       maxCapped: MAXCAP2,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_IN_WINDOW,
     });
     assertOk(feb);
@@ -285,7 +285,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: NEGATIVE,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_CURRENT,
     });
     assertRejected(result);
@@ -299,7 +299,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: AMBER,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_CURRENT,
     });
     assertRejected(result);
@@ -316,19 +316,19 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: AMBER,
-      confirmed: true,
+      acknowledgedOverspend: true,
       today: JAN_CURRENT,
     });
     assertOk(result);
     expect(encodeMoney(result.ledger.maxCapped)).toBe("7500.00");
   });
 
-  test("row 8 — blocked (maxCapped > 2× opening), confirmed:true → exceeds_hard_cap, NO override, no write", async () => {
+  test("row 8 — blocked (maxCapped > 2× opening), acknowledgedOverspend:true → exceeds_hard_cap, NO override, no write", async () => {
     const result = await cmdA.createLedger({
       month: JAN,
       openingBalance: OPENING,
       maxCapped: BLOCKED,
-      confirmed: true, // ignored — the block is absolute
+      acknowledgedOverspend: true, // ignored — the block is absolute
       today: JAN_CURRENT,
     });
     assertRejected(result);
@@ -342,7 +342,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: SEP,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: FEB_OUT_OF_WINDOW,
     });
     assertRejected(result);
@@ -356,7 +356,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: NOV_2026,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: FEB_OUT_OF_WINDOW,
     });
     assertRejected(result);
@@ -370,7 +370,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
         month: JAN,
         openingBalance: OPENING,
         maxCapped: MAXCAP,
-        confirmed: false,
+        acknowledgedOverspend: false,
         today: JAN_CURRENT,
       }),
     );
@@ -378,7 +378,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_CURRENT,
     });
     assertRejected(again);
@@ -391,7 +391,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: FEB,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_OUT_OF_WINDOW,
     });
     assertRejected(result);
@@ -407,7 +407,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_CURRENT,
     });
 
@@ -466,7 +466,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
         month: FEB,
         openingBalance: OPENING2,
         maxCapped: MAXCAP2,
-        confirmed: false,
+        acknowledgedOverspend: false,
         today: JAN_IN_WINDOW,
       });
     } catch (e) {
@@ -486,7 +486,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
         month: JAN,
         openingBalance: OPENING,
         maxCapped: MAXCAP,
-        confirmed: false,
+        acknowledgedOverspend: false,
         today: JAN_CURRENT,
       }),
     );
@@ -495,7 +495,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
         month: FEB,
         openingBalance: OPENING2,
         maxCapped: MAXCAP2,
-        confirmed: false,
+        acknowledgedOverspend: false,
         today: JAN_IN_WINDOW,
       }),
     );
@@ -507,7 +507,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_CURRENT,
     });
     assertOk(jan);
@@ -516,7 +516,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
         month: FEB,
         openingBalance: OPENING2,
         maxCapped: MAXCAP2,
-        confirmed: false,
+        acknowledgedOverspend: false,
         today: JAN_IN_WINDOW,
       }),
     );
@@ -535,7 +535,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       month: JAN,
       openingBalance: OPENING,
       maxCapped: MAXCAP,
-      confirmed: false,
+      acknowledgedOverspend: false,
       today: JAN_CURRENT,
     });
     assertOk(result);
@@ -558,7 +558,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
           month: JAN,
           openingBalance: OPENING,
           maxCapped: MAXCAP,
-          confirmed: false,
+          acknowledgedOverspend: false,
           today,
         });
       } catch (e) {
