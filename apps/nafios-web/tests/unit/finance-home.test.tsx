@@ -30,7 +30,7 @@ let query: FakeQuery;
 mock.module(HOOK_PATH, () => ({ useFinanceHomeState: () => query }));
 
 // Imported AFTER the mock is registered so the component binds to the stub.
-const { FinanceHome } = await import("../../src/features/finance/components/finance-home.tsx");
+const { FinanceHome } = await import("../../src/features/finance/components/home/finance-home.tsx");
 
 afterAll(() => {
   mock.module(HOOK_PATH, () => ({ useFinanceHomeState: realUseFinanceHomeState }));

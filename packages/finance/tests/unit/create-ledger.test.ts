@@ -1,7 +1,5 @@
-import { describe, expect, test } from "bun:test";
-// A malformed `today` throws the calendar `CodecError` from @nafios/datetime
-// (where the Month codec lives), not finance's own money CodecError.
-import { CodecError, decodeMonth } from "@nafios/datetime";
+import { afterEach, beforeEach, describe, expect, setSystemTime, test } from "bun:test";
+import { decodeMonth } from "@nafios/datetime";
 import type { PostgrestError } from "@nafios/supabase-core";
 import { decodeMoney } from "../../src/domain";
 import type { FinanceClient } from "../../src/internal/client";
@@ -117,8 +115,19 @@ const AMBER = decodeMoney("7500.00"); // > opening, ≤ 2× → amber (draw 347.
 const BLOCKED = decodeMoney("20000.00"); // > 2× opening → blocked
 const NEGATIVE = decodeMoney("-1.00");
 
-const CURRENT_DAY = "2027-01-15"; // current Jan; next Feb NOT in window
-const IN_WINDOW = "2027-01-28"; // next Feb IN window (31−28=3 < 7)
+// `today` is NOT an input — the command reads it from @nafios/datetime's clock
+// seam (the suite's sole `new Date()`, ADR-0028). Pin it with setSystemTime.
+// Midday avoids any local-midnight ambiguity when deriving the calendar day.
+const CURRENT_DAY = new Date(2027, 0, 15, 12, 0, 0); // 2027-01-15 — current Jan; next Feb NOT in window
+const IN_WINDOW = new Date(2027, 0, 28, 12, 0, 0); // 2027-01-28 — next Feb IN window (31−28=3 < 7)
+
+// Default the clock to current-Jan; the park/insert cases re-pin to IN_WINDOW.
+beforeEach(() => {
+  setSystemTime(CURRENT_DAY);
+});
+afterEach(() => {
+  setSystemTime(); // restore the real clock
+});
 
 const BASE = {
   month: JAN,
@@ -135,7 +144,6 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     const result = await createLedgerCommands(client).createLedger({
       ...BASE,
       openingBalance: NEGATIVE,
-      today: CURRENT_DAY,
     });
     if (result.ok) throw new Error("expected rejection");
     expect(result.reason).toBe("negative_amount");
@@ -148,7 +156,6 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     const result = await createLedgerCommands(client).createLedger({
       ...BASE,
       maxCapped: NEGATIVE,
-      today: CURRENT_DAY,
     });
     if (result.ok) throw new Error("expected rejection");
     expect(result.reason).toBe("negative_amount");
@@ -160,7 +167,6 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
       ...BASE,
       maxCapped: AMBER,
       acknowledgedOverspend: false,
-      today: CURRENT_DAY,
     });
     if (result.ok) throw new Error("expected rejection");
     expect(result.reason).toBe("requires_confirmation");
@@ -174,7 +180,6 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
       ...BASE,
       maxCapped: BLOCKED,
       acknowledgedOverspend: true,
-      today: CURRENT_DAY,
     });
     if (result.ok) throw new Error("expected rejection");
     expect(result.reason).toBe("exceeds_hard_cap");
@@ -186,19 +191,11 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     const result = await createLedgerCommands(client).createLedger({
       ...BASE,
       month: SEP, // neither current nor next
-      today: CURRENT_DAY,
     });
     if (result.ok) throw new Error("expected rejection");
     expect(result.reason).toBe("month_not_openable");
     expect(result.guardrail).toBeNull();
     expect(ops).toEqual(["list"]); // read to resolve openable months, then no write
-  });
-
-  test("malformed `today` throws CodecError (programming error, not a result rejection)", async () => {
-    const { client } = makeClient({ list: { data: [], error: null } });
-    await expect(
-      createLedgerCommands(client).createLedger({ ...BASE, today: "2027-13-01" }),
-    ).rejects.toBeInstanceOf(CodecError);
   });
 });
 
@@ -211,7 +208,7 @@ describe("open a month", () => {
       findOngoing: { data: null, error: null },
       insert: { data: ledgerRow({ status: "ongoing" }), error: null },
     });
-    const result = await createLedgerCommands(client).createLedger({ ...BASE, today: CURRENT_DAY });
+    const result = await createLedgerCommands(client).createLedger({ ...BASE });
     if (!result.ok) throw new Error("expected ok");
     expect(result.parkedLedgerId).toBeNull();
     expect(ops).toEqual(["list", "findOngoing", "insert"]); // no park
@@ -225,10 +222,10 @@ describe("open a month", () => {
       findOngoing: { data: ledgerRow({ id: "jan-id", status: "ongoing" }), error: null },
       insert: { data: ledgerRow({ id: "feb-id", month: "2027-02-01" }), error: null },
     });
+    setSystemTime(IN_WINDOW); // next Feb is only openable inside the lead-day window
     const result = await createLedgerCommands(client).createLedger({
       ...BASE,
       month: FEB,
-      today: IN_WINDOW,
     });
     if (!result.ok) throw new Error("expected ok");
     expect(result.parkedLedgerId).toBe("jan-id");
@@ -253,10 +250,10 @@ describe("compensation on a failed insert", () => {
       },
       updateStatus: { ongoing: { data: ledgerRow({ status: "ongoing" }), error: null } },
     });
+    setSystemTime(IN_WINDOW); // next Feb is only openable inside the lead-day window
     const promise = createLedgerCommands(client).createLedger({
       ...BASE,
       month: FEB,
-      today: IN_WINDOW,
     });
     await expect(promise).rejects.toBeInstanceOf(FinanceDataError);
     await expect(promise.catch((e) => (e as FinanceDataError).code)).resolves.toBe(
@@ -283,10 +280,10 @@ describe("compensation on a failed insert", () => {
         ongoing: { data: null, error: pgError({ code: "08006", message: "connection lost" }) },
       },
     });
+    setSystemTime(IN_WINDOW); // next Feb is only openable inside the lead-day window
     const promise = createLedgerCommands(client).createLedger({
       ...BASE,
       month: FEB,
-      today: IN_WINDOW,
     });
     // The compensation error (08006 → unknown) is swallowed; the original
     // duplicate_month is what propagates.

@@ -1,6 +1,6 @@
+import { formatDate } from "@nafios/datetime";
 import { TextInput } from "@nafios/ui/components/text-input";
 import { SidebarTrigger } from "@nafios/ui/components/ui/sidebar";
-import { format } from "date-fns";
 import { Search } from "lucide-react";
 import {
   createContext,
@@ -120,7 +120,7 @@ export function NavbarClock() {
 
   return (
     <span className="hidden whitespace-nowrap text-xs font-medium tabular-nums tracking-wide text-muted-foreground sm:inline">
-      {now && format(now, "EEE · d MMM · hh:mma").toUpperCase()}
+      {now && formatDate(now, "EEE · d MMM · hh:mma").toUpperCase()}
     </span>
   );
 }

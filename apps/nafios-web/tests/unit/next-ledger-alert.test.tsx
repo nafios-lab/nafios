@@ -6,7 +6,7 @@ import {
   monthOf,
 } from "@nafios/finance";
 import { cleanup, render, screen } from "@testing-library/react";
-import { NextLedgerAlert } from "../../src/features/finance/components/next-ledger-alert.tsx";
+import { NextLedgerAlert } from "../../src/features/finance/components/home/next-ledger-alert.tsx";
 
 afterEach(cleanup);
 

@@ -29,6 +29,10 @@
               {
                 "group": ["@nafios/*/internal/*"],
                 "message": "Do not import from another package's internal/ directory. Use the public barrel (@nafios/<name>) instead."
+              },
+              {
+                "group": ["date-fns", "date-fns/*"],
+                "message": "Do not import date-fns directly. All date/time logic goes through @nafios/datetime — the suite's sole date-fns seam (ADR-0028). @nafios/ui is the only exemption."
               }
             ]
           }
@@ -45,6 +49,26 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["packages/datetime/**", "packages/ui/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@nafios/*/internal/*"],
+                    "message": "Do not import from another package's internal/ directory. Use the public barrel (@nafios/<name>) instead."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     {
       "includes": ["packages/finance/src/domain/**"],
       "linter": {
@@ -63,6 +87,10 @@
                       "@supabase/*"
                     ],
                     "message": "src/domain/ is the pure layer — it must not import the data layer (src/internal/), @nafios/database, @nafios/supabase-core, or @supabase/*. Move I/O to src/internal/."
+                  },
+                  {
+                    "group": ["date-fns", "date-fns/*"],
+                    "message": "Do not import date-fns directly. All date/time logic goes through @nafios/datetime (ADR-0028)."
                   }
                 ]
               }

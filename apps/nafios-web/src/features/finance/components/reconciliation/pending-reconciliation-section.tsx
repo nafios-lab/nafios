@@ -8,7 +8,7 @@ import {
 } from "@nafios/ui/components/ui/collapsible";
 import { Skeleton } from "@nafios/ui/components/ui/skeleton";
 import { ChevronDown, Clock, ReceiptText, TriangleAlert } from "lucide-react";
-import { useReconPendingLedgers } from "../hooks/use-recon-pending-ledgers";
+import { useReconPendingLedgers } from "../../hooks/use-recon-pending-ledgers";
 import { PendingReconciliationLedgersList } from "./pending-reconciliation-ledgers-list";
 
 /**

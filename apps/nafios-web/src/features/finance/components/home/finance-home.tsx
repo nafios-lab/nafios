@@ -2,7 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from "@nafios/ui/components/ui/al
 import { Button } from "@nafios/ui/components/ui/button";
 import { Skeleton } from "@nafios/ui/components/ui/skeleton";
 import { TriangleAlert } from "lucide-react";
-import { useFinanceHomeState } from "../hooks/use-finance-home-state";
+import { useFinanceHomeState } from "../../hooks/use-finance-home-state";
 import { LedgerDetailCard } from "./ledger-detail-card";
 import { LedgerStartCard } from "./ledger-start-card";
 import { NextLedgerAlert } from "./next-ledger-alert";

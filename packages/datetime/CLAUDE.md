@@ -1,8 +1,12 @@
 # @nafios/datetime
 
-Shared **calendar-time primitives** for the suite. Pure, framework-agnostic,
-zero I/O, no clock — the value types and operations that any module dealing in
-calendar months/days depends on, owned by nothing domain-specific.
+Shared **date & calendar-time utilities** for the suite — framework-agnostic and
+owned by nothing domain-specific. **The one package allowed to import `date-fns`**
+([ADR-0028](../../adr/0028-datetime-sole-date-fns-seam.md)): every other app and
+package does date/time work through this barrel and never imports `date-fns`
+directly (Biome-enforced; `@nafios/ui` is the sole exemption). The calendar math
+(`Month`, codecs, `daysInMonth`, formatters) stays pure and clock-free; `day.ts`
+is the isolated clock seam (`today` / `isToday`) — the only `new Date()` here.
 
 Extracted from `@nafios/finance` (2026-08) once `Month` proved to be a generic
 temporal primitive rather than a finance concept: it is the standard library's
@@ -24,6 +28,10 @@ consumer ergonomics (its public types reference `Month`).
   `"July 2026"`). English-only by construction; the `Intl` seam if i18n lands.
 - **`CodecError` + `CodecErrorCode`** — thrown by the `Month` decode path on a
   malformed / out-of-range value (`month_not_a_date` / `month_not_first_of_month`).
+- **`today` / `isToday`** (`day.ts`) — today's local calendar day as `"YYYY-MM-DD"`,
+  and a same-day check. The **only** clock read in the package (see Invariant 1).
+- **`formatDate(date, pattern)`** (`format-date.ts`) — render a `Date` for display
+  via a date-fns token pattern; the suite's sole seam over date-fns' `format`.
 
 ## Public API surface
 
@@ -32,8 +40,13 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
 
 ## Invariants
 
-1. **Pure.** Zero I/O, zero runtime dependencies, no clock read. Callers supply
-   "today" as a `"YYYY-MM-DD"` string; this package never calls `new Date()`.
+1. **The suite's only `date-fns` importer; calendar math stays pure.** `date-fns`
+   is a dependency of this package and no other (except `@nafios/ui`) — every
+   consumer routes date/time work through this barrel (Biome `noRestrictedImports`,
+   [ADR-0028](../../adr/0028-datetime-sole-date-fns-seam.md)). `month.ts` /
+   `calendar.ts` / `format-month.ts` still do zero I/O and never read the clock —
+   callers pass "today" in as a `"YYYY-MM-DD"` string. The single `new Date()`
+   lives in `day.ts` and nowhere else, so the calendar math stays deterministic.
 2. **`Month` is day-less and first-of-month-canonical.** Decode rejects a day
    component ≠ 01; encode always emits `-01`.
 3. The barrel exports **only** the public API.
@@ -47,6 +60,10 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   boundary), so the identical name is not a conflict.
 - **`Month` != the `Temporal` global.** This package models the concept as a
   branded string; it does not wrap the TC39 `Temporal` API.
+- **`formatDate` leaks date-fns tokens.** `pattern` is a date-fns format-token
+  string; that token dialect is the one bit of date-fns that reaches callers.
+  Swapping the vendor later means revisiting patterns, not import sites — the
+  accepted trade-off of a thin format seam ([ADR-0028](../../adr/0028-datetime-sole-date-fns-seam.md)).
 - **No build step.** Consumed as TypeScript source via Bun workspace resolution
   ([ADR-0006](../../adr/0006-no-build-internal-packages.md)).
 
@@ -64,6 +81,8 @@ src/
   index.ts         # barrel — public exports only
   month.ts         # Month value type + codec + monthOf/addMonths/compareMonths
   calendar.ts      # daysInMonth (leap-year aware)
+  day.ts           # today / isToday (THE clock seam — the only new Date() here)
+  format-date.ts   # formatDate — the date-fns `format` seam (Date -> label)
   codec-error.ts   # CodecError + CodecErrorCode (month_* codes)
   format-month.ts  # formatMonthName / formatMonthLong
 tests/unit/        # bun:test unit tests

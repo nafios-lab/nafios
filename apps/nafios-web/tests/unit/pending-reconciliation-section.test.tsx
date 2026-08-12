@@ -27,7 +27,7 @@ mock.module(HOOK_PATH, () => ({ useReconPendingLedgers: () => query }));
 
 // Imported AFTER the mock is registered so the component binds to the stub.
 const { PendingReconciliationSection } = await import(
-  "../../src/features/finance/components/pending-reconciliation-section.tsx"
+  "../../src/features/finance/components/reconciliation/pending-reconciliation-section.tsx"
 );
 
 afterAll(() => {

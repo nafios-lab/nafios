@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@nafios/ui/components/ui/card";
 import { createFileRoute } from "@tanstack/react-router";
 import { LayoutTemplate } from "lucide-react";
-import { FinanceHome } from "~/features/finance/components/finance-home";
-import { PendingReconciliationSection } from "~/features/finance/components/pending-reconciliation-section";
-import { ViewSettledLedgersButton } from "~/features/finance/components/view-settled-ledgers-button";
+import { FinanceHome } from "~/features/finance/components/home/finance-home";
+import { PendingReconciliationSection } from "~/features/finance/components/reconciliation/pending-reconciliation-section";
+import { ViewSettledLedgersButton } from "~/features/finance/components/shared/view-settled-ledgers-button";
 
 // Index page for /finance — the finance home dashboard, rendered inside the
 // finance module layout's outlet. The layout owns the rail + navbar; this file

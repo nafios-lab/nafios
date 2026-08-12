@@ -2,14 +2,25 @@
 
 ## Purpose
 
-Shared, framework-agnostic **calendar-time primitives** for the NafiOS suite:
-the `Month` value type and its operations, day-level calendar math, month-label
-formatting, and the calendar codec error. Owned by nothing domain-specific so
+Shared, framework-agnostic **date & calendar-time utilities** for the NafiOS
+suite: the `Month` value type and its operations, day-level calendar math,
+month-label formatting, the calendar codec error, and the clock + display-format
+seam (`today` / `isToday` / `formatDate`). Owned by nothing domain-specific so
 any module (Finance, Budgeting, Calendar, SmartTodo, …) depends on it directly.
 
-Pure by contract: **zero I/O, zero runtime dependencies, no clock**. Any "today"
-is supplied by the caller as a `"YYYY-MM-DD"` string; this package never reads
-the system clock, so every function is deterministic and trivially testable.
+**This package is the suite's sole abstraction over `date-fns`**
+([ADR-0028](../../adr/0028-datetime-sole-date-fns-seam.md)): it is the *only*
+package that may import `date-fns`; every other app and package does date/time
+work through this barrel and never imports `date-fns` directly (enforced by a
+Biome `noRestrictedImports` guard). Centralizing the dependency here keeps the
+vendor swappable and the timezone/parsing footguns handled in one place.
+`@nafios/ui` is the one exemption — a Date-native design-system leaf.
+
+The calendar *math* (the `Month` codec, `addMonths`, `compareMonths`,
+`daysInMonth`) stays pure and clock-free — callers pass "today" in as a
+`"YYYY-MM-DD"` string — so it remains deterministic and trivially testable. The
+clock read (`today` / `isToday`) is isolated to `day.ts`: the only `new Date()`
+in the package.
 
 ## Background
 
@@ -62,6 +73,21 @@ lexicographic order equals chronological order. Branded — constructible only v
 English-only by construction; the seam that would move to `Intl.DateTimeFormat`
 if localization is ever required.
 
+### Clock (`day.ts`)
+
+- `today(): string` — today's local calendar day as a `"YYYY-MM-DD"` string.
+  Reads the system clock (the only clock read in the package).
+- `isToday(isoDate: string): boolean` — whether a `"YYYY-MM-DD"` date is today's
+  local calendar day.
+
+### Date formatting
+
+- `formatDate(date: Date, pattern: string): string` — render a `Date` for
+  display using a date-fns token pattern, in local time (e.g.
+  `"EEE · d MMM · hh:mma"`). The suite's sole seam over date-fns' `format`;
+  `pattern` is a date-fns token string (the one piece of date-fns that reaches
+  callers — see [ADR-0028](../../adr/0028-datetime-sole-date-fns-seam.md)).
+
 ### Errors
 
 - `CodecError` (`class`, `readonly code: CodecErrorCode`) — thrown by the
@@ -74,7 +100,12 @@ never interoperate in a `catch`.
 
 ## Invariants
 
-1. Pure — no I/O, no dependencies, no clock read.
+1. **The suite's only `date-fns` importer** (except `@nafios/ui`). `date-fns` is
+   a dependency of this package and every consumer routes date/time work through
+   this barrel — enforced by a Biome `noRestrictedImports` guard
+   ([ADR-0028](../../adr/0028-datetime-sole-date-fns-seam.md)). The calendar
+   *math* stays pure and clock-free (no I/O, no clock); the single `new Date()`
+   lives in `day.ts`.
 2. `Month` is day-less and first-of-month-canonical (decode rejects day ≠ 01;
    encode always emits `-01`).
 3. The barrel is the only public surface.

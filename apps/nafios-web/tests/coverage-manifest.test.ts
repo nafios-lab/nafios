@@ -24,6 +24,7 @@ import "../src/lib/database.ts";
 import "../src/features/auth/schemas/login-schema.ts";
 import "../src/features/auth/schemas/signup-schema.ts";
 import "../src/features/onboarding/schemas/onboarding-schema.ts";
+import "../src/features/finance/schemas/create-ledger-schema.ts";
 // Onboarding lib
 import "../src/features/onboarding/lib/avatar.ts";
 import "../src/features/onboarding/lib/family-helpers.ts";
@@ -50,11 +51,11 @@ import "../src/features/onboarding/components/family-member-list-item.tsx";
 import "../src/features/onboarding/components/onboard-step-family.tsx";
 import "../src/features/onboarding/components/onboard-step-profile.tsx";
 import "../src/features/onboarding/components/onboarding-wizard.tsx";
-import "../src/features/finance/components/finance-home.tsx";
-import "../src/features/finance/components/ledger-detail-card.tsx";
-import "../src/features/finance/components/ledger-start-card.tsx";
-import "../src/features/finance/components/pending-reconciliation-section.tsx";
-import "../src/features/finance/components/view-settled-ledgers-button.tsx";
+import "../src/features/finance/components/home/finance-home.tsx";
+import "../src/features/finance/components/home/ledger-detail-card.tsx";
+import "../src/features/finance/components/home/ledger-start-card.tsx";
+import "../src/features/finance/components/reconciliation/pending-reconciliation-section.tsx";
+import "../src/features/finance/components/shared/view-settled-ledgers-button.tsx";
 
 test("coverage manifest imports every in-scope module", () => {
   expect(true).toBe(true);

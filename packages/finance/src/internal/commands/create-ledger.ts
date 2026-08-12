@@ -22,7 +22,7 @@
 // ongoing) then inserts, and compensates (reverts the park) if the insert
 // throws. The index is the hard, unconditional backstop for the invariant.
 
-import { compareMonths, type Month } from "@nafios/datetime";
+import { compareMonths, type Month, today } from "@nafios/datetime";
 import { resolveCreationState } from "../../domain/creation-window";
 import { type MaxCappedGuardrail, validateMaxCapped } from "../../domain/max-capped";
 import { compareMoney, type Money, ZERO_MONEY } from "../../domain/money";
@@ -54,10 +54,6 @@ export interface CreateLedgerInput {
    *  maxCapped above income and will draw from savings". Lifts the amber gate only;
    *  never overrides a blocked (> 2× opening) value. */
   readonly acknowledgedOverspend: boolean;
-  /** Caller-supplied "YYYY-MM-DD" (the web loader has it — EF3.4 discipline: no
-   *  clock in the command's decision path). Validated via EF3.1 through the EF3.4
-   *  resolver; a malformed value throws CodecError. */
-  readonly today: string;
 }
 
 // ───────────────── Rejection (deterministic input failure) ─────────────────
@@ -107,8 +103,7 @@ export interface LedgerCommands {
    * Throws FinanceDataError (EF3.6) for a genuine DB/query failure — including
    * the rare lost race where the month was validated free but got taken before
    * the insert; the parked ledger is compensated (reverted to `ongoing`) before
-   * the throw (§4.2 / §4.3). Throws CodecError if `today` is malformed (a
-   * programming error, not user input).
+   * the throw (§4.2 / §4.3).
    */
   createLedger(input: CreateLedgerInput): Promise<CreateLedgerResult>;
 }
@@ -124,7 +119,7 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
 
   return {
     async createLedger(input) {
-      const { month, openingBalance, maxCapped, acknowledgedOverspend, today } = input;
+      const { month, openingBalance, maxCapped, acknowledgedOverspend } = input;
 
       // ── §4.1 pre-write validation — all deterministic, all before any write ──
 
@@ -149,10 +144,11 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       //    ledgers (a LedgerHeader[], which structurally satisfies EF3.4's
       //    LedgerMonthStatus[]) feed the resolver; `month` must equal an openable
       //    month (compared via compareMonths). Rejects far-future, back-fill, and
-      //    — because a taken month is never offered — any month already taken. A
-      //    malformed `today` throws CodecError from the resolver here (§4.3).
+      //    — because a taken month is never offered — any month already taken.
+      //    `today` is read here from @nafios/datetime's clock seam (the suite's
+      //    sole `new Date()`, ADR-0028), not taken as an input.
       const ledgers = await repo.list();
-      const { openable } = resolveCreationState({ today, leadDays: LEAD_DAYS, ledgers });
+      const { openable } = resolveCreationState({ today: today(), leadDays: LEAD_DAYS, ledgers });
       const isOpenable =
         (openable.current !== null && compareMonths(openable.current, month) === 0) ||
         (openable.next !== null && compareMonths(openable.next, month) === 0);

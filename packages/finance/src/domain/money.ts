@@ -94,7 +94,7 @@ export function encodeMoney(value: Money): string {
  *   715235 (cents) -> "$7,152.35"   |   -143030 -> "-$1,430.30"   |   0 -> "$0.00"
  * Single-currency (USD / en-US) to match the module's M1 scope. The divide-by-100
  * is a presentation-layer concern only (Intl rounds to 2 dp) — never a
- * re-derivation of a stored amount; the exact cents in `value` stay the source of
+ * re-derivatixon of a stored amount; the exact cents in `value` stay the source of
  * truth. NOT for persistence — use `encodeMoney` for the DB write path.
  */
 export function formatMoney(value: Money): string {

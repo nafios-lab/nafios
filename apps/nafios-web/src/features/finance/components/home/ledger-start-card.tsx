@@ -4,6 +4,7 @@ import { Text } from "@nafios/ui/components/typography/text";
 import { Badge } from "@nafios/ui/components/ui/badge";
 import { Button } from "@nafios/ui/components/ui/button";
 import { CircleHelp, ExternalLink, NotebookText } from "lucide-react";
+import { CreateLedgerForm } from "../create-ledger/create-ledger-form";
 
 export interface LedgerStartCardProps {
   /** Lead-Day window (from the seam). Selects the scenario: `false` → single CTA
@@ -53,23 +54,38 @@ export function LedgerStartCard({
       <div className="flex w-full flex-col items-center gap-3">
         {isWithinLeadDay ? (
           <>
-            <Button variant="spotlight" className="w-full" iconLeft={<ExternalLink />}>
-              Open {formatMonthLong(nextMonth)} ledger
-              <Badge
-                variant="spotlight"
-                className="ml-1 rounded-full border-transparent font-medium"
-              >
-                Recommended
-              </Badge>
-            </Button>
-            <Button variant="outline" className="w-full text-muted-foreground">
-              Open {formatMonthLong(currentMonth)} Instead
-            </Button>
+            <CreateLedgerForm
+              ledgerMonth={nextMonth}
+              trigger={
+                <Button variant="spotlight" className="w-full" iconLeft={<ExternalLink />}>
+                  Open {formatMonthLong(nextMonth)} ledger
+                  <Badge
+                    variant="spotlight"
+                    className="ml-1 rounded-full border-transparent font-medium"
+                  >
+                    Recommended
+                  </Badge>
+                </Button>
+              }
+            />
+            <CreateLedgerForm
+              ledgerMonth={currentMonth}
+              trigger={
+                <Button variant="outline" className="w-full text-muted-foreground">
+                  Open {formatMonthLong(currentMonth)} Instead
+                </Button>
+              }
+            />
           </>
         ) : (
-          <Button variant="secondary" className="w-full" iconLeft={<ExternalLink />}>
-            Open {formatMonthLong(currentMonth)} ledger
-          </Button>
+          <CreateLedgerForm
+            ledgerMonth={currentMonth}
+            trigger={
+              <Button variant="secondary" className="w-full" iconLeft={<ExternalLink />}>
+                Open {formatMonthLong(currentMonth)} ledger
+              </Button>
+            }
+          />
         )}
       </div>
 
