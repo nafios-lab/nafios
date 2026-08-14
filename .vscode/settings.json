@@ -1,5 +1,7 @@
 {
+  "biome.lsp.bin": "./node_modules/.bin/biome",
   "tailwindCSS.experimental.configFile": "packages/ui/src/styles/globals.css",
+  "tailwindCSS.lint.suggestCanonicalClasses": "ignore",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit",
