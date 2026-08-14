@@ -26,6 +26,7 @@ export * from "./codec-error";
 export * from "./creation-window";
 export * from "./default-categories";
 export * from "./envelope";
+export * from "./health-margin";
 export * from "./ledger-metrics";
 export * from "./max-capped";
 export * from "./money";

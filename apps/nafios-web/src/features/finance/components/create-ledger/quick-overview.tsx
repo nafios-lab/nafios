@@ -6,6 +6,7 @@ import {
   ZERO_MONEY,
 } from "@nafios/finance";
 import { cn } from "@nafios/ui/lib/utils";
+import { HealthMarginTile } from "./health-margin-tile";
 
 export interface QuickOverviewProps {
   /** Opening balance the user has keyed, or `null` while the field is empty. */
@@ -38,7 +39,8 @@ export function QuickOverview({ openingBalance, maxCapped }: QuickOverviewProps)
 
   const tiles = [
     { label: "Projected COL", value: metrics.col, signed: false },
-    { label: "Health Margin", value: metrics.healthMargin, signed: true },
+    // Health Margin renders its own gauge (HealthMarginTile) — `signed` is ignored for it.
+    { label: "Health Margin", value: metrics.summarizedHealthMargin, signed: false },
     { label: "ASM Contr.", value: metrics.asmContribution, signed: true },
   ] as const;
 
@@ -54,15 +56,19 @@ export function QuickOverview({ openingBalance, maxCapped }: QuickOverviewProps)
             className="flex flex-col gap-1.5 rounded-xl border bg-muted/40 px-4 py-3.5"
           >
             <span className="text-muted-foreground text-sm">{tile.label}</span>
-            <span
-              className={cn(
-                "font-bold text-xl tabular-nums",
-                tile.signed &&
-                  (isNegativeMoney(tile.value) ? "text-destructive" : "text-success-foreground"),
-              )}
-            >
-              {formatMoney(tile.value)}
-            </span>
+            {tile.label === "Health Margin" ? (
+              <HealthMarginTile summary={tile.value} />
+            ) : (
+              <span
+                className={cn(
+                  "font-bold text-xl tabular-nums",
+                  tile.signed &&
+                    (isNegativeMoney(tile.value) ? "text-destructive" : "text-success-foreground"),
+                )}
+              >
+                {formatMoney(tile.value)}
+              </span>
+            )}
           </div>
         ))}
       </div>

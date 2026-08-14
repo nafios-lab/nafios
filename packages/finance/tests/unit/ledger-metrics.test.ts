@@ -32,7 +32,10 @@ describe("computeLedgerMetrics — the §6 matrix", () => {
   test("#1 Jan 2027 anchor reproduces every metric to the cent", () => {
     const m = computeLedgerMetrics(JAN_2027);
     expect(encodeMoney(m.col)).toBe("4307.28");
-    expect(encodeMoney(m.healthMargin)).toBe("2107.72");
+    // Health Margin (MaxCapped 6415.00 − COL 4307.28 = 2107.72 → 33% headroom) is
+    // now surfaced as the bucketed gauge, not a bare amount.
+    expect(m.summarizedHealthMargin.status).toBe("healthy");
+    expect(m.summarizedHealthMargin.percent).toBe(33);
     expect(encodeMoney(m.asmContribution)).toBe("2845.07");
     expect(m.outstanding.count).toBe(1);
     expect(encodeMoney(m.outstanding.total)).toBe("1200.00");
@@ -42,7 +45,9 @@ describe("computeLedgerMetrics — the §6 matrix", () => {
   test("#2 empty ledger — COL 0, HM == MaxCapped, ASM == Opening", () => {
     const m = computeLedgerMetrics(ledgerOf("7152.35", "6415.00", []));
     expect(encodeMoney(m.col)).toBe("0.00");
-    expect(encodeMoney(m.healthMargin)).toBe("6415.00");
+    // COL 0 → HM == MaxCapped → full 100% headroom.
+    expect(m.summarizedHealthMargin.status).toBe("healthy");
+    expect(m.summarizedHealthMargin.percent).toBe(100);
     expect(encodeMoney(m.asmContribution)).toBe("7152.35");
     expect(m.outstanding.count).toBe(0);
     expect(encodeMoney(m.outstanding.total)).toBe("0.00");
@@ -101,16 +106,22 @@ describe("computeLedgerMetrics — the §6 matrix", () => {
     expect(m.isAsmNegative).toBe(false);
   });
 
-  test("#8 negative Health Margin with positive ASM", () => {
+  test("#8 negative Health Margin (Over) with positive ASM", () => {
     const m = computeLedgerMetrics(ledgerOf("2000.00", "1000.00", [["1200.00", "pending"]]));
-    expect(encodeMoney(m.healthMargin)).toBe("-200.00");
+    // HM = 1000 − 1200 = −200 → past the ceiling → 'over' at −20%.
+    expect(m.summarizedHealthMargin.status).toBe("over");
+    expect(m.summarizedHealthMargin.percent).toBe(-20);
     expect(encodeMoney(m.asmContribution)).toBe("800.00");
     expect(m.isAsmNegative).toBe(false);
   });
 
   test("#9 structural gap: ASM − HM == Opening − MaxCapped", () => {
     const m = computeLedgerMetrics(JAN_2027);
-    expect(encodeMoney(subtractMoney(m.asmContribution, m.healthMargin))).toBe("737.35");
+    // The raw Health Margin amount is no longer surfaced on metrics (only its
+    // bucketed gauge is); recompute it the way the engine does — MaxCapped − COL —
+    // to assert the invariant relating it to ASM Contribution.
+    const healthMargin = subtractMoney(JAN_2027.maxCapped, m.col);
+    expect(encodeMoney(subtractMoney(m.asmContribution, healthMargin))).toBe("737.35");
   });
 
   test("#10 exact sum — no float drift", () => {
@@ -132,7 +143,7 @@ describe("computeLedgerMetrics — the §6 matrix", () => {
       const m = computeLedgerMetrics(ledger);
       return {
         col: encodeMoney(m.col),
-        healthMargin: encodeMoney(m.healthMargin),
+        healthMargin: m.summarizedHealthMargin.text,
         asmContribution: encodeMoney(m.asmContribution),
         count: m.outstanding.count,
         total: encodeMoney(m.outstanding.total),

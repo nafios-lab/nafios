@@ -15,6 +15,7 @@
 // it names directly is 'pending', for the (narrower) Outstanding subset.
 
 import { countsTowardCol, type EnvelopeStatus } from "./envelope";
+import { type HealthMarginSummary, summarizeHealthMargin } from "./health-margin";
 import { isNegativeMoney, type Money, subtractMoney, sumMoney } from "./money";
 
 /** "What's left to handle this month" — the count and summed amount of the
@@ -29,7 +30,7 @@ export interface Outstanding {
  *  Computed on read, never stored. */
 export interface LedgerMetrics {
   readonly col: Money; // Σ(amount) where status is pending or paid
-  readonly healthMargin: Money; // MaxCapped − COL  (may be negative = over ceiling)
+  readonly summarizedHealthMargin: HealthMarginSummary;
   readonly asmContribution: Money; // Opening − COL    (may be negative = overspend)
   readonly outstanding: Outstanding;
   readonly isAsmNegative: boolean; // asmContribution < 0 → drives the persistent banner (EF3.13)
@@ -57,9 +58,8 @@ export function computeLedgerMetrics(ledger: {
     ledger.envelopes.filter((e) => countsTowardCol(e.status)).map((e) => e.amount),
   );
 
-  // Health Margin (discipline gauge) and ASM Contribution (real money) — distinct,
-  // both may be negative.
-  const healthMargin = subtractMoney(ledger.maxCapped, col);
+  // ASM Contribution (real money): Opening − COL. May be negative (overspend).
+  // Health Margin is no longer a bare amount here — it's summarized below.
   const asmContribution = subtractMoney(ledger.openingBalance, col);
 
   // Outstanding — the `pending` subset only (narrower than COL; `paid` is done).
@@ -72,7 +72,10 @@ export function computeLedgerMetrics(ledger: {
 
   return {
     col,
-    healthMargin,
+    summarizedHealthMargin: summarizeHealthMargin({
+      maxCapped: ledger.maxCapped,
+      col,
+    }),
     asmContribution,
     outstanding,
     isAsmNegative: isNegativeMoney(asmContribution),

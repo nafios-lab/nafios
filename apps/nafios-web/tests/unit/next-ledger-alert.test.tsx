@@ -4,6 +4,7 @@ import {
   type LedgerSummaryCard,
   moneyFromCents,
   monthOf,
+  summarizeHealthMargin,
 } from "@nafios/finance";
 import { cleanup, render, screen } from "@testing-library/react";
 import { NextLedgerAlert } from "../../src/features/finance/components/home/next-ledger-alert.tsx";
@@ -33,7 +34,10 @@ function summaryWithPending(pending: number): LedgerSummaryCard {
     maxCapped: moneyFromCents(500000),
     metrics: {
       col: moneyFromCents(430030),
-      healthMargin: moneyFromCents(69970),
+      summarizedHealthMargin: summarizeHealthMargin({
+        maxCapped: moneyFromCents(500000),
+        col: moneyFromCents(430030),
+      }),
       asmContribution: moneyFromCents(285205),
       outstanding: { count: pending, total: moneyFromCents(pending * 1000) },
       isAsmNegative: false,

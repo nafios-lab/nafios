@@ -327,6 +327,42 @@ This is more prominent than a simple red number because negative ASM is a more s
 
 The system does **not** block envelope additions when ASM Contribution is negative. Legitimate overspend scenarios exist (emergency repairs, one-time large purchases from savings). The system shows truth — the user decides.
 
+### Health Margin status zones (presentation)
+
+The raw `Health Margin` amount answers "how many dollars of headroom", but not "is
+that good?". A **status gauge** buckets the ratio of headroom to ceiling —
+`ratio = HealthMargin / MaxCapped` — into a named verdict for at-a-glance reading
+(a corner chip / future gauge), so no surface re-derives thresholds by hand:
+
+| Zone         | Condition                     | Label        | Signal      |
+| ------------ | ----------------------------- | ------------ | ----------- |
+| Healthy      | `ratio ≥ 30%`                 | `Healthy`    | green       |
+| Tight        | `10% ≤ ratio < 30%`           | `Tight`      | amber       |
+| At risk      | `0% ≤ ratio < 10%`            | `At risk`    | red (alarm) |
+| Over         | `ratio < 0%` (margin < 0)     | `Over`       | red (alarm) |
+| No ceiling   | `MaxCapped == 0`              | `No ceiling` | neutral     |
+
+> **Signal palette.** The design system (`@nafios/ui`) exposes three status hues —
+> `success` (green), `warning` (amber), `error` (red) — with no distinct orange.
+> `At risk` and `Over` both map to the red `error` token; they stay **separate zones**
+> (the marker position and the `At risk` vs `Over` label distinguish them), but share
+> the alarm colour. Introduce an orange token later if the two-tier red proves
+> insufficient — the zones themselves need no change.
+
+- **`Over` is decided by the sign of the margin**, not the ratio — so it holds even
+  where the ratio is a repeating fraction. The percent displayed is a rounded
+  presentation figure; the zone boundary itself is an exact comparison (no float
+  decides a bucket).
+- **`MaxCapped == 0` is a valid ledger value** (`ck_balances_nonneg` allows it), but
+  the ratio divides by it and a `$0` ceiling reads in practice as "no ceiling
+  configured" (a blank creation-form field coerces to `0`), not an intentional zero
+  cap. So it yields the neutral **No ceiling** state (ratio undefined) — the amount
+  tile still shows the truthful `−COL`; the chip declines to judge health with
+  nothing to judge against.
+- These thresholds are **presentation policy** (they change how a number is *labelled*,
+  never the `Health Margin = MaxCapped − COL` formula or any invariant). They live in
+  ONE pure place — `@nafios/finance`'s `summarizeHealthMargin` — and are tunable there.
+
 ### Worked example — User's Jan 2027 ledger
 
 - Opening Balance: **$7,152.35**

@@ -4,6 +4,7 @@ import {
   type LedgerSummaryCard,
   moneyFromCents,
   monthOf,
+  summarizeHealthMargin,
 } from "@nafios/finance";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
@@ -64,7 +65,10 @@ function makeSummary(overrides: Partial<LedgerSummaryCard> = {}): LedgerSummaryC
     maxCapped: moneyFromCents(500000), // $5,000.00
     metrics: {
       col: moneyFromCents(430030), // $4,300.30
-      healthMargin: moneyFromCents(69970), // maxCapped − col
+      summarizedHealthMargin: summarizeHealthMargin({
+        maxCapped: moneyFromCents(500000),
+        col: moneyFromCents(430030),
+      }), // Tight · 14% (maxCapped − col headroom)
       asmContribution: moneyFromCents(285205), // opening − col
       outstanding: { count: 1, total: moneyFromCents(12000) },
       isAsmNegative: false,

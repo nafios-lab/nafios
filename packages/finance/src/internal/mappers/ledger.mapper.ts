@@ -7,7 +7,11 @@
 
 import type { TablesInsert } from "@nafios/database";
 import { decodeMonth, encodeMonth } from "@nafios/datetime";
-import type { LedgerSummaryCard, ReconPendingLedger } from "../../domain";
+import {
+  type LedgerSummaryCard,
+  type ReconPendingLedger,
+  summarizeHealthMargin,
+} from "../../domain";
 import { decodeMoney, encodeMoney } from "../../domain/money";
 import type {
   LedgerHeader,
@@ -61,25 +65,29 @@ export function newLedgerToInsertRow(input: NewLedger): TablesInsert<"monthly_le
 
 /**
  * READ: `get_ledger_summary` payload → LedgerSummaryCard. Decodes every money
- * field via decodeMoney (col / asm_contribution / health_margin /
- *
- * outstanding.total — asm & health MAY be negative, which decodeMoney handles)
- * and the first-of-month DATE via decodeMonth (EF3.1); `status` maps 1:1 (the DB
- * enum values ARE LedgerStatus). `envelope_counts.carried_over` (DB snake_case)
+ * field via decodeMoney (col / asm_contribution / outstanding.total — asm MAY be
+ * negative, which decodeMoney handles) and the first-of-month DATE via decodeMonth
+ * (EF3.1); `status` maps 1:1 (the DB enum values ARE LedgerStatus). The Health
+ * Margin is NOT read from the payload's `health_margin`: it is re-summarized live
+ * via the pure `summarizeHealthMargin(maxCapped, col)` — the same gauge every
+ * surface reads — so the card carries the bucketed verdict, not a bare amount.
+ * `envelope_counts.carried_over` (DB snake_case)
  * becomes `carriedOver` — the summary card's counterpart to the envelope mapper's
  * `carried_over ↔ carried-over` seam. A malformed value throws EF3.1's CodecError
  * here, NOT a FinanceDataError (that is strictly for query failures).
  */
 export function ledgerSummaryDTOToCard(payload: LedgerSummaryDTO): LedgerSummaryCard {
+  const col = decodeMoney(payload.col);
+  const maxCapped = decodeMoney(payload.max_capped);
   return {
     id: payload.id,
     month: decodeMonth(payload.month),
     status: payload.status,
     openingBalance: decodeMoney(payload.opening_balance),
-    maxCapped: decodeMoney(payload.max_capped),
+    maxCapped,
     metrics: {
-      col: decodeMoney(payload.col),
-      healthMargin: decodeMoney(payload.health_margin),
+      col,
+      summarizedHealthMargin: summarizeHealthMargin({ maxCapped, col }),
       asmContribution: decodeMoney(payload.asm_contribution),
       outstanding: {
         count: payload.outstanding.count,
