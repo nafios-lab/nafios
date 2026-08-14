@@ -249,7 +249,7 @@ export interface Outstanding {
 }
 export interface LedgerMetrics {
   col: Money; // Σ(amount) where status is pending or paid
-  healthMargin: Money; // MaxCapped − COL   (may be negative)
+  summarizedHealthMargin: HealthMarginSummary; // bucketed verdict over MaxCapped − COL (not a bare amount)
   asmContribution: Money; // Opening − COL     (may be negative)
   outstanding: Outstanding;
   isAsmNegative: boolean;
@@ -259,6 +259,21 @@ export function computeLedgerMetrics(ledger: {
   maxCapped: Money;
   envelopes: readonly { amount: Money; status: EnvelopeStatus }[];
 }): LedgerMetrics;
+
+// Health Margin status gauge — the presentation judgment layered on the raw
+// `Health Margin = MaxCapped − COL` amount (see monthly-ledger.md, "Health Margin
+// status zones"). Pure: buckets the headroom ratio into a named zone + a
+// ready-to-render snippet, so no surface re-derives thresholds by hand.
+export type HealthStatus = "healthy" | "tight" | "at-risk" | "over" | "no-ceiling";
+export const HEALTH_MARGIN_THRESHOLDS: { healthy: 30; tight: 10 }; // whole-percent cutoffs, tunable here
+export interface HealthMarginSummary {
+  status: HealthStatus; // the verdict (drives colour + word)
+  label: string; // "Healthy" | "Tight" | "At risk" | "Over" | "No ceiling"
+  ratio: number | null; // margin / maxCapped as a fraction; null when no-ceiling
+  percent: number | null; // ratio rounded to a whole percent; null when no-ceiling
+  text: string; // corner snippet, e.g. "Healthy · 62%", "Over · -10%", "No ceiling"
+}
+export function summarizeHealthMargin(input: { maxCapped: Money; col: Money }): HealthMarginSummary;
 ```
 
 ### Data layer — ledger repository (EF3.6)

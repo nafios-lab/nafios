@@ -1,7 +1,8 @@
 // @nafios/finance — domain layer (pure). Zero I/O, zero dependencies, no clock.
 //
 // THE Health Margin status gauge — the presentation judgment layered on top of
-// the raw `Health Margin = MaxCapped − COL` amount (ledger-metrics.md §5). The
+// the raw `Health Margin = MaxCapped − COL` amount (monthly-ledger.md, "Health
+// Margin status zones"). The
 // amount alone ("$1,240") makes the user ask "is that good?"; this pins the
 // answer as a named zone + a ready-to-render snippet ("Healthy · 62%"), so the
 // UI renders a verdict instead of re-deriving one. The judgment lives here, in
@@ -9,8 +10,8 @@
 // invent its own thresholds.
 //
 // The zone is decided by the RATIO of headroom to ceiling — `margin / maxCapped`
-// — bucketed by fixed cutoffs (monthly-ledger.md §5, "Health Margin status
-// zones"). Threshold classification stays EXACT: it compares scaled integer
+// — bucketed by fixed cutoffs (monthly-ledger.md, "Health Margin status zones").
+// Threshold classification stays EXACT: it compares scaled integer
 // cents (`100·marginCents ⋛ percent·maxCappedCents`), never a float, so a value
 // on a boundary lands deterministically. The displayed `percent` IS a rounded
 // float — a presentation figure only (like formatMoney's ÷100), never the basis
