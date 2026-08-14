@@ -15,6 +15,7 @@ import {
   createLedgerSchema,
 } from "../../schemas/create-ledger-schema";
 import { MoneyInput } from "../shared/money-input";
+import { QuickOverview } from "./quick-overview";
 import { SaveDefaultsCheckbox } from "./save-defaults-checkbox";
 
 interface CreateLedgerFormProps {
@@ -101,6 +102,16 @@ export function CreateLedgerForm(props: CreateLedgerFormProps) {
           </div>
 
           <SaveDefaultsCheckbox />
+          <formApi.Subscribe
+            selector={(state) => ({
+              openingBalance: state.values.openingBalance,
+              maxCapped: state.values.maxCapped,
+            })}
+          >
+            {({ openingBalance, maxCapped }) => (
+              <QuickOverview openingBalance={openingBalance} maxCapped={maxCapped} />
+            )}
+          </formApi.Subscribe>
           <Button variant="brand" type="submit">
             Open ledger
           </Button>
