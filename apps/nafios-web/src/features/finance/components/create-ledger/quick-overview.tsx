@@ -1,5 +1,6 @@
 import {
   computeLedgerMetrics,
+  type Envelope,
   formatMoney,
   isNegativeMoney,
   type Money,
@@ -13,6 +14,7 @@ export interface QuickOverviewProps {
   openingBalance: Money | null;
   /** Max Capped (the spending ceiling) the user has keyed, or `null` while empty. */
   maxCapped: Money | null;
+  envelopesToBeCreated: Envelope[];
 }
 
 /**
@@ -30,11 +32,15 @@ export interface QuickOverviewProps {
  * `Money` display rules — not special-cased away, even though COL = 0 keeps them
  * non-negative for now.
  */
-export function QuickOverview({ openingBalance, maxCapped }: QuickOverviewProps) {
+export function QuickOverview({
+  openingBalance,
+  maxCapped,
+  envelopesToBeCreated,
+}: QuickOverviewProps) {
   const metrics = computeLedgerMetrics({
     openingBalance: openingBalance ?? ZERO_MONEY,
     maxCapped: maxCapped ?? ZERO_MONEY,
-    envelopes: [], // no recurring templates in EF3 ⇒ COL = 0
+    envelopes: envelopesToBeCreated, // no recurring templates in EF3 ⇒ COL = 0
   });
 
   const tiles = [

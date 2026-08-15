@@ -15,6 +15,7 @@ import {
   createLedgerSchema,
 } from "../../schemas/create-ledger-schema";
 import { MoneyInput } from "../shared/money-input";
+import { EnvPreviewList } from "./env-preview-list";
 import { QuickOverview } from "./quick-overview";
 import { SaveDefaultsCheckbox } from "./save-defaults-checkbox";
 
@@ -109,9 +110,14 @@ export function CreateLedgerForm(props: CreateLedgerFormProps) {
             })}
           >
             {({ openingBalance, maxCapped }) => (
-              <QuickOverview openingBalance={openingBalance} maxCapped={maxCapped} />
+              <QuickOverview
+                openingBalance={openingBalance}
+                maxCapped={maxCapped}
+                envelopesToBeCreated={[]}
+              />
             )}
           </formApi.Subscribe>
+          <EnvPreviewList envs={[]} />
           <Button variant="brand" type="submit">
             Open ledger
           </Button>
