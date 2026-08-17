@@ -7,11 +7,14 @@ import {
   summarizeHealthMargin,
 } from "@nafios/finance";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { createWrapper } from "../query-wrapper.tsx";
 
 // FinanceHome now owns its own client-side read (ADR-0026) via `useFinanceHomeState`,
 // so we drive it by mocking that hook to a controllable query object — each test
-// sets `isPending` / `isError` / the resolved `data` seam, and no QueryClient
-// provider is needed (the read plumbing is covered in use-finance-home-state.test.tsx).
+// sets `isPending` / `isError` / the resolved `data` seam. The read plumbing is
+// covered in use-finance-home-state.test.tsx. We still render under a QueryClient
+// wrapper (`renderHome`) because the empty-state CTAs embed `CreateLedgerForm`,
+// whose `useCreateLedger` mutation reads `useQueryClient`.
 //
 // `mock.module` is process-global and leaks forward to later files, so we capture
 // the REAL hook up front and restore it in `afterAll` — use-finance-home-state.test.tsx
@@ -91,10 +94,15 @@ function ready(overrides: Partial<FinanceHomeState> = {}): void {
 beforeEach(() => ready());
 afterEach(cleanup);
 
+/** Render under a QueryClient — the empty-state CTAs embed a mutation-driven form. */
+function renderHome() {
+  return render(<FinanceHome />, { wrapper: createWrapper() });
+}
+
 describe("FinanceHome — read states (loading / error)", () => {
   test("loading → a skeleton, no cards or CTAs", () => {
     query = { isPending: true };
-    const { container } = render(<FinanceHome />);
+    const { container } = renderHome();
 
     expect(container.querySelector(".animate-pulse")).not.toBeNull();
     expect(container.querySelector("[data-slot='ledger-detail-card']")).toBeNull();
@@ -104,7 +112,7 @@ describe("FinanceHome — read states (loading / error)", () => {
   test("error → a generic error card with a working retry (no error-code matrix)", () => {
     const refetch = mock(() => {});
     query = { isError: true, refetch };
-    render(<FinanceHome />);
+    renderHome();
 
     expect(screen.getByText("Couldn't load your finance home")).toBeDefined();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -115,7 +123,7 @@ describe("FinanceHome — read states (loading / error)", () => {
 describe("FinanceHome — display decision (fresh_start_ledger)", () => {
   test("active ledger (+ summary) → renders the Ledger Detail Card, not the empty state", () => {
     ready(activeSeam());
-    const { container } = render(<FinanceHome />);
+    const { container } = renderHome();
 
     expect(container.querySelector("[data-slot='ledger-detail-card']")).not.toBeNull();
     // The summary is wired through — the lifecycle pill + a headline metric show.
@@ -132,7 +140,7 @@ describe("FinanceHome — display decision (fresh_start_ledger)", () => {
     // NOT a fresh start, so the empty/fresh state does not show either (the
     // non-fresh branch still renders the NextLedgerAlert, but neither card).
     ready({ fresh_start_ledger: false, activeLedgerSummary: null });
-    const { container } = render(<FinanceHome />);
+    const { container } = renderHome();
 
     expect(container.querySelector("[data-slot='ledger-detail-card']")).toBeNull();
     expect(screen.queryByText("Start your first month")).toBeNull();
@@ -140,7 +148,7 @@ describe("FinanceHome — display decision (fresh_start_ledger)", () => {
 
   test("fresh start → renders the empty state, not the detail card", () => {
     ready({ fresh_start_ledger: true });
-    const { container } = render(<FinanceHome />);
+    const { container } = renderHome();
 
     expect(screen.getByText("Start your first month")).toBeDefined();
     expect(container.querySelector("[data-slot='ledger-detail-card']")).toBeNull();
@@ -150,7 +158,7 @@ describe("FinanceHome — display decision (fresh_start_ledger)", () => {
     // Even with the window open, an active ledger still shows the detail card
     // and never the creation CTAs.
     ready({ ...activeSeam(), isWithinLeadDay: true });
-    const { container } = render(<FinanceHome />);
+    const { container } = renderHome();
 
     expect(container.querySelector("[data-slot='ledger-detail-card']")).not.toBeNull();
     expect(screen.queryByText(/Recommended/)).toBeNull();
@@ -160,7 +168,7 @@ describe("FinanceHome — display decision (fresh_start_ledger)", () => {
 describe("FinanceHome — empty-state scenarios (Lead-Day)", () => {
   test("Scenario 1 (outside Lead-Day): single CTA + caption, no Recommended/Instead", () => {
     ready({ isWithinLeadDay: false });
-    render(<FinanceHome />);
+    renderHome();
 
     expect(screen.getByText("Open July 2026 ledger")).toBeDefined();
     expect(screen.getByText("August will become available in the recon period")).toBeDefined();
@@ -170,7 +178,7 @@ describe("FinanceHome — empty-state scenarios (Lead-Day)", () => {
 
   test("Scenario 2 (inside Lead-Day): Recommended primary + secondary CTA + caption", () => {
     ready({ isWithinLeadDay: true });
-    render(<FinanceHome />);
+    renderHome();
 
     expect(screen.getByText("Open August 2026 ledger")).toBeDefined();
     expect(screen.getByText("Recommended")).toBeDefined();
@@ -186,7 +194,7 @@ describe("FinanceHome — empty-state scenarios (Lead-Day)", () => {
       currentMonth: monthOf("2026-12-01"),
       nextMonth: monthOf("2027-01-01"),
     });
-    render(<FinanceHome />);
+    renderHome();
 
     expect(screen.getByText("Open January 2027 ledger")).toBeDefined();
     expect(screen.getByText("Open December 2026 Instead")).toBeDefined();

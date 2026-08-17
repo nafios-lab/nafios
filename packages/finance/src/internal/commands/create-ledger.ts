@@ -24,7 +24,7 @@
 
 import { compareMonths, type Month, today } from "@nafios/datetime";
 import { resolveCreationState } from "../../domain/creation-window";
-import { type MaxCappedGuardrail, validateMaxCapped } from "../../domain/max-capped";
+import { validateMaxCapped } from "../../domain/max-capped";
 import { compareMoney, type Money, ZERO_MONEY } from "../../domain/money";
 import type { FinanceClient } from "../client";
 import { createLedgerRepository, type LedgerHeader } from "../repositories/ledger.repo";
@@ -64,18 +64,18 @@ export interface CreateLedgerInput {
 export type CreateLedgerRejectionReason =
   | "month_not_openable" // month ∉ EF3.4 openable set: far-future, back-fill, or already has a ledger
   | "negative_amount" // openingBalance or maxCapped < 0 (EF3.5 does not police sign; DB ck_balances_nonneg backstops)
-  | "requires_confirmation" // EF3.5 amber zone, acknowledgedOverspend === false
+  | "overspend_warning" // EF3.5 amber zone, acknowledgedOverspend === false
   | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — NO override
 
 // ───────────────────────────── Result ─────────────────────────────
 
 /**
  * The command's result. A deterministic pre-write rejection is `{ ok: false }`
- * (the caller renders it — same channel as EF3.5's validation result).
- * `guardrail` is present iff the reason is a guardrail one (so the amber sheet
- * has `savingsDraw` / the block message has `hardCap`), null otherwise. On
- * success, `parkedLedgerId` is the id of the ledger moved to `reconciling`
- * (S3/S5), or null when nothing was parked (fresh start — S2).
+ * carrying only its `reason` — the caller renders copy from the reason alone.
+ * (The guardrail payload — `savingsDraw` / `hardCap` — was removed; the UI does
+ * not consume it. Richer per-reason detail can be reintroduced later if a
+ * situation warrants it.) On success, `parkedLedgerId` is the id of the ledger
+ * moved to `reconciling` (S3/S5), or null when nothing was parked (fresh start — S2).
  */
 export type CreateLedgerResult =
   | {
@@ -86,7 +86,6 @@ export type CreateLedgerResult =
   | {
       readonly ok: false;
       readonly reason: CreateLedgerRejectionReason;
-      readonly guardrail: MaxCappedGuardrail | null;
     };
 
 // ─────────────────────────── The command ──────────────────────────
@@ -128,16 +127,16 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       //    write, so the DB ck_balances_nonneg is only ever a backstop. Compared
       //    via EF3.1's compareMoney against ZERO_MONEY — no raw-number math.
       if (compareMoney(openingBalance, ZERO_MONEY) < 0 || compareMoney(maxCapped, ZERO_MONEY) < 0) {
-        return { ok: false, reason: "negative_amount", guardrail: null };
+        return { ok: false, reason: "negative_amount" };
       }
 
-      // 2. MaxCapped guardrail (pure — EF3.5). Returned verbatim: the reason is
-      //    exactly EF3.5's `requires_confirmation` / `exceeds_hard_cap`, and the
-      //    guardrail (savingsDraw / hardCap) travels so EF3.12 renders the sheet /
-      //    message. The command does NOT re-derive the zones.
+      // 2. MaxCapped guardrail (pure — EF3.5). The command surfaces only the
+      //    reason (`overspend_warning` / `exceeds_hard_cap`); the guardrail
+      //    payload (savingsDraw / hardCap) is intentionally NOT propagated — the
+      //    UI branches on the reason alone. The command does NOT re-derive the zones.
       const validation = validateMaxCapped({ openingBalance, maxCapped, acknowledgedOverspend });
       if (!validation.ok) {
-        return { ok: false, reason: validation.reason, guardrail: validation.guardrail };
+        return { ok: false, reason: validation.reason };
       }
 
       // 3. Openable-month (needs the single list() read — EF3.4). The caller's
@@ -153,7 +152,7 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
         (openable.current !== null && compareMonths(openable.current, month) === 0) ||
         (openable.next !== null && compareMonths(openable.next, month) === 0);
       if (!isOpenable) {
-        return { ok: false, reason: "month_not_openable", guardrail: null };
+        return { ok: false, reason: "month_not_openable" };
       }
 
       // ── §4.2 open the month — the atomic prev-ongoing → reconciling transition ──

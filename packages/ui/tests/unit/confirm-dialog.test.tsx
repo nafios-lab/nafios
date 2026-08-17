@@ -137,4 +137,55 @@ describe("ConfirmDialog", () => {
       expect(btn.className).not.toContain("bg-error");
     });
   });
+
+  describe("controlled mode", () => {
+    test("opens via the open prop without a trigger", async () => {
+      render(<ConfirmDialog open title="Controlled" onConfirm={() => {}} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Controlled")).toBeDefined();
+      });
+      expect(screen.queryByRole("button", { name: "Open" })).toBeNull();
+    });
+
+    test("stays closed when open is false", () => {
+      render(<ConfirmDialog open={false} title="Hidden" onConfirm={() => {}} />);
+
+      expect(screen.queryByText("Hidden")).toBeNull();
+    });
+
+    test("calls onOpenChange when confirm is clicked", async () => {
+      const user = userEvent.setup();
+      const onOpenChange = mock(() => {});
+      const onConfirm = mock(() => {});
+      render(
+        <ConfirmDialog open onOpenChange={onOpenChange} title="Controlled" onConfirm={onConfirm} />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: "Confirm" })).toBeDefined();
+      });
+
+      await user.click(screen.getByRole("button", { name: "Confirm" }));
+      expect(onConfirm).toHaveBeenCalledTimes(1);
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    test("calls onOpenChange when cancel is clicked", async () => {
+      const user = userEvent.setup();
+      const onOpenChange = mock(() => {});
+      const onConfirm = mock(() => {});
+      render(
+        <ConfirmDialog open onOpenChange={onOpenChange} title="Controlled" onConfirm={onConfirm} />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: "Cancel" })).toBeDefined();
+      });
+
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(onConfirm).not.toHaveBeenCalled();
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+  });
 });

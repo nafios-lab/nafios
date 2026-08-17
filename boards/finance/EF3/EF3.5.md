@@ -99,7 +99,7 @@ export function evaluateMaxCapped(
 
 /** Why validateMaxCapped rejected a proposed maxCapped. */
 export type MaxCappedRejectionReason =
-  | "requires_confirmation" // amber zone, but `confirmed` was false
+  | "overspend_warning" // amber zone, but `confirmed` was false
   | "exceeds_hard_cap"; // blocked zone — above 2×opening; NEVER overridable
 
 /**
@@ -123,7 +123,7 @@ export type MaxCappedValidation =
  *
  *   zone 'ok'                    → { ok: true }                              (confirmed ignored)
  *   zone 'amber' & confirmed     → { ok: true }
- *   zone 'amber' & !confirmed    → { ok: false, reason: 'requires_confirmation' }
+ *   zone 'amber' & !confirmed    → { ok: false, reason: 'overspend_warning' }
  *   zone 'blocked' (any confirm) → { ok: false, reason: 'exceeds_hard_cap' }  (NO override)
  *
  * `confirmed` is the user's explicit amber-zone acknowledgement ("Yes, I understand" —
@@ -181,7 +181,7 @@ packages/finance/
 
 1. **Composes the zone with `confirmed`.** `validateMaxCapped` classifies via `evaluateMaxCapped`, then:
    - `zone === 'ok'` → `{ ok: true }` — `confirmed` is **ignored** (green needs no confirmation).
-   - `zone === 'amber'` → `{ ok: true }` iff `confirmed === true`; else `{ ok: false, reason: 'requires_confirmation' }`.
+   - `zone === 'amber'` → `{ ok: true }` iff `confirmed === true`; else `{ ok: false, reason: 'overspend_warning' }`.
    - `zone === 'blocked'` → **always** `{ ok: false, reason: 'exceeds_hard_cap' }`, regardless of `confirmed`.
 2. **`confirmed` lifts amber only — it can NEVER override a block.** This is the crux of the "no override" rule (`monthly-ledger.md` §2, RFC-022): a `confirmed: true` on a blocked value still rejects with `exceeds_hard_cap`. The gate makes an accidental overspend impossible and a deliberate one (within 2×) possible — exactly RFC-022's Informed Friction (rows 13–15).
 3. **Returns a result; never throws.** A bad `maxCapped` is _user_ input — the caller (EF3.7 command / EF3.12 form) renders the rejection, it is not a programming error. This differs from EF3.1's codecs, which throw `CodecError` on malformed _DB_ values. Both variants carry `guardrail`, so the caller always has `savingsDraw` (to prompt) and `hardCap` (to explain the ceiling).
@@ -236,7 +236,7 @@ validateMaxCapped({
   maxCapped: decodeMoney("7500.00"),
   confirmed: false,
 });
-// => { ok: false, reason: 'requires_confirmation', guardrail: { zone: 'amber', savingsDraw: 347.65, ... } }
+// => { ok: false, reason: 'overspend_warning', guardrail: { zone: 'amber', savingsDraw: 347.65, ... } }
 
 validateMaxCapped({
   openingBalance: opening,
@@ -280,7 +280,7 @@ Encode as unit tests in `tests/unit/max-capped.test.ts` so `bun run check` enfor
 | --- | ------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
 | 10  | `7152.35` / `6415.00` / `false`       | `{ ok: true, zone 'ok' }`                                            | green passes; `confirmed` irrelevant                   |
 | 11  | `7152.35` / `7152.35` / `false`       | `{ ok: true, zone 'ok' }`                                            | `== opening` boundary → green                          |
-| 12  | `7152.35` / `7500.00` / `false`       | `{ ok: false, 'requires_confirmation' }`                             | amber, not confirmed                                   |
+| 12  | `7152.35` / `7500.00` / `false`       | `{ ok: false, 'overspend_warning' }`                                 | amber, not confirmed                                   |
 | 13  | `7152.35` / `7500.00` / `true`        | `{ ok: true, zone 'amber' }`                                         | amber, confirmed → passes                              |
 | 14  | `7152.35` / `14304.70` / `true`       | `{ ok: true, zone 'amber' }`                                         | exactly 2×, confirmed → passes                         |
 | 15  | `7152.35` / `14304.71` / `true`       | `{ ok: false, 'exceeds_hard_cap' }`                                  | **blocked; `confirmed: true` does NOT override**       |
@@ -303,7 +303,7 @@ Encode as unit tests in `tests/unit/max-capped.test.ts` so `bun run check` enfor
 - [ ] **AC2** — `evaluateMaxCapped` classifies exactly per §4.1: `ok` ⟺ `maxCapped ≤ opening`; `amber` ⟺ `opening < maxCapped ≤ 2×opening`; `blocked` ⟺ `maxCapped > 2×opening`. The boundaries are correct — `== opening` is `ok`, `== 2×opening` is `amber` (rows 2, 5, 6).
 - [ ] **AC3** — `hardCap` is `2 × opening` computed via `addMoney(opening, opening)` (exact, no float/`*`), present in every zone (rows 1–9, 18).
 - [ ] **AC4** — `savingsDraw` is `subtractMoney(maxCapped, opening)` iff `zone === 'amber'`, and `null` for `ok` and `blocked` (rows 1–9).
-- [ ] **AC5** — `validateMaxCapped` passes green (any `confirmed`), passes amber **only** when `confirmed === true` else rejects `requires_confirmation`, and **always** rejects blocked as `exceeds_hard_cap` (rows 10–16).
+- [ ] **AC5** — `validateMaxCapped` passes green (any `confirmed`), passes amber **only** when `confirmed === true` else rejects `overspend_warning`, and **always** rejects blocked as `exceeds_hard_cap` (rows 10–16).
 - [ ] **AC6** — **No override:** a `blocked` value with `confirmed: true` still returns `{ ok: false, reason: 'exceeds_hard_cap' }` (row 15). `confirmed` can lift amber and nothing else.
 - [ ] **AC7** — Both variants of `MaxCappedValidation` carry `guardrail` equal to `evaluateMaxCapped(opening, maxCapped)` (row 17); the functions return results and **never throw** on any `Money` pair (user input, not a programming error — §4.2).
 - [ ] **AC8** — Every row of the §6 matrix passes as a unit test, including the ±1¢ boundary flips (rows 3, 5, 6) and the zero-opening edge (rows 8–9); the result contains **no user-facing copy** (numbers only — §4.3); `bun run check` is green across the workspace.
@@ -341,7 +341,7 @@ This ticket is **one PR** that closes EF3.5. It is a leaf domain function depend
 
 | Version | Date       | Author            | Changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------- | ---------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1.0     | 2026-07-08 | Hanafi Yakub      | **Implemented & merged-ready.** Added `src/domain/max-capped.ts` (`MaxCappedZone`, `MaxCappedGuardrail`, `evaluateMaxCapped`, `MaxCappedRejectionReason`, `MaxCappedValidation`, `validateMaxCapped`) — pure, EF3.1 `Money` helpers only (`hardCap = addMoney(opening, opening)`, `savingsDraw = subtractMoney(maxCapped, opening)`, boundaries via `compareMoney`); re-exported from the domain barrel. Added `tests/unit/max-capped.test.ts` covering the full §6 matrix (rows 1–20: zones, ±1¢ boundary flips, zero-opening edge, gate × `confirmed`, no-override, purity/numbers-only). `typecheck` + all unit tests + biome check green (AC1–AC9). EF3.5 checkbox ticked in `EF3.md`. |
+| 1.0     | 2026-07-08 | Hanafi Yakub      | **Implemented & merged-ready.** Added `src/domain/max-capped.ts` (`MaxCappedZone`, `MaxCappedGuardrail`, `evaluateMaxCapped`, `MaxCappedRejectionReason`, `MaxCappedValidation`, `validateMaxCapped`) — pure, EF3.1 `Money` helpers only (`hardCap = addMoney(opening, opening)`, `savingsDraw = subtractMoney(maxCapped, opening)`, boundaries via `compareMoney`); re-exported from the domain barrel. Added `tests/unit/max-capped.test.ts` covering the full §6 matrix (rows 1–20: zones, ±1¢ boundary flips, zero-opening edge, gate × `confirmed`, no-override, purity/numbers-only). `typecheck` + all unit tests + biome check green (AC1–AC9). EF3.5 checkbox ticked in `EF3.md`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | 0.1     | 2026-07-03 | NafiOS Foundation | Initial standalone task for the MaxCapped guardrail in `@nafios/finance`'s domain layer: `evaluateMaxCapped` (pure zone classifier → `ok`/`amber`/`blocked`, `hardCap` = 2×opening via `addMoney`, amber-only `savingsDraw` = `maxCapped − opening`) and `validateMaxCapped` (enforcement gate composing zone + explicit `confirmed` flag → `{ ok }` result; green passes, amber passes only when confirmed, blocked always rejects with **no override**). Pins RFC-022's Informed-Friction input-side rules (amber `> Opening` confirm, hard-block `> 2× Opening`) in one place consumed by the create command (EF3.7) and creation form (EF3.12, S6); boundaries fixed (`== opening` → ok, `== 2×` → amber); numbers-only (copy is EF3.12's); returns a result and never throws (user input, not a programming error). Scopes out the Tier-3 negative-ASM banner (EF3.2 `isAsmNegative` / EF3.13), `multiplyMoney`, ledger-mutability, and status transitions. Verification matrix (zones, ±1¢ boundaries, zero-opening edge, gate + `confirmed`, no-override) + AC1–AC9 + §9 Definition of Done (green `bun run check` as the merge gate); PR-able standalone as a leaf domain function on EF3.1. |
 
 </content>

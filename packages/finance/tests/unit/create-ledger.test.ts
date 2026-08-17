@@ -139,7 +139,7 @@ const BASE = {
 // ─────────────────── Pre-write rejections — no write ───────────────────
 
 describe("pre-write validation — returns { ok:false }, performs no write", () => {
-  test("negative openingBalance → negative_amount, guardrail null, no query issued", async () => {
+  test("negative openingBalance → negative_amount, no query issued", async () => {
     const { client, ops } = makeClient({});
     const result = await createLedgerCommands(client).createLedger({
       ...BASE,
@@ -147,7 +147,6 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     });
     if (result.ok) throw new Error("expected rejection");
     expect(result.reason).toBe("negative_amount");
-    expect(result.guardrail).toBeNull();
     expect(ops).toEqual([]); // no read, no write — the check is pure and first
   });
 
@@ -161,7 +160,7 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     expect(result.reason).toBe("negative_amount");
   });
 
-  test("amber maxCapped, not confirmed → requires_confirmation, guardrail travels, no query", async () => {
+  test("amber maxCapped, not confirmed → overspend_warning, no query", async () => {
     const { client, ops } = makeClient({});
     const result = await createLedgerCommands(client).createLedger({
       ...BASE,
@@ -169,8 +168,7 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
       acknowledgedOverspend: false,
     });
     if (result.ok) throw new Error("expected rejection");
-    expect(result.reason).toBe("requires_confirmation");
-    expect(result.guardrail?.zone).toBe("amber");
+    expect(result.reason).toBe("overspend_warning");
     expect(ops).toEqual([]);
   });
 
@@ -183,7 +181,6 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     });
     if (result.ok) throw new Error("expected rejection");
     expect(result.reason).toBe("exceeds_hard_cap");
-    expect(result.guardrail?.zone).toBe("blocked");
   });
 
   test("month not in the openable set → month_not_openable after the single list() read, no write", async () => {
@@ -194,7 +191,6 @@ describe("pre-write validation — returns { ok:false }, performs no write", () 
     });
     if (result.ok) throw new Error("expected rejection");
     expect(result.reason).toBe("month_not_openable");
-    expect(result.guardrail).toBeNull();
     expect(ops).toEqual(["list"]); // read to resolve openable months, then no write
   });
 });

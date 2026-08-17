@@ -38,11 +38,11 @@ pattern for the finance write hooks that follow (envelopes, etc.).
 
 `createLedger` has **two** distinct failure channels — do not collapse them:
 
-| Outcome | How it arrives | Meaning | UI |
-| --- | --- | --- | --- |
-| `{ ok: true, ledger, parkedLedgerId }` | resolved value | ledger opened | close dialog, invalidate, toast |
-| `{ ok: false, reason, guardrail }` | **resolved value** (not thrown) | deterministic pre-write rejection — user-fixable / needs confirmation | render inline; `requires_confirmation` → amber sheet |
-| throws `FinanceDataError` | **rejected promise** | genuine DB/query fault (EF3.6) | generic error state |
+| Outcome                                | How it arrives                  | Meaning                                                               | UI                                               |
+| -------------------------------------- | ------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------ |
+| `{ ok: true, ledger, parkedLedgerId }` | resolved value                  | ledger opened                                                         | close dialog, invalidate, toast                  |
+| `{ ok: false, reason, guardrail }`     | **resolved value** (not thrown) | deterministic pre-write rejection — user-fixable / needs confirmation | render inline; `overspend_warning` → amber sheet |
+| throws `FinanceDataError`              | **rejected promise**            | genuine DB/query fault (EF3.6)                                        | generic error state                              |
 
 Source: `CreateLedgerResult` and the command contract in
 [packages/finance/src/internal/commands/create-ledger.ts:80-108](../../../../../../../packages/finance/src/internal/commands/create-ledger.ts#L80-L108).
@@ -50,9 +50,9 @@ Source: `CreateLedgerResult` and the command contract in
 Consequence for `useMutation`:
 
 - **Only the thrown `FinanceDataError` routes to `onError`.** A `{ ok: false }`
-  rejection is a *successful* promise, so it lands in `onSuccess` / the returned
+  rejection is a _successful_ promise, so it lands in `onSuccess` / the returned
   `data`. Branch on `data.ok` — do **not** re-throw rejections into `onError`.
-  Rejections like `requires_confirmation` are a confirmation flow, not an error;
+  Rejections like `overspend_warning` are a confirmation flow, not an error;
   throwing them would lose the `guardrail` payload the amber sheet needs and would
   trip React Query's retry/error semantics.
 
@@ -71,34 +71,34 @@ split: **there is no backend service.** The finance command
 true server-side enforcement is Postgres — RLS + `CHECK`/`UNIQUE` constraints. So
 "put it on the backend" here means one of two very different things: the **domain
 command** layer (still in the browser — the single source of truth for the
-*rules*, but **not** a trust boundary), or the **database** (the real trust
-boundary — but it can only express *constraints*, never a "did the user
+_rules_, but **not** a trust boundary), or the **database** (the real trust
+boundary — but it can only express _constraints_, never a "did the user
 acknowledge?" interaction).
 
 Three layers, three distinct jobs — not duplicates of one:
 
-| Layer | Runs where | Owns | For create-ledger |
-| --- | --- | --- | --- |
-| Form schema (zod) | browser | field presence only | "required" on the two money inputs — deliberately nothing else ([create-ledger-schema.ts](../../schemas/create-ledger-schema.ts) comment: does **not** re-derive EF3.5) |
-| Domain command | browser | the business *rules* (single source of truth) | amber (`requires_confirmation`), hard cap (`exceeds_hard_cap`), non-negativity, openable-month |
-| Postgres (RLS/CHECK/UNIQUE) | server (**trust boundary**) | hard *invariants* | `ck_balances_nonneg`, one-ledger-per-month uniqueness (`duplicate_month`), owner RLS |
+| Layer                       | Runs where                  | Owns                                          | For create-ledger                                                                                                                                                       |
+| --------------------------- | --------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Form schema (zod)           | browser                     | field presence only                           | "required" on the two money inputs — deliberately nothing else ([create-ledger-schema.ts](../../schemas/create-ledger-schema.ts) comment: does **not** re-derive EF3.5) |
+| Domain command              | browser                     | the business _rules_ (single source of truth) | amber (`overspend_warning`), hard cap (`exceeds_hard_cap`), non-negativity, openable-month                                                                              |
+| Postgres (RLS/CHECK/UNIQUE) | server (**trust boundary**) | hard _invariants_                             | `ck_balances_nonneg`, one-ledger-per-month uniqueness (`duplicate_month`), owner RLS                                                                                    |
 
-**Why not just guard the amber rule on the FE?** You *can* mirror
+**Why not just guard the amber rule on the FE?** You _can_ mirror
 `maxCapped > openingBalance` in the form — but you shouldn't:
 
 1. **The spec assigns it to the command.** EF3.5 is owned by `createLedger`, and
    the schema file explicitly says it does not re-derive the guardrail. A copy in
    the form is a second definition of one rule that will drift.
-2. **Letting the command decide costs nothing.** `validateMaxCapped` is *pure* and
-   runs **before any DB read** — the command returns `requires_confirmation` at the
+2. **Letting the command decide costs nothing.** `validateMaxCapped` is _pure_ and
+   runs **before any DB read** — the command returns `overspend_warning` at the
    guardrail step, ahead of `repo.list()`. So submitting with
    `acknowledgedOverspend: false` incurs **no network round-trip** for the amber
    case. The usual reason to pre-check on the FE (avoid a wasted server hit) does
    not apply.
-3. **The FE still owns the *interaction*.** Rendering the amber sheet and capturing
+3. **The FE still owns the _interaction_.** Rendering the amber sheet and capturing
    "yes" is pure UI state; that "yes" is the `acknowledgedOverspend` boolean fed
-   back into the same command. The FE guards the *conversation*; the command guards
-   the *rule*.
+   back into the same command. The FE guards the _conversation_; the command guards
+   the _rule_.
 
 **Why the command must "return more than an error."** The amber case is **not an
 error** — it's a request for one more input. An exception can only carry a
@@ -107,7 +107,7 @@ sheet copy, `hardCap` for the block message). That is exactly why the command
 returns the `CreateLedgerResult` **discriminated union** rather than throwing (see
 §2). Exceptions stay reserved for genuine faults (`FinanceDataError`). So yes, the
 command must return structured rejection data — and it already does; the FE needs
-no *additional* validation shape, it just consumes the union.
+no _additional_ validation shape, it just consumes the union.
 
 **Bottom line:** don't move the guard to the FE and don't add a parallel FE check.
 Keep the rule in the command (it's free and canonical), let the FE own only the
@@ -141,7 +141,8 @@ export function useCreateLedger() {
   const queryClient = useQueryClient();
 
   return useMutation<CreateLedgerResult, Error, CreateLedgerInput>({
-    mutationFn: (input) => createLedgerCommands(getFinanceClient()).createLedger(input),
+    mutationFn: (input) =>
+      createLedgerCommands(getFinanceClient()).createLedger(input),
     onSuccess: (result) => {
       // Only a real open changes server state worth re-reading. A pre-write
       // rejection ({ ok: false }) wrote nothing — leave the cache untouched.
@@ -201,7 +202,7 @@ const formApi = useForm({
 
     // result.ok === false → branch on result.reason:
     //   "month_not_openable" | "negative_amount" → inline error copy
-    //   "requires_confirmation" → open the amber sheet with result.guardrail (§6)
+    //   "overspend_warning" → open the amber sheet with result.guardrail (§6)
     //   "exceeds_hard_cap"      → blocked message with result.guardrail.hardCap
   },
 });
@@ -225,11 +226,11 @@ invalidation, which is orthogonal to the component's navigation/close logic).
 
 ## 6. The amber-zone confirmation (two-phase submit)
 
-`requires_confirmation` (EF3.5) is the reason this must be a *branch on data*, not
+`overspend_warning` (EF3.5) is the reason this must be a _branch on data_, not
 an error. Flow:
 
 1. First submit → `acknowledgedOverspend: false` → command returns
-   `{ ok: false, reason: "requires_confirmation", guardrail: { savingsDraw, … } }`.
+   `{ ok: false, reason: "overspend_warning", guardrail: { savingsDraw, … } }`.
 2. Form opens the amber confirmation sheet using `guardrail.savingsDraw`.
 3. User confirms → **re-run the same mutation** with `acknowledgedOverspend: true`
    → the guardrail gate lifts and the write proceeds (or returns `exceeds_hard_cap`
@@ -286,16 +287,17 @@ Worked example for all three: opening a ledger with `openingBalance: 3000`.
 ```jsonc
 {
   "ok": true,
-  "ledger": {                              // LedgerHeader = MonthlyLedger minus `envelopes`
+  "ledger": {
+    // LedgerHeader = MonthlyLedger minus `envelopes`
     "id": "b1f4c0de-...-uuid",
-    "month": "2026-08",                    // Month, "YYYY-MM"
+    "month": "2026-08", // Month, "YYYY-MM"
     "openingBalance": 3000,
     "maxCapped": 2500,
-    "status": "ongoing",                   // the new ledger is always the ongoing one
+    "status": "ongoing", // the new ledger is always the ongoing one
     "createdAt": "2026-08-15T09:12:44.000Z", // ISO-8601 timestamptz, opaque
-    "settledAt": null                      // null until status === 'settled'
+    "settledAt": null, // null until status === 'settled'
   },
-  "parkedLedgerId": null                   // uuid of the ledger parked to 'reconciling', or null (fresh start / clean gap)
+  "parkedLedgerId": null, // uuid of the ledger parked to 'reconciling', or null (fresh start / clean gap)
 }
 ```
 
@@ -305,17 +307,18 @@ Worked example for all three: opening a ledger with `openingBalance: 3000`.
 ### 2. amber — needs confirmation (`data.ok === false`, still `onSuccess`)
 
 `maxCapped: 3500` (> opening, ≤ 2×) with `acknowledgedOverspend: false`. The
-promise **resolves** (it is *not* an error) with:
+promise **resolves** (it is _not_ an error) with:
 
 ```jsonc
 {
   "ok": false,
-  "reason": "requires_confirmation",       // CreateLedgerRejectionReason
-  "guardrail": {                           // MaxCappedGuardrail — present because the reason is a guardrail one
+  "reason": "overspend_warning", // CreateLedgerRejectionReason
+  "guardrail": {
+    // MaxCappedGuardrail — present because the reason is a guardrail one
     "zone": "amber",
-    "hardCap": 6000,                        // 2 × openingBalance — the ceiling that can never be crossed
-    "savingsDraw": 500                      // maxCapped − openingBalance — the "$Z drawn from savings" for the sheet copy
-  }
+    "hardCap": 6000, // 2 × openingBalance — the ceiling that can never be crossed
+    "savingsDraw": 500, // maxCapped − openingBalance — the "$Z drawn from savings" for the sheet copy
+  },
 }
 ```
 
@@ -337,9 +340,11 @@ It is a real `Error`, so it carries a `message` plus the finance-specific fields
 {
   "name": "FinanceDataError",
   "message": "finance data error (duplicate_month) on uq_ledger_user_month: duplicate key value violates unique constraint \"uq_ledger_user_month\"",
-  "code": "duplicate_month",               // FinanceDataErrorCode — branch on this, not the message
-  "constraint": "uq_ledger_user_month",    // violated DB constraint (null when the SQLSTATE carries none)
-  "cause": { /* raw PostgrestError from the SDK */ }
+  "code": "duplicate_month", // FinanceDataErrorCode — branch on this, not the message
+  "constraint": "uq_ledger_user_month", // violated DB constraint (null when the SQLSTATE carries none)
+  "cause": {
+    /* raw PostgrestError from the SDK */
+  },
 }
 ```
 

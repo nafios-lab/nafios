@@ -1,8 +1,8 @@
 ---
 title: "@nafios/ui"
 status: active
-version: 1.4.0
-updated: 2026-08-01
+version: 1.6.0
+updated: 2026-08-16
 owner: Hanafi
 related_adrs: [0006]
 ---
@@ -54,7 +54,19 @@ controlled via `open` + `onOpenChange`.
 ### Components (NafiOS composites)
 
 Re-exported from `@nafios/ui/components/*`:
-`ConfirmDialog` — confirmation modal composed from Dialog + Button.
+`ConfirmDialog` — confirmation modal composed from Dialog + Button. Supports
+both uncontrolled use (pass a `trigger`; the dialog owns its open state) and
+controlled use (pass `open` + `onOpenChange` to drive it from a parent, e.g.
+opening it from a callback rather than a click); `trigger` is optional in the
+controlled case.
+`ErrorDialog` — error modal composed from Dialog + Button, styled with the
+`error` semantic token and an alert icon in the header. Mirrors `ConfirmDialog`'s
+uncontrolled (`trigger`) / controlled (`open` + `onOpenChange`) duality. `title`
+defaults to "Something went wrong"; a primary dismiss button (`onDismiss`,
+default label "Dismiss") always shows, and an optional retry button appears only
+when `onRetry` is supplied (default label "Try again"). An optional `details`
+string renders in a de-emphasised monospace block for technical messages or
+error codes. Both footer buttons close the dialog.
 `UserMenu` — account dropdown anchored to the user's avatar, composed from
 DropdownMenu + Avatar. Takes a presentation-focused `user`
 (`{ name?, email?, avatarUrl? }`) and optional `onProfile` / `onSettings` /

@@ -48,7 +48,6 @@ describe("validateMaxCapped — the gate & confirmed interaction (§6 rows 10–
       acknowledgedOverspend: false,
     });
     expect(r.ok).toBe(true);
-    expect(r.guardrail.zone).toBe("ok");
   });
 
   test("#11 == opening boundary → green", () => {
@@ -58,18 +57,16 @@ describe("validateMaxCapped — the gate & confirmed interaction (§6 rows 10–
       acknowledgedOverspend: false,
     });
     expect(r.ok).toBe(true);
-    expect(r.guardrail.zone).toBe("ok");
   });
 
-  test("#12 amber, not confirmed → requires_confirmation", () => {
+  test("#12 amber, not confirmed → overspend_warning", () => {
     const r = validateMaxCapped({
       openingBalance: m("7152.35"),
       maxCapped: m("7500.00"),
       acknowledgedOverspend: false,
     });
     expect(r.ok).toBe(false);
-    expect(r.ok === false && r.reason).toBe("requires_confirmation");
-    expect(r.guardrail.zone).toBe("amber");
+    expect(r.ok === false && r.reason).toBe("overspend_warning");
   });
 
   test("#13 amber, confirmed → passes", () => {
@@ -79,7 +76,6 @@ describe("validateMaxCapped — the gate & confirmed interaction (§6 rows 10–
       acknowledgedOverspend: true,
     });
     expect(r.ok).toBe(true);
-    expect(r.guardrail.zone).toBe("amber");
   });
 
   test("#14 exactly 2×, confirmed → passes (top of amber)", () => {
@@ -89,7 +85,6 @@ describe("validateMaxCapped — the gate & confirmed interaction (§6 rows 10–
       acknowledgedOverspend: true,
     });
     expect(r.ok).toBe(true);
-    expect(r.guardrail.zone).toBe("amber");
   });
 
   test("#15 blocked; acknowledgedOverspend: true does NOT override", () => {
@@ -100,7 +95,6 @@ describe("validateMaxCapped — the gate & confirmed interaction (§6 rows 10–
     });
     expect(r.ok).toBe(false);
     expect(r.ok === false && r.reason).toBe("exceeds_hard_cap");
-    expect(r.guardrail.zone).toBe("blocked");
   });
 
   test("#16 blocked regardless of confirm", () => {
@@ -111,30 +105,6 @@ describe("validateMaxCapped — the gate & confirmed interaction (§6 rows 10–
     });
     expect(r.ok).toBe(false);
     expect(r.ok === false && r.reason).toBe("exceeds_hard_cap");
-    expect(r.guardrail.zone).toBe("blocked");
-  });
-
-  test("#17 both variants carry guardrail === evaluateMaxCapped(opening, maxCapped)", () => {
-    const cases: ReadonlyArray<[string, string, boolean]> = [
-      ["7152.35", "6415.00", false],
-      ["7152.35", "7500.00", false],
-      ["7152.35", "7500.00", true],
-      ["7152.35", "14304.71", true],
-    ];
-    for (const [opening, maxCapped, acknowledgedOverspend] of cases) {
-      const r = validateMaxCapped({
-        openingBalance: m(opening),
-        maxCapped: m(maxCapped),
-        acknowledgedOverspend,
-      });
-      const g = evaluateMaxCapped(m(opening), m(maxCapped));
-      expect(r.guardrail.zone).toBe(g.zone);
-      expect(encodeMoney(r.guardrail.hardCap)).toBe(encodeMoney(g.hardCap));
-      expect(r.guardrail.savingsDraw === null).toBe(g.savingsDraw === null);
-      if (g.savingsDraw !== null && r.guardrail.savingsDraw !== null) {
-        expect(encodeMoney(r.guardrail.savingsDraw)).toBe(encodeMoney(g.savingsDraw));
-      }
-    }
   });
 });
 

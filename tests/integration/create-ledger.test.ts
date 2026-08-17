@@ -280,7 +280,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
 
   // ─────────────── Pre-write rejections — result union, no write ───────────────
 
-  test("row 5 — negative openingBalance → negative_amount, guardrail null, NO ledger created", async () => {
+  test("row 5 — negative openingBalance → negative_amount, NO ledger created", async () => {
     const result = await cmdA.createLedger({
       month: JAN,
       openingBalance: NEGATIVE,
@@ -290,11 +290,10 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
     });
     assertRejected(result);
     expect(result.reason).toBe("negative_amount");
-    expect(result.guardrail).toBeNull();
     expect(await ledgersOf(USER_A)).toHaveLength(0);
   });
 
-  test("row 6 — amber (maxCapped > opening), not confirmed → requires_confirmation w/ savingsDraw, no write", async () => {
+  test("row 6 — amber (maxCapped > opening), not confirmed → overspend_warning, no write", async () => {
     const result = await cmdA.createLedger({
       month: JAN,
       openingBalance: OPENING,
@@ -303,11 +302,7 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
       today: JAN_CURRENT,
     });
     assertRejected(result);
-    expect(result.reason).toBe("requires_confirmation");
-    expect(result.guardrail?.zone).toBe("amber");
-    expect(result.guardrail?.savingsDraw && encodeMoney(result.guardrail.savingsDraw)).toBe(
-      "347.65",
-    );
+    expect(result.reason).toBe("overspend_warning");
     expect(await ledgersOf(USER_A)).toHaveLength(0);
   });
 
@@ -333,7 +328,6 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
     });
     assertRejected(result);
     expect(result.reason).toBe("exceeds_hard_cap");
-    expect(result.guardrail?.zone).toBe("blocked");
     expect(await ledgersOf(USER_A)).toHaveLength(0);
   });
 
@@ -347,7 +341,6 @@ describe.skipIf(!HAS_ENV)("create-ledger command — verification matrix (live D
     });
     assertRejected(result);
     expect(result.reason).toBe("month_not_openable");
-    expect(result.guardrail).toBeNull();
     expect(await ledgersOf(USER_A)).toHaveLength(0);
   });
 

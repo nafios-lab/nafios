@@ -35,6 +35,11 @@ const requireMoney = (label: string) =>
 export const createLedgerSchema = z.object({
   openingBalance: requireMoney("an opening balance"),
   maxCapped: requireMoney("a spending cap"),
+  // Internal acknowledgement flag for the amber overspend confirm flow — never
+  // keyed by the user, flipped programmatically on re-submit. `.default(false)`
+  // keeps it out of the "required" gate so it never adds a field error and an
+  // empty form still reports only the two money inputs.
+  acknowledgeOverspend: z.boolean().default(false),
 });
 
 /**

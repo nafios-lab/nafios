@@ -338,15 +338,14 @@ export interface CreateLedgerInput {
 export type CreateLedgerRejectionReason =
   | "month_not_openable" // month ∉ EF3.4 openable set
   | "negative_amount" // openingBalance or maxCapped < 0
-  | "requires_confirmation" // EF3.5 amber zone, not confirmed
+  | "overspend_warning" // EF3.5 amber zone, not confirmed
   | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — no override
 
 export type CreateLedgerResult =
   | { readonly ok: true; readonly ledger: LedgerHeader; readonly parkedLedgerId: string | null }
   | {
       readonly ok: false;
-      readonly reason: CreateLedgerRejectionReason;
-      readonly guardrail: MaxCappedGuardrail | null; // EF3.5 max-capped guardrail; present iff a guardrail reason
+      readonly reason: CreateLedgerRejectionReason; // UI branches on the reason alone; no guardrail payload
     };
 ```
 

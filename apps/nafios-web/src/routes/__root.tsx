@@ -1,5 +1,6 @@
 import { ScreenLoader } from "@nafios/ui/components/screen-loader";
 import { ThemeToggle } from "@nafios/ui/components/theme-toggle";
+import { Toaster } from "@nafios/ui/components/ui/sonner";
 import { useTheme } from "@nafios/ui/hooks/use-theme";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
@@ -20,6 +21,7 @@ function RootDocument() {
       <RouteProgress />
       <Outlet />
       <ScreenLoader />
+      <Toaster />
       <ThemeToggle className={import.meta.env.DEV ? "bottom-24" : undefined} />
       {import.meta.env.DEV && (
         <TanStackDevtools
