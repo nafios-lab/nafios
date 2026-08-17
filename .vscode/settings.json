@@ -8,6 +8,9 @@
     "source.organizeImports.biome": "explicit",
     "source.fixAll.biome": "explicit"
   },
+  "editor.fontFamily": "SF Mono, Fira Code, Menlo, Monaco, 'Courier New', monospace",
+  "editor.fontWeight": "500",
+  "editor.fontSize": 12,
   "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },
   "[typescriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
   "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
