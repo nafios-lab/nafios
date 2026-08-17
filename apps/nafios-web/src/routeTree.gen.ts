@@ -21,6 +21,8 @@ import { Route as ProtectedAppWelcomeRouteImport } from './routes/_protected/_ap
 import { Route as ProtectedAppFinanceIndexRouteImport } from './routes/_protected/_app/finance/index'
 import { Route as ProtectedAppFinanceAccountsRouteImport } from './routes/_protected/_app/finance/accounts'
 import { Route as ProtectedAppFinanceTransactionsRouteImport } from './routes/_protected/_app/finance/transactions'
+import { Route as ProtectedAppFinanceLedgerIndexRouteImport } from './routes/_protected/_app/finance/ledger/index'
+import { Route as ProtectedAppFinanceLedgerMonthRouteImport } from './routes/_protected/_app/finance/ledger/$month'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -84,6 +86,18 @@ const ProtectedAppFinanceTransactionsRoute =
     path: '/transactions',
     getParentRoute: () => ProtectedAppFinanceRouteRoute,
   } as any)
+const ProtectedAppFinanceLedgerIndexRoute =
+  ProtectedAppFinanceLedgerIndexRouteImport.update({
+    id: '/ledger/',
+    path: '/ledger/',
+    getParentRoute: () => ProtectedAppFinanceRouteRoute,
+  } as any)
+const ProtectedAppFinanceLedgerMonthRoute =
+  ProtectedAppFinanceLedgerMonthRouteImport.update({
+    id: '/ledger/$month',
+    path: '/ledger/$month',
+    getParentRoute: () => ProtectedAppFinanceRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +110,8 @@ export interface FileRoutesByFullPath {
   '/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
   '/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
   '/finance/': typeof ProtectedAppFinanceIndexRoute
+  '/finance/ledger/$month': typeof ProtectedAppFinanceLedgerMonthRoute
+  '/finance/ledger/': typeof ProtectedAppFinanceLedgerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -107,6 +123,8 @@ export interface FileRoutesByTo {
   '/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
   '/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
   '/finance': typeof ProtectedAppFinanceIndexRoute
+  '/finance/ledger/$month': typeof ProtectedAppFinanceLedgerMonthRoute
+  '/finance/ledger': typeof ProtectedAppFinanceLedgerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,6 +140,8 @@ export interface FileRoutesById {
   '/_protected/_app/finance/accounts': typeof ProtectedAppFinanceAccountsRoute
   '/_protected/_app/finance/transactions': typeof ProtectedAppFinanceTransactionsRoute
   '/_protected/_app/finance/': typeof ProtectedAppFinanceIndexRoute
+  '/_protected/_app/finance/ledger/$month': typeof ProtectedAppFinanceLedgerMonthRoute
+  '/_protected/_app/finance/ledger/': typeof ProtectedAppFinanceLedgerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -136,6 +156,8 @@ export interface FileRouteTypes {
     | '/finance/accounts'
     | '/finance/transactions'
     | '/finance/'
+    | '/finance/ledger/$month'
+    | '/finance/ledger/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -147,6 +169,8 @@ export interface FileRouteTypes {
     | '/finance/accounts'
     | '/finance/transactions'
     | '/finance'
+    | '/finance/ledger/$month'
+    | '/finance/ledger'
   id:
     | '__root__'
     | '/'
@@ -161,6 +185,8 @@ export interface FileRouteTypes {
     | '/_protected/_app/finance/accounts'
     | '/_protected/_app/finance/transactions'
     | '/_protected/_app/finance/'
+    | '/_protected/_app/finance/ledger/$month'
+    | '/_protected/_app/finance/ledger/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -255,6 +281,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAppFinanceTransactionsRouteImport
       parentRoute: typeof ProtectedAppFinanceRouteRoute
     }
+    '/_protected/_app/finance/ledger/': {
+      id: '/_protected/_app/finance/ledger/'
+      path: '/ledger'
+      fullPath: '/finance/ledger/'
+      preLoaderRoute: typeof ProtectedAppFinanceLedgerIndexRouteImport
+      parentRoute: typeof ProtectedAppFinanceRouteRoute
+    }
+    '/_protected/_app/finance/ledger/$month': {
+      id: '/_protected/_app/finance/ledger/$month'
+      path: '/ledger/$month'
+      fullPath: '/finance/ledger/$month'
+      preLoaderRoute: typeof ProtectedAppFinanceLedgerMonthRouteImport
+      parentRoute: typeof ProtectedAppFinanceRouteRoute
+    }
   }
 }
 
@@ -276,6 +316,8 @@ interface ProtectedAppFinanceRouteRouteChildren {
   ProtectedAppFinanceAccountsRoute: typeof ProtectedAppFinanceAccountsRoute
   ProtectedAppFinanceTransactionsRoute: typeof ProtectedAppFinanceTransactionsRoute
   ProtectedAppFinanceIndexRoute: typeof ProtectedAppFinanceIndexRoute
+  ProtectedAppFinanceLedgerMonthRoute: typeof ProtectedAppFinanceLedgerMonthRoute
+  ProtectedAppFinanceLedgerIndexRoute: typeof ProtectedAppFinanceLedgerIndexRoute
 }
 
 const ProtectedAppFinanceRouteRouteChildren: ProtectedAppFinanceRouteRouteChildren =
@@ -283,6 +325,8 @@ const ProtectedAppFinanceRouteRouteChildren: ProtectedAppFinanceRouteRouteChildr
     ProtectedAppFinanceAccountsRoute: ProtectedAppFinanceAccountsRoute,
     ProtectedAppFinanceTransactionsRoute: ProtectedAppFinanceTransactionsRoute,
     ProtectedAppFinanceIndexRoute: ProtectedAppFinanceIndexRoute,
+    ProtectedAppFinanceLedgerMonthRoute: ProtectedAppFinanceLedgerMonthRoute,
+    ProtectedAppFinanceLedgerIndexRoute: ProtectedAppFinanceLedgerIndexRoute,
   }
 
 const ProtectedAppFinanceRouteRouteWithChildren =

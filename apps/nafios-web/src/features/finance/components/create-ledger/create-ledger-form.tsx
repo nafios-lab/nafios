@@ -1,4 +1,4 @@
-import { formatMonthLong, type Month } from "@nafios/datetime";
+import { encodeMonth, formatMonthLong, type Month } from "@nafios/datetime";
 import type { CreateLedgerRejectionReason, CreateLedgerResult, Money } from "@nafios/finance";
 import { ConfirmDialog } from "@nafios/ui/components/confirm-dialog";
 import { ErrorDialog } from "@nafios/ui/components/error-dialog";
@@ -13,6 +13,7 @@ import {
 } from "@nafios/ui/components/ui/dialog";
 import { toast } from "@nafios/ui/components/ui/sonner";
 import { useForm } from "@tanstack/react-form";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useCreateLedger } from "../../hooks/use-create-ledger";
 import {
@@ -59,10 +60,12 @@ const BLOCKED_LEDGER_DESCRIPTIONS: Record<BlockedLedgerReason, string> = {
 
 export function CreateLedgerForm(props: CreateLedgerFormProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [ledgerCreateException, setLedgerCreateException] = useState<BlockedLedgerReason | null>(
     null,
   );
+  const nav = useNavigate();
 
   const createLedger = useCreateLedger();
 
@@ -90,12 +93,10 @@ export function CreateLedgerForm(props: CreateLedgerFormProps) {
           } else {
             setLedgerCreateException(result.reason);
           }
+          return;
         }
-        /**
-         * @TODO
-         * Step 1: close the form dialog
-         * Step 2: navigate to the monthly ledger route - session open
-         */
+        setFormOpen(false);
+        nav({ to: "/finance/ledger/$month", params: { month: encodeMonth(props.ledgerMonth) } });
       } catch (err) {
         toast.error("Couldn't open ledger", {
           description: err instanceof Error ? err.message : "Something went wrong.",
@@ -134,7 +135,9 @@ export function CreateLedgerForm(props: CreateLedgerFormProps) {
         onConfirm={handleConfirmAcknowledgement}
       />
       <Dialog
+        open={formOpen}
         onOpenChange={(open) => {
+          setFormOpen(open);
           if (open) {
             formApi.reset();
           }
