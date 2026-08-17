@@ -74,9 +74,13 @@ export interface EnvelopeStatusWrite {
 // ───────────────────────── The envelope repository ─────────────────────────
 
 /** The envelope columns the mapper builds an Envelope from — the repository's
- *  read surface (excludes user_id, created_at, updated_at, obligation_kind). */
+ *  read surface (excludes user_id, created_at, updated_at, obligation_kind).
+ *  `amount` / `original_amount` are cast `::text` for the same reason as the
+ *  ledger's HEADER_COLUMNS: PostgREST serializes an uncast numeric as a JSON
+ *  number, which would route money through a float before the codec ever sees it.
+ *  A cast column keeps its own name, so the mapper still reads `amount`. */
 const ENVELOPE_COLUMNS =
-  "id, ledger_id, category_id, item, amount, original_amount, status, paid_at, payment_source_id, remark, linked_member_id, sort_order, template_id, carried_from_envelope_id, carry_over_reason";
+  "id, ledger_id, category_id, item, amount::text, original_amount::text, status, paid_at, payment_source_id, remark, linked_member_id, sort_order, template_id, carried_from_envelope_id, carry_over_reason";
 
 export interface EnvelopeRepository {
   /** Insert an envelope (user_id filled by the DB default auth.uid() — never set

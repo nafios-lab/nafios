@@ -14,15 +14,16 @@ import type {
   ReconPendingLedgerDTO,
 } from "../../src/internal/repositories/ledger.repo";
 
-// A monthly_ledger row as supabase-js hands it back: numeric(12,2) arrives as a
-// STRING at runtime (the generated Row type lossily says `number`), so the
-// fixture stores money as strings cast to satisfy the type.
+// A monthly_ledger row as supabase-js hands it back: the repository's SELECT
+// casts the numeric(12,2) columns `::text`, so money arrives as a STRING (an
+// uncast numeric would come back from PostgREST as a JSON number — a float).
+// LedgerRow types those columns as `string` to match.
 function row(overrides: Partial<LedgerRow> = {}): LedgerRow {
   return {
     id: "11111111-1111-1111-1111-111111111111",
     month: "2027-01-01",
-    opening_balance: "7152.35" as unknown as number,
-    max_capped: "6415.00" as unknown as number,
+    opening_balance: "7152.35",
+    max_capped: "6415.00",
     status: "ongoing",
     created_at: "2027-01-01T08:00:00.000Z",
     settled_at: null,
@@ -57,9 +58,7 @@ describe("rowToLedgerHeader — exact round-trip (money never floated)", () => {
   });
 
   test("a malformed stored money value surfaces CodecError", () => {
-    expect(() =>
-      rowToLedgerHeader(row({ opening_balance: "not-money" as unknown as number })),
-    ).toThrow();
+    expect(() => rowToLedgerHeader(row({ opening_balance: "not-money" }))).toThrow();
   });
 });
 

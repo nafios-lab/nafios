@@ -41,14 +41,21 @@ export type LedgerHeader = Omit<MonthlyLedger, "envelopes">;
 /**
  * The monthly_ledger columns a LedgerHeader is built from — every column except
  * `user_id` (RLS-scoped, never surfaced to the domain). The repository selects
- * exactly these. numeric(12,2) columns arrive from the SDK as strings despite
- * the generated `number` type (see the column comment in the EF1.1 migration);
- * the mapper is where that reality is reconciled.
+ * exactly these, casting the numeric(12,2) columns `::text` (see HEADER_COLUMNS).
+ * The generated `Tables<>` row types those columns as `number` (that is what the
+ * bare column would be); the `::text` cast overrides them to `string` here so the
+ * TYPE matches what the SELECT actually returns and the mapper needs no cast.
  */
-export type LedgerRow = Pick<
-  Tables<"monthly_ledger">,
-  "id" | "month" | "opening_balance" | "max_capped" | "status" | "created_at" | "settled_at"
->;
+export type LedgerRow = Omit<
+  Pick<
+    Tables<"monthly_ledger">,
+    "id" | "month" | "opening_balance" | "max_capped" | "status" | "created_at" | "settled_at"
+  >,
+  "opening_balance" | "max_capped"
+> & {
+  readonly opening_balance: string; // numeric(12,2) ::text — decode via decodeMoney
+  readonly max_capped: string; // numeric(12,2) ::text — decode via decodeMoney
+};
 
 /**
  * The exact jsonb shape `get_ledger_summary` emits. Money fields are TEXT
@@ -112,8 +119,19 @@ export interface NewLedger {
   readonly status?: Extract<LedgerStatus, "ongoing" | "reconciling">;
 }
 
-/** The columns a LedgerHeader is built from — the mapper's read surface. */
-const HEADER_COLUMNS = "id, month, opening_balance, max_capped, status, created_at, settled_at";
+/**
+ * The columns a LedgerHeader is built from — the mapper's read surface.
+ *
+ * The numeric(12,2) columns are cast `::text` in the SELECT so PostgREST emits
+ * them as JSON STRINGS. Without the cast PostgREST serializes numeric as a JSON
+ * *number* and the SDK hands the mapper a float — exactly what the Money codec
+ * exists to prevent. This is the same money-as-text contract the
+ * `get_ledger_summary` / `get_pending_recon_ledgers` RPCs already apply in SQL;
+ * table reads now match it. A cast column keeps its own name, so the mapper still
+ * reads `opening_balance` / `max_capped`.
+ */
+const HEADER_COLUMNS =
+  "id, month, opening_balance::text, max_capped::text, status, created_at, settled_at";
 
 export interface LedgerRepository {
   /**

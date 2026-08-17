@@ -24,7 +24,7 @@ function envelopeRow(overrides: Partial<EnvelopeRow> = {}): EnvelopeRow {
     ledger_id: "11111111-1111-1111-1111-111111111111",
     category_id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
     item: "Netflix",
-    amount: "19.90" as unknown as number,
+    amount: "19.90",
     original_amount: null,
     status: "pending",
     paid_at: null,
@@ -66,7 +66,7 @@ describe("rowToEnvelope — read", () => {
     const envelope = rowToEnvelope(
       envelopeRow({
         status: "carried_over",
-        amount: "120.00" as unknown as number,
+        amount: "120.00",
         payment_source_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
         remark: "monthly",
         linked_member_id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
@@ -94,12 +94,12 @@ describe("rowToEnvelope — read", () => {
   });
 
   test("re-encodes a decoded amount exactly (money never floated)", () => {
-    const envelope = rowToEnvelope(envelopeRow({ amount: "120.00" as unknown as number }));
+    const envelope = rowToEnvelope(envelopeRow({ amount: "120.00" }));
     expect(encodeMoney(envelope.amount)).toBe("120.00");
   });
 
   test("decodes a non-null original_amount faithfully (mapped even though EF3 is manual)", () => {
-    const envelope = rowToEnvelope(envelopeRow({ original_amount: "50.00" as unknown as number }));
+    const envelope = rowToEnvelope(envelopeRow({ original_amount: "50.00" }));
     expect(envelope.originalAmount).not.toBeNull();
     expect(encodeMoney(envelope.originalAmount as ReturnType<typeof decodeMoney>)).toBe("50.00");
   });

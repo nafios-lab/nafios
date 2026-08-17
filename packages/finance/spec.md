@@ -171,7 +171,9 @@ them to/from the raw DB shapes. Signatures only; see
 [EF3.1](../../issues/EF3.1.md) for behavior rules and the verification matrix.
 
 ```ts
-// Money — exact money held as branded integer CENTS (numeric(12,2) is read as a string).
+// Money — exact money held as branded integer CENTS. numeric(12,2) is read as a
+// string; every read path MUST cast the column ::text (PostgREST emits an uncast
+// numeric as a JSON number — a float), and decodeMoney rejects a non-string input.
 export type Money = number & { readonly __brand: "Money" };
 export const ZERO_MONEY: Money;
 export function decodeMoney(dbValue: string): Money; // numeric(12,2) string -> Money

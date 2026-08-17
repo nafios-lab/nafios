@@ -48,7 +48,7 @@ function envelopeRow(overrides: Partial<EnvelopeRow> = {}): EnvelopeRow {
     ledger_id: "11111111-1111-1111-1111-111111111111",
     category_id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
     item: "Netflix",
-    amount: "19.90" as unknown as number,
+    amount: "19.90",
     original_amount: null,
     status: "pending",
     paid_at: null,
@@ -171,7 +171,7 @@ describe("listByLedger", () => {
 describe("update", () => {
   test("shapes a partial update (encoded amount), reads back, returns the Envelope", async () => {
     const { client, calls } = makeClient({
-      data: envelopeRow({ item: "X", amount: "99.99" as unknown as number }),
+      data: envelopeRow({ item: "X", amount: "99.99" }),
       error: null,
     });
     const envelope = await createEnvelopeRepository(client).update("id-1", {

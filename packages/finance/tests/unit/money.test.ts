@@ -44,6 +44,16 @@ describe("decodeMoney / toCents / encodeMoney", () => {
     }
   });
 
+  // Regression: a numeric column selected WITHOUT a ::text cast comes back from
+  // PostgREST as a JS number. RegExp.test stringifies its argument, so such a
+  // value used to slip past the format guard and die on `.startsWith` as an
+  // opaque TypeError. It must fail as a typed CodecError at the boundary.
+  test("#6b rejects a non-string input (uncast numeric) as money_not_numeric", () => {
+    for (const v of [7152.35, 0, -12.5, null, undefined, {}]) {
+      expect(codeOf(() => decodeMoney(v as unknown as string))).toBe("money_not_numeric");
+    }
+  });
+
   test("#7 rejects magnitude beyond numeric(12,2) range", () => {
     expect(codeOf(() => decodeMoney("10000000000.00"))).toBe("money_out_of_range");
   });

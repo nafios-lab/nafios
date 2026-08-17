@@ -57,8 +57,8 @@ function ledgerRow(month: string, status: LedgerRow["status"]): LedgerRow {
   return {
     id: `id-${month}-${status}`,
     month,
-    opening_balance: "1000.00" as unknown as number,
-    max_capped: "1500.00" as unknown as number,
+    opening_balance: "1000.00",
+    max_capped: "1500.00",
     status,
     created_at: "2026-07-01T08:00:00.000Z",
     settled_at: status === "settled" ? "2026-07-31T00:00:00.000Z" : null,

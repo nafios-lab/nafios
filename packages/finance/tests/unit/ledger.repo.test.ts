@@ -63,8 +63,8 @@ function ledgerRow(overrides: Partial<LedgerRow> = {}): LedgerRow {
   return {
     id: "11111111-1111-1111-1111-111111111111",
     month: "2027-01-01",
-    opening_balance: "7152.35" as unknown as number,
-    max_capped: "6415.00" as unknown as number,
+    opening_balance: "7152.35",
+    max_capped: "6415.00",
     status: "ongoing",
     created_at: "2027-01-01T08:00:00.000Z",
     settled_at: null,

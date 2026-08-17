@@ -28,16 +28,16 @@ import type {
  * strings (EF3.2 §4.2). A malformed stored value throws EF3.1's CodecError here
  * — NOT a FinanceDataError (that is strictly for query failures).
  *
- * The `as unknown as string` casts acknowledge that supabase-js returns
- * numeric(12,2) as a STRING at runtime even though the generated Row type says
- * `number`; the value is never coerced through a JS float.
+ * The money columns arrive as STRINGS because the repository's SELECT casts them
+ * `::text` (PostgREST would otherwise emit an uncast numeric as a JSON number);
+ * `LedgerRow` types them that way, so the value is never coerced through a float.
  */
 export function rowToLedgerHeader(row: LedgerRow): LedgerHeader {
   return {
     id: row.id,
     month: decodeMonth(row.month),
-    openingBalance: decodeMoney(row.opening_balance as unknown as string),
-    maxCapped: decodeMoney(row.max_capped as unknown as string),
+    openingBalance: decodeMoney(row.opening_balance),
+    maxCapped: decodeMoney(row.max_capped),
     status: row.status,
     createdAt: row.created_at,
     settledAt: row.settled_at,

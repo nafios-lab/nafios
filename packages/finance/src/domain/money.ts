@@ -1,8 +1,11 @@
 // @nafios/finance — domain layer (pure). Zero I/O, zero dependencies.
 //
 // The one money value type for the whole module. Finance stores money as
-// Postgres `numeric(12,2)`, which the Supabase SDK reads as a *string* (never a
-// JS number — floats can't hold decimal money exactly: 0.1 + 0.2 !== 0.3).
+// Postgres `numeric(12,2)` and reads it as a *string* (never a JS number —
+// floats can't hold decimal money exactly: 0.1 + 0.2 !== 0.3). That string is
+// NOT automatic: PostgREST serializes an uncast numeric as a JSON *number*, so
+// every read path must cast the column `::text` — in the SELECT for table reads
+// (see the repositories' *_COLUMNS) or in SQL for the aggregate RPCs.
 // `Money` holds the value as a whole number of CENTS so every combine is exact
 // integer arithmetic. This module is the ONLY sanctioned way to build & combine
 // money — nothing downstream reaches for `+` on a raw number.
@@ -50,6 +53,18 @@ export function toCents(value: Money): number {
  *   - magnitude exceeds numeric(12,2) range -> money_out_of_range
  */
 export function decodeMoney(dbValue: string): Money {
+  // Runtime type guard FIRST. The regex below would silently coerce a non-string
+  // (RegExp.test stringifies its argument), so a JS number sails past it and only
+  // blows up later on `.startsWith` as an opaque TypeError. A numeric column that
+  // was not cast ::text arrives here as a number — reject it as a typed CodecError
+  // at the boundary instead, naming the actual fault.
+  if (typeof dbValue !== "string") {
+    throw new CodecError(
+      "money_not_numeric",
+      `Money must be decoded from a string (numeric(12,2) cast ::text), got ${typeof dbValue}: ${JSON.stringify(dbValue)}`,
+    );
+  }
+
   // Optional leading '-', one or more integer digits, optionally '.' + digits.
   // Rejects separators, symbols, "", "NaN", "Infinity", ".5", "1." up front.
   if (!/^-?\d+(\.\d+)?$/.test(dbValue)) {

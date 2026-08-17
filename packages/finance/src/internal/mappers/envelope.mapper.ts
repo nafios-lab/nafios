@@ -31,27 +31,34 @@ type EnvelopeStatusDb = Enums<"envelope_status">;
  * The envelope columns an Envelope is built from — every column EF3.3's type
  * needs, EXCLUDING `user_id` (RLS-scoped, never surfaced) and the trio the domain
  * type omits (`created_at`, `updated_at`, `obligation_kind`). The repository
- * selects exactly these. numeric(12,2) columns arrive from the SDK as strings
- * despite the generated `number` type; the mapper is where that is reconciled.
+ * selects exactly these, casting the numeric(12,2) columns `::text`. The generated
+ * `Tables<>` row types those as `number` (what the bare column would be); the cast
+ * overrides them to `string` here so the TYPE matches what the SELECT returns.
  */
-export type EnvelopeRow = Pick<
-  Tables<"envelope">,
-  | "id"
-  | "ledger_id"
-  | "category_id"
-  | "item"
-  | "amount"
-  | "original_amount"
-  | "status"
-  | "paid_at"
-  | "payment_source_id"
-  | "remark"
-  | "linked_member_id"
-  | "sort_order"
-  | "template_id"
-  | "carried_from_envelope_id"
-  | "carry_over_reason"
->;
+export type EnvelopeRow = Omit<
+  Pick<
+    Tables<"envelope">,
+    | "id"
+    | "ledger_id"
+    | "category_id"
+    | "item"
+    | "amount"
+    | "original_amount"
+    | "status"
+    | "paid_at"
+    | "payment_source_id"
+    | "remark"
+    | "linked_member_id"
+    | "sort_order"
+    | "template_id"
+    | "carried_from_envelope_id"
+    | "carry_over_reason"
+  >,
+  "amount" | "original_amount"
+> & {
+  readonly amount: string; // numeric(12,2) ::text — decode via decodeMoney
+  readonly original_amount: string | null; // numeric(12,2) ::text — decode via decodeMoney
+};
 
 // ─────────────────────────── The carried_over seam ───────────────────────────
 
@@ -75,9 +82,9 @@ export function statusToDb(status: EnvelopeStatus): EnvelopeStatusDb {
  * (always null in EF3 — manual). A malformed stored numeric throws EF3.1's
  * CodecError here — NOT a FinanceDataError (that is strictly for query failures).
  *
- * The `as unknown as string` casts acknowledge that supabase-js returns
- * numeric(12,2) as a STRING at runtime even though the generated Row type says
- * `number`; the value is never coerced through a JS float.
+ * The money columns arrive as STRINGS because the repository's SELECT casts them
+ * `::text` (PostgREST would otherwise emit an uncast numeric as a JSON number);
+ * `EnvelopeRow` types them that way, so the value is never coerced through a float.
  */
 export function rowToEnvelope(row: EnvelopeRow): Envelope {
   return {
@@ -85,9 +92,8 @@ export function rowToEnvelope(row: EnvelopeRow): Envelope {
     ledgerId: row.ledger_id,
     category: row.category_id,
     item: row.item,
-    amount: decodeMoney(row.amount as unknown as string),
-    originalAmount:
-      row.original_amount == null ? null : decodeMoney(row.original_amount as unknown as string),
+    amount: decodeMoney(row.amount),
+    originalAmount: row.original_amount == null ? null : decodeMoney(row.original_amount),
     status: statusFromDb(row.status),
     paidAt: row.paid_at,
     paymentSource: row.payment_source_id,

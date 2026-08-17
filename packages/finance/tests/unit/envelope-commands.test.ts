@@ -20,8 +20,8 @@ function ledgerRow(overrides: Partial<LedgerRow> = {}): LedgerRow {
   return {
     id: "11111111-1111-1111-1111-111111111111",
     month: "2027-01-01",
-    opening_balance: "7152.35" as unknown as number,
-    max_capped: "6415.00" as unknown as number,
+    opening_balance: "7152.35",
+    max_capped: "6415.00",
     status: "ongoing",
     created_at: "2027-01-01T08:00:00.000Z",
     settled_at: null,
@@ -35,7 +35,7 @@ function envelopeRow(overrides: Partial<EnvelopeRow> = {}): EnvelopeRow {
     ledger_id: "11111111-1111-1111-1111-111111111111",
     category_id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
     item: "Netflix",
-    amount: "19.90" as unknown as number,
+    amount: "19.90",
     original_amount: null,
     status: "pending",
     paid_at: null,
@@ -233,7 +233,7 @@ describe("editEnvelope", () => {
       },
       ledger: { data: ledgerRow(), error: null },
       envelopeWrite: {
-        data: envelopeRow({ status: "paid", amount: "22.90" as unknown as number }),
+        data: envelopeRow({ status: "paid", amount: "22.90" }),
         error: null,
       },
     });
