@@ -1,5 +1,6 @@
 import { Provider } from "jotai";
 import type { PropsWithChildren } from "react";
+import { JotaiDevtools } from "~/shared/components/dev/jotai-devtools";
 
 interface LedgerSheetProviderProps extends PropsWithChildren {
   month: string;
@@ -17,5 +18,12 @@ interface LedgerSheetProviderProps extends PropsWithChildren {
  */
 export function LedgerSheetProvider({ month, children }: LedgerSheetProviderProps) {
   // key={month} → a new store per month, so month-to-month navigation resets.
-  return <Provider key={month}>{children}</Provider>;
+  return (
+    <Provider key={month}>
+      {children}
+      {/* Inside the Provider by necessity: the inspector resolves the store it
+          reads from context, and this store is the one that holds the atoms. */}
+      <JotaiDevtools />
+    </Provider>
+  );
 }

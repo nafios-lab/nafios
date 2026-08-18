@@ -4,7 +4,8 @@ preload = ["./tests/setup.ts"]
 # Coverage scope & 90% gate — see adr/0020-test-coverage-scoping-and-gate.md.
 # The denominator is shell logic + feature UI. Excluded: the routing layer
 # (routes/, router.tsx) which is framework wiring better covered by integration
-# tests, the generated route tree, Storybook stories, barrels, and test files.
+# tests, the generated route tree, Storybook stories, barrels, dev-only
+# tooling (shared/components/dev/, stripped from prod builds), and test files.
 # The threshold is enforced only under `--coverage` (the `test:coverage`
 # script), so plain `bun test` / CI `check` are unaffected.
 coverageReporter = ["text"]
@@ -16,6 +17,9 @@ coveragePathIgnorePatterns = [
   "**/routes/**",
   "**/router.tsx",
   "**/routeTree.gen.ts",
+  # Dev-only devtools wiring: `import.meta.env.DEV` is falsy under `bun test`,
+  # so these render nothing and there is no behaviour left to assert.
+  "**/shared/components/dev/**",
   "**/*.stories.tsx",
   "**/index.ts",
   "**/tests/**",

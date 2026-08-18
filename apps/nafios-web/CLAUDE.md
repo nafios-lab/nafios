@@ -124,6 +124,7 @@ src/
   routes/            file-based routing — TanStack Router owns this tree
   features/          frontend feature slices (components, hooks, schemas)
   shared/components/ shell-wide shared UI (error boundaries, error screen, route progress)
+  shared/components/dev/ dev-only tooling (Jotai atom inspector) — absent from prod builds
   lib/               client-side app infrastructure (auth.ts: auth browser client + session query; database.ts: data browser client)
   main.tsx           client mount (createRoot + RouterProvider)
   router.tsx         Router + QueryClient wiring
@@ -145,7 +146,8 @@ src/
 
 - `bunfig.toml` preloads `tests/setup.ts` and enforces a **90% per-file coverage
   gate** (under `--coverage` only; `routes/`, `router.tsx`, the generated tree,
-  stories, barrels, and tests are excluded — see ADR-0020).
+  stories, barrels, `shared/components/dev/`, and tests are excluded — see
+  ADR-0020).
 - `tests/setup.ts` registers happy-dom and mocks `@nafios/auth-core`'s **browser**
   client + ops as shared spies (this is a fresh SPA harness — it deliberately
   does **not** copy `apps/web`'s `createServerFn`/cookie-seam setup). Hooks that
@@ -160,6 +162,31 @@ bun run typecheck      # tsc --noEmit
 bun test               # run tests
 bun run test:coverage  # tests + 90% gate
 ```
+
+## Devtools
+
+TanStack Router / Query / Form devtools are mounted together in
+`routes/__root.tsx` behind `import.meta.env.DEV` as plugins of a single
+`<TanStackDevtools>` panel (bottom-right).
+
+**Jotai** is separate and deliberately so. Its inspector needs the *store*, and
+under ADR-0029 every module scopes its atoms to its own `<Provider>` — the
+default store is always empty, so a root-level mount would show nothing.
+`shared/components/dev/jotai-devtools.tsx` is therefore mounted **inside** each
+Jotai Provider (see `features/finance/state/ledger-sheet/ledger-sheet-provider.tsx`),
+where `useStore()` resolves the store that actually holds the atoms. It appears
+bottom-left, and unmounts with its Provider — which is correct: the store is gone.
+
+Two constraints worth knowing before touching this:
+
+- `jotai-devtools` drags in Mantine and a ~1 MB stylesheet, so it is loaded via
+  `React.lazy` inside a folded `import.meta.env.DEV` ternary. That makes it
+  *absent* from `dist/`, not merely unreachable — verify with
+  `grep -rl mantine dist/` after a build.
+- `@vitejs/plugin-react` v6 is oxc-based and takes no Babel plugins, so
+  `jotai/babel/plugin-debug-label` is unavailable. **Every atom must set
+  `debugLabel` by hand** beside its definition, or the panel lists it as
+  `1:atom`. See `features/finance/state/ledger-sheet/ledger-sheet.atoms.ts`.
 
 ## Cutover (later, at parity)
 

@@ -29,5 +29,6 @@ export function useLedger(month: Month) {
   return useQuery<GetLedgerQueryResp>({
     queryKey: ["finance", "ledger", month],
     queryFn: () => createLedgerQueries(getFinanceClient()).getLedger(month),
+    staleTime: Infinity,
   });
 }
