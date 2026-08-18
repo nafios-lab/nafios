@@ -29,9 +29,9 @@ import type { LedgerStatus } from "./monthly-ledger";
 /**
  * The minimal view of an existing ledger the resolver needs: its month (to decide
  * which months are free) and its status (to spot a stale `ongoing` ledger for the
- * roll-forward signal). A full MonthlyLedger (EF3.2) structurally satisfies this,
- * so the repository (EF3.6/EF3.10) can pass its ledgers directly and test fixtures
- * stay minimal — same "accepts a minimal shape" discipline as computeLedgerMetrics.
+ * roll-forward signal). A MonthlyLedger (EF3.2) structurally satisfies this, so
+ * the repository (EF3.6) can pass its ledgers directly and test fixtures stay
+ * minimal — same "accepts a minimal shape" discipline as computeLedgerMetrics.
  */
 export interface LedgerMonthStatus {
   readonly month: Month; // EF3.1

@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "b
 import {
   type CreateLedgerInput,
   type CreateLedgerResult,
-  type LedgerHeader,
+  type MonthlyLedger,
   moneyFromCents,
   monthOf,
 } from "@nafios/finance";
@@ -36,10 +36,10 @@ const { CreateLedgerForm } = await import(
 );
 
 // Result fixtures — the form reads only `ok` / `reason`, so the ok payload is
-// illustrative (cast rather than a full LedgerHeader build).
+// illustrative (cast rather than a full MonthlyLedger build).
 const OK_RESULT: CreateLedgerResult = {
   ok: true,
-  ledger: {} as LedgerHeader,
+  ledger: {} as MonthlyLedger,
   parkedLedgerId: null,
 };
 const OVERSPEND: CreateLedgerResult = { ok: false, reason: "overspend_warning" };

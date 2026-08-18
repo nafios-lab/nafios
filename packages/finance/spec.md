@@ -69,7 +69,8 @@ repository (`createLedgerRepository` → `insert` / `findById` / `findByMonth` /
 every later repository reuses: the typed `FinanceDataError` + the single
 SQLSTATE→code classifier (`mapPostgrestError`, with the 23505-by-constraint-name
 split), and the row↔domain mapper (money/month via the EF3.1 codecs). Barrel
-surface: `FinanceDataError`, `FinanceDataErrorCode`, `LedgerHeader`; the factory,
+surface: `FinanceDataError`, `FinanceDataErrorCode` (the ledger shape itself is
+the domain's `MonthlyLedger`, exported from the domain barrel); the factory,
 mapper, and classifier stay **internal**. Full contract, verification matrix, and
 the test-lane decision: [EF3.6](../../boards/finance/EF3/EF3.6.md).
 
@@ -240,7 +241,10 @@ export function applyStatusTransition(
 // MonthlyLedger — one calendar month of cashflow; derived metrics are NOT stored.
 export type LedgerStatus = "ongoing" | "reconciling" | "settled";
 export interface MonthlyLedger {
-  /* id, month, openingBalance, maxCapped, status, envelopes, … — see monthly-ledger.ts */
+  /* id, month, openingBalance, maxCapped, status, createdAt, settledAt — see monthly-ledger.ts.
+     Mirrors the monthly_ledger TABLE: no `envelopes` (own entity, own read) and no
+     `derivedMetrics` (computed on read) — both are conceptual-only rows in the
+     domain spec's field table. */
 }
 export function isLedgerMutable(status: LedgerStatus): boolean; // false once settled
 
@@ -301,9 +305,10 @@ export class FinanceDataError extends Error {
   readonly cause: PostgrestError; // the raw SDK error
 }
 
-// A MonthlyLedger WITHOUT its envelopes — everything the monthly_ledger table
-// alone yields; EF3.10 completes it with envelopes + computed metrics.
-export type LedgerHeader = Omit<MonthlyLedger, "envelopes">;
+// The persisted ledger IS the domain `MonthlyLedger` (exported from the domain
+// barrel) — the repository decodes monthly_ledger rows straight into it. There is
+// no header/detail split: envelopes are their own entity, read separately via the
+// envelope repository and paired with the ledger at the query layer.
 ```
 
 ### Data layer — create-ledger command (EF3.7)
@@ -344,7 +349,7 @@ export type CreateLedgerRejectionReason =
   | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — no override
 
 export type CreateLedgerResult =
-  | { readonly ok: true; readonly ledger: LedgerHeader; readonly parkedLedgerId: string | null }
+  | { readonly ok: true; readonly ledger: MonthlyLedger; readonly parkedLedgerId: string | null }
   | {
       readonly ok: false;
       readonly reason: CreateLedgerRejectionReason; // UI branches on the reason alone; no guardrail payload
@@ -434,25 +439,50 @@ export interface ProvisionCategoriesResult {
 }
 ```
 
-### Data layer — Finance-Home read surface (EF3.13)
+### Data layer — ledger read surface (EF3.13)
 
-Barrel-exported: the app-facing **read surface** the EF3.10 Finance Home consumes
-to decide between the empty/fresh state and the Ledger Detail Card from real,
-RLS-scoped data. `createLedgerQueries(client)` returns `getFinanceHomeState(today)`,
-which runs the internal `createLedgerRepository(client).list()` once and feeds the
-result into the pure EF3.4 `resolveCreationState` (`leadDays` fixed at **7**) —
-deriving `fresh_start_ledger` (`list.length === 0`) from the same list. When a
-ledger is `ongoing` (`status === 'ongoing'` only; `reconciling` / `settled` do not
-count) it then reads that ledger's `get_ledger_summary` card into
-`activeLedgerSummary` (`null` otherwise). `today` is caller-supplied ("YYYY-MM-DD") and passed straight to the
-pure resolver, so the surface reads **no clock** (the browser caller passes its
-local calendar day per ADR-0026; tests pass a fixed string). Client-agnostic — it
-takes a `FinanceClient`; the runtime caller is the browser client
-(`createBrowserClient()`, RLS applies). `createLedgerRepository` and the mapper
-stay **internal** (import-boundary rule held) — this query is the public read API,
-the repository its private primitive. A repository read failure propagates as
-`FinanceDataError` (EF3.6) unchanged. Full contract + verification matrix:
-[EF3.13](../../boards/finance/EF3/EF3.13.md).
+Barrel-exported: the app-facing **read surface** the Finance app consumes to render
+ledger state from real, RLS-scoped data. `createLedgerQueries(client)` returns three
+reads, each composing internal `createLedgerRepository` primitives and adding no I/O
+of its own. Client-agnostic — it takes a `FinanceClient`; the runtime caller is the
+browser client (`createBrowserClient()`, RLS applies). `createLedgerRepository` and
+the mapper stay **internal** (import-boundary rule held) — these queries are the
+public read API, the repository their private primitive. A repository read failure
+propagates as `FinanceDataError` (EF3.6) unchanged from all three. Full contract +
+verification matrix: [EF3.13](../../boards/finance/EF3/EF3.13.md).
+
+**`getFinanceHomeState(today)`** — what the EF3.10 Finance Home uses to decide
+between the empty/fresh state and the Ledger Detail Card. Runs
+`createLedgerRepository(client).list()` once and feeds the result into the pure EF3.4
+`resolveCreationState` (`leadDays` fixed at **7**) — deriving `fresh_start_ledger`
+(`list.length === 0`) from the same list. When a ledger is `ongoing`
+(`status === 'ongoing'` only; `reconciling` / `settled` do not count) it then reads
+that ledger's `get_ledger_summary` card into `activeLedgerSummary` (`null`
+otherwise). `today` is caller-supplied ("YYYY-MM-DD") and passed straight to the pure
+resolver, so the surface reads **no clock** (the browser caller passes its local
+calendar day per ADR-0026; tests pass a fixed string).
+
+**`getReconPendingLedgers()`** — the reconciliation worklist the Finance Home's
+pending-reconciliation list renders. Wraps the repository's `listPendingRecon()`
+(the server-side `get_pending_recon_ledgers` aggregate — every `reconciling` ledger
+with its unresolved `pending` envelope count + Σ amount, one round-trip) in
+`{ ledgers }`. Takes no arguments: RLS scopes to the caller and the RPC filters
+`status = 'reconciling'` internally. `{ ledgers: [] }` when nothing is reconciling —
+an empty worklist, never an error.
+
+**`getLedger(month)`** — the single-ledger read the `/finance/ledger/$month` route
+resolves. Keyed by **month, not by id**: `(user_id, month)` is unique
+([monthly-ledger.md §2](../../specs/domain/finance/monthly-ledger.md#2-entity-fields))
+and every read is RLS-scoped, so the month is the ledger's natural key per user — and
+it is the key the route already carries, so the page resolves from its own URL with
+no month→id round-trip and survives refresh / deep-link. Wraps the repository's
+`findByMonth(month)` in `{ ledger }`. Resolves `{ ledger: null }` when the caller owns
+no ledger for that month: the roll-forward gap
+([monthly-ledger.md §3](../../specs/domain/finance/monthly-ledger.md#creation-window--roll-forward))
+is a **normal state** the route renders as "not opened yet", not an error. Returns the
+bare `MonthlyLedger` header — no envelopes (their own entity, their own read) and no
+derived metrics (computed on read); a caller needing either pairs this with the
+envelope read / `get_ledger_summary`.
 
 ```ts
 export function createLedgerQueries(client: FinanceClient): LedgerQueries;
@@ -461,6 +491,27 @@ export interface LedgerQueries {
   // Finance-Home decision state for the current user, given a caller-supplied
   // "YYYY-MM-DD" today. Reads no clock (the pure resolver does the day math).
   getFinanceHomeState(today: string): Promise<FinanceHomeState>;
+
+  // Every `reconciling` ledger for the caller, each with its unresolved-envelope
+  // count + sum. No arguments — RLS scopes it; the RPC filters the status.
+  getReconPendingLedgers(): Promise<ReconPendingLedgersQueryResp>;
+
+  // The caller's ledger for one calendar month, keyed by MONTH (the (user_id,
+  // month) natural key — the same key the /finance/ledger/$month route carries),
+  // never by id. `{ ledger: null }` when that month has no ledger for the caller.
+  getLedger(month: Month): Promise<GetLedgerQueryResp>;
+}
+
+// `ledgers` is [] when nothing is reconciling — an empty worklist, not an error.
+export interface ReconPendingLedgersQueryResp {
+  readonly ledgers: ReconPendingLedger[];
+}
+
+// `ledger` is null when the caller owns no ledger for that month — the
+// roll-forward gap the month route renders as "not opened yet". The bare header:
+// no envelopes (own entity, own read), no derived metrics (computed on read).
+export interface GetLedgerQueryResp {
+  readonly ledger: MonthlyLedger | null;
 }
 
 // A UI-ready shape the EF3.10 Home consumes. currentMonth / nextMonth are the

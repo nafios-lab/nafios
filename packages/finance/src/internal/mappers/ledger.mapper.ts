@@ -9,12 +9,12 @@ import type { TablesInsert } from "@nafios/database";
 import { decodeMonth, encodeMonth } from "@nafios/datetime";
 import {
   type LedgerSummaryCard,
+  type MonthlyLedger,
   type ReconPendingLedger,
   summarizeHealthMargin,
 } from "../../domain";
 import { decodeMoney, encodeMoney } from "../../domain/money";
 import type {
-  LedgerHeader,
   LedgerRow,
   LedgerSummaryDTO,
   NewLedger,
@@ -22,7 +22,7 @@ import type {
 } from "../repositories/ledger.repo";
 
 /**
- * READ: monthly_ledger row → LedgerHeader. Decodes money via decodeMoney and the
+ * READ: monthly_ledger row → MonthlyLedger. Decodes money via decodeMoney and the
  * first-of-month DATE via decodeMonth (EF3.1); `status` maps 1:1 (the DB enum
  * values ARE LedgerStatus); `createdAt`/`settledAt` pass through as opaque ISO
  * strings (EF3.2 §4.2). A malformed stored value throws EF3.1's CodecError here
@@ -32,7 +32,7 @@ import type {
  * `::text` (PostgREST would otherwise emit an uncast numeric as a JSON number);
  * `LedgerRow` types them that way, so the value is never coerced through a float.
  */
-export function rowToLedgerHeader(row: LedgerRow): LedgerHeader {
+export function rowToMonthlyLedger(row: LedgerRow): MonthlyLedger {
   return {
     id: row.id,
     month: decodeMonth(row.month),

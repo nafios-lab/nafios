@@ -93,8 +93,10 @@ export interface EnvelopeRepository {
   findById(id: string): Promise<Envelope | null>;
 
   /** All envelopes in a ledger, ordered by sort_order asc then created_at asc
-   *  (stable). [] when the ledger has none. THIS is what EF3.10 composes into a
-   *  MonthlyLedger. */
+   *  (stable). [] when the ledger has none. Envelopes are their OWN entity —
+   *  never a field on MonthlyLedger (EF3.2) — so THIS is the read a ledger-detail
+   *  surface pairs with the ledger read, and what computeLedgerMetrics is
+   *  spread over. */
   listByLedger(ledgerId: string): Promise<Envelope[]>;
 
   /** Partial line-field update (no status/paidAt). Encodes money; returns the

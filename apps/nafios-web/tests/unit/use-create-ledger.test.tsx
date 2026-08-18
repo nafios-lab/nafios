@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
-import type { CreateLedgerInput, CreateLedgerResult, LedgerHeader } from "@nafios/finance";
+import type { CreateLedgerInput, CreateLedgerResult, MonthlyLedger } from "@nafios/finance";
 import * as finance from "@nafios/finance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
@@ -68,7 +68,7 @@ describe("useCreateLedger", () => {
 
   test("a successful open invalidates the Finance-Home slice", async () => {
     createLedger = () =>
-      Promise.resolve({ ok: true, ledger: {} as LedgerHeader, parkedLedgerId: null });
+      Promise.resolve({ ok: true, ledger: {} as MonthlyLedger, parkedLedgerId: null });
     const { result } = renderHook(() => useCreateLedger(), { wrapper });
 
     const res = await result.current.mutateAsync(INPUT);

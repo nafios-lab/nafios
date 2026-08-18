@@ -61,17 +61,21 @@ export {
   type ProvisionCategoriesResult,
   provisionDefaultCategories,
 } from "./internal/provisioning/provision-default-categories";
-// The app-facing READ surface — Finance-Home decision state (EF3.13). Composes
-// the internal ledger repository + the pure creation-window resolver into the
-// single read EF3.10's Home consumes (`getFinanceHomeState(today)`); the
-// repository + mapper stay internal (import-boundary rule held).
+// The app-facing READ surface — the ledger reads (EF3.13). Composes the internal
+// ledger repository + the pure creation-window resolver into the reads the app
+// consumes: EF3.10's Home decision state (`getFinanceHomeState(today)`), the
+// reconciliation worklist (`getReconPendingLedgers()`), and the single-ledger read
+// the `/finance/ledger/$month` route resolves (`getLedger(month)` — keyed by
+// month, the (user_id, month) natural key, never by id); the repository + mapper
+// stay internal (import-boundary rule held).
 export {
   createLedgerQueries,
   type FinanceHomeState,
+  type GetLedgerQueryResp,
   type LedgerQueries,
   type ReconPendingLedgersQueryResp,
 } from "./internal/queries/ledger-queries";
-// The persisted-ledger shape EF3.10's read surface builds on. The summary-card
-// read shape (`LedgerSummaryCard`) + its `EnvelopeStatusCounts` breakdown are pure
-// domain types — exported via the domain barrel above, not from here.
-export type { LedgerHeader } from "./internal/repositories/ledger.repo";
+// NOTE: the persisted-ledger shape is `MonthlyLedger` itself — a pure domain
+// type exported via the domain barrel above, like the `LedgerSummaryCard` read
+// shape and its `EnvelopeStatusCounts` breakdown. Nothing ledger-shaped is
+// exported from `internal/` (there is no header/detail split to re-export).

@@ -25,9 +25,10 @@
 import { compareMonths, type Month, today } from "@nafios/datetime";
 import { resolveCreationState } from "../../domain/creation-window";
 import { validateMaxCapped } from "../../domain/max-capped";
+import type { MonthlyLedger } from "../../domain/monthly-ledger";
 import { compareMoney, type Money, ZERO_MONEY } from "../../domain/money";
 import type { FinanceClient } from "../client";
-import { createLedgerRepository, type LedgerHeader } from "../repositories/ledger.repo";
+import { createLedgerRepository } from "../repositories/ledger.repo";
 
 // No config layer in EF3 (monthly-ledger.md §3/§6) — leadDays is a fixed 7. When
 // a config capability lands it supplies the value; this command's contract is
@@ -80,7 +81,7 @@ export type CreateLedgerRejectionReason =
 export type CreateLedgerResult =
   | {
       readonly ok: true;
-      readonly ledger: LedgerHeader;
+      readonly ledger: MonthlyLedger;
       readonly parkedLedgerId: string | null;
     }
   | {
@@ -97,7 +98,7 @@ export interface LedgerCommands {
    * rule; on any failure returns `{ ok: false }` and performs NO write. On
    * success it parks the current `ongoing` ledger (if any) to `reconciling` and
    * inserts the new `ongoing` ledger as one all-or-nothing operation (§4.2),
-   * returning the created LedgerHeader.
+   * returning the created MonthlyLedger.
    *
    * Throws FinanceDataError (EF3.6) for a genuine DB/query failure — including
    * the rare lost race where the month was validated free but got taken before
@@ -140,7 +141,7 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       }
 
       // 3. Openable-month (needs the single list() read — EF3.4). The caller's
-      //    ledgers (a LedgerHeader[], which structurally satisfies EF3.4's
+      //    ledgers (a MonthlyLedger[], which structurally satisfies EF3.4's
       //    LedgerMonthStatus[]) feed the resolver; `month` must equal an openable
       //    month (compared via compareMonths). Rejects far-future, back-fill, and
       //    — because a taken month is never offered — any month already taken.
@@ -173,7 +174,7 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       // the outcome is all-or-nothing: either "new open + old parked" or "nothing
       // changed — old still ongoing".
       await repo.updateStatus(ongoing.id, "reconciling");
-      let ledger: LedgerHeader;
+      let ledger: MonthlyLedger;
       try {
         ledger = await repo.insert({ month, openingBalance, maxCapped, status: "ongoing" });
       } catch (error) {

@@ -45,8 +45,12 @@ export interface LedgerMetrics {
  * accepts (pending + paid). Health Margin / ASM Contribution via subtractMoney
  * (both MAY be negative). Outstanding counts the `pending` subset only.
  *
- * Accepts any object with the metrics-relevant fields, so a full MonthlyLedger
- * satisfies it and test fixtures can be minimal.
+ * Accepts any object with the metrics-relevant fields, so test fixtures stay
+ * minimal. `envelopes` is NOT part of MonthlyLedger (they are their own entity —
+ * EF3.2) — the caller spreads a ledger over a separately-read envelope list:
+ * `computeLedgerMetrics({ ...ledger, envelopes })`. That is deliberate: a bare
+ * ledger read cannot be handed straight to this engine, so a missing envelope
+ * read is a TYPE ERROR, never a silently-zero COL.
  */
 export function computeLedgerMetrics(ledger: {
   readonly openingBalance: Money;

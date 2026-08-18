@@ -26,20 +26,11 @@ import {
   ledgerSummaryDTOToCard,
   newLedgerToInsertRow,
   reconPendingLedgerDTOToDomain,
-  rowToLedgerHeader,
+  rowToMonthlyLedger,
 } from "../mappers/ledger.mapper";
 
 /**
- * The PERSISTED ledger — a MonthlyLedger WITHOUT its envelopes. Everything the
- * monthly_ledger table alone can produce; envelopes (EF3.8) are attached, with
- * computed metrics, by the composed read surface (EF3.10). Returning
- * Omit<…, 'envelopes'> (not a MonthlyLedger with envelopes: []) is deliberate:
- * it makes it a TYPE ERROR to run computeLedgerMetrics on a bare header read.
- */
-export type LedgerHeader = Omit<MonthlyLedger, "envelopes">;
-
-/**
- * The monthly_ledger columns a LedgerHeader is built from — every column except
+ * The monthly_ledger columns a MonthlyLedger is built from — every column except
  * `user_id` (RLS-scoped, never surfaced to the domain). The repository selects
  * exactly these, casting the numeric(12,2) columns `::text` (see HEADER_COLUMNS).
  * The generated `Tables<>` row types those columns as `number` (that is what the
@@ -120,7 +111,7 @@ export interface NewLedger {
 }
 
 /**
- * The columns a LedgerHeader is built from — the mapper's read surface.
+ * The columns a MonthlyLedger is built from — the mapper's read surface.
  *
  * The numeric(12,2) columns are cast `::text` in the SELECT so PostgREST emits
  * them as JSON STRINGS. Without the cast PostgREST serializes numeric as a JSON
@@ -136,14 +127,14 @@ const HEADER_COLUMNS =
 export interface LedgerRepository {
   /**
    * Insert a new ledger (user_id filled by the DB default auth.uid() — never set
-   * here). Returns the created LedgerHeader (read back so DB-defaulted
+   * here). Returns the created MonthlyLedger (read back so DB-defaulted
    * id/createdAt/status are present). Throws FinanceDataError on a DB failure
    * (duplicate_month | ongoing_exists | check_violation | …).
    */
-  insert(input: NewLedger): Promise<LedgerHeader>;
+  insert(input: NewLedger): Promise<MonthlyLedger>;
 
   /** Fetch by id, RLS-scoped to the caller. null when not found OR not owned. */
-  findById(id: string): Promise<LedgerHeader | null>;
+  findById(id: string): Promise<MonthlyLedger | null>;
 
   /**
    * The ledger's SUMMARY-CARD payload — header + COL / ASM Contribution / Health
@@ -168,15 +159,15 @@ export interface LedgerRepository {
 
   /** The caller's ledger for a given month, or null — the uniqueness/conflict
    *  probe EF3.7 uses before opening a month. */
-  findByMonth(month: Month): Promise<LedgerHeader | null>;
+  findByMonth(month: Month): Promise<MonthlyLedger | null>;
 
   /** THE "one ongoing" query: the caller's single `ongoing` ledger, or null. The
    *  uq_one_ongoing_ledger partial unique index guarantees at most one. */
-  findOngoing(): Promise<LedgerHeader | null>;
+  findOngoing(): Promise<MonthlyLedger | null>;
 
   /** All the caller's ledgers, chronological by month (ascending). [] when none.
    *  Satisfies EF3.4's LedgerMonthStatus[] input directly (month + status). */
-  list(): Promise<LedgerHeader[]>;
+  list(): Promise<MonthlyLedger[]>;
 
   /**
    * Transition a ledger's status (EF3 uses this ONLY for ongoing → reconciling).
@@ -186,7 +177,7 @@ export interface LedgerRepository {
   updateStatus(
     id: string,
     status: Extract<LedgerStatus, "ongoing" | "reconciling">,
-  ): Promise<LedgerHeader>;
+  ): Promise<MonthlyLedger>;
 
   /** Delete a ledger, RLS-scoped. A complete-CRUD primitive; NO EF3 user story
    *  deletes a ledger — present for test teardown and repository completeness. */
@@ -209,7 +200,7 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
       if (error) {
         throw mapPostgrestError(error);
       }
-      return rowToLedgerHeader(data as LedgerRow);
+      return rowToMonthlyLedger(data as LedgerRow);
     },
 
     async findById(id) {
@@ -217,7 +208,7 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
       if (error) {
         throw mapPostgrestError(error);
       }
-      return data ? rowToLedgerHeader(data as LedgerRow) : null;
+      return data ? rowToMonthlyLedger(data as LedgerRow) : null;
     },
 
     async getLedgerSummary(id) {
@@ -252,7 +243,7 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
       if (error) {
         throw mapPostgrestError(error);
       }
-      return data ? rowToLedgerHeader(data as LedgerRow) : null;
+      return data ? rowToMonthlyLedger(data as LedgerRow) : null;
     },
 
     async findOngoing() {
@@ -263,7 +254,7 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
       if (error) {
         throw mapPostgrestError(error);
       }
-      return data ? rowToLedgerHeader(data as LedgerRow) : null;
+      return data ? rowToMonthlyLedger(data as LedgerRow) : null;
     },
 
     async list() {
@@ -273,7 +264,7 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
       if (error) {
         throw mapPostgrestError(error);
       }
-      return (data as LedgerRow[]).map(rowToLedgerHeader);
+      return (data as LedgerRow[]).map(rowToMonthlyLedger);
     },
 
     async updateStatus(id, status) {
@@ -285,7 +276,7 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
       if (error) {
         throw mapPostgrestError(error);
       }
-      return rowToLedgerHeader(data as LedgerRow);
+      return rowToMonthlyLedger(data as LedgerRow);
     },
 
     async delete(id) {

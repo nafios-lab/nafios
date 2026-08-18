@@ -1,12 +1,13 @@
-// @nafios/finance — data layer (src/internal/). The Finance-Home READ surface
-// (EF3.13): the single public read that resolves the Home decision state for the
-// logged-in user given a caller-supplied `today`.
+// @nafios/finance — data layer (src/internal/). The ledger READ surface: the
+// public reads the Finance app consumes — the Home decision state (EF3.13), the
+// reconciliation worklist, and the single-ledger read the month route resolves.
 //
-// It COMPOSES already-built primitives — it adds no new I/O, no clock, and no
-// migration:
-//   • the internal `createLedgerRepository(client).list()` (EF3.6) — the user's
-//     ledgers, RLS-scoped, chronological (a `LedgerHeader[]`, structurally the
-//     resolver's `LedgerMonthStatus[]`), and
+// Every read COMPOSES already-built primitives — this layer adds no new I/O, no
+// clock, and no migration:
+//   • the internal `createLedgerRepository(client)` (EF3.6) — `list()` (the
+//     user's ledgers, RLS-scoped, chronological — a `MonthlyLedger[]`,
+//     structurally the resolver's `LedgerMonthStatus[]`), `getLedgerSummary(id)`,
+//     `listPendingRecon()`, and `findByMonth(month)`, and
 //   • the pure `resolveCreationState` / `addMonths` (EF3.4/EF3.1) — the Lead-Day
 //     window + openable-month math.
 //
@@ -20,6 +21,7 @@
 import { addMonths, type Month } from "@nafios/datetime";
 import {
   type LedgerSummaryCard,
+  type MonthlyLedger,
   type ReconPendingLedger,
   resolveCreationState,
 } from "../../domain";
@@ -66,8 +68,21 @@ export interface FinanceHomeState {
   };
 }
 
+/** `getReconPendingLedgers`'s envelope. `ledgers` is `[]` when nothing is
+ *  reconciling — an empty worklist, never an error. */
 export interface ReconPendingLedgersQueryResp {
   ledgers: ReconPendingLedger[];
+}
+
+/** `getLedger`'s envelope. `ledger` is `null` when the caller owns no ledger for
+ *  that month — the roll-forward gap the month route renders as "not opened yet",
+ *  a NORMAL state rather than an error (mirrors the repository's `findByMonth`).
+ *  The shape is the bare `MonthlyLedger` header: no envelopes (own entity, own
+ *  read) and no derived metrics (computed on read) — see the domain spec's §2
+ *  note. Callers needing either pair this with the envelope read /
+ *  `get_ledger_summary`. */
+export interface GetLedgerQueryResp {
+  ledger: MonthlyLedger | null;
 }
 
 export interface LedgerQueries {
@@ -84,6 +99,16 @@ export interface LedgerQueries {
    * The list of all the pending reconciliation ledgers
    */
   getReconPendingLedgers(): Promise<ReconPendingLedgersQueryResp>;
+
+  /**
+   * The caller's ledger for one calendar month, keyed by MONTH — not by id.
+   * `(user_id, month)` is unique and every read is RLS-scoped, so the month is
+   * the ledger's natural key per user: the same key the `/finance/ledger/$month`
+   * route carries, so the page resolves from its own URL with no id round-trip.
+   * Resolves `{ ledger: null }` when that month has no ledger for the caller.
+   * Propagates `FinanceDataError` from the repository unchanged.
+   */
+  getLedger(month: Month): Promise<GetLedgerQueryResp>;
 }
 
 /**
@@ -123,6 +148,15 @@ export function createLedgerQueries(client: FinanceClient): LedgerQueries {
       const data = await ledgers.listPendingRecon();
       return {
         ledgers: data,
+      };
+    },
+
+    async getLedger(month) {
+      // One RLS-scoped read on the (user_id, month) unique key. A miss is `null`,
+      // not a throw — an unopened month is a state the route renders.
+      const ledger = await ledgers.findByMonth(month);
+      return {
+        ledger,
       };
     },
   };

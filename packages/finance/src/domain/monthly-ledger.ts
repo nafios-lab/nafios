@@ -2,14 +2,16 @@
 //
 // The MonthlyLedger is the primary unit of work in finance: one calendar month
 // of cashflow (monthly-ledger.md §1). This module owns the canonical in-memory
-// shape the repository (EF3.6/EF3.10) decodes DB rows into, plus the status
-// model (LedgerStatus + isLedgerMutable). Derived metrics are NOT stored on the
-// type — they're computed on read by computeLedgerMetrics (ledger-metrics.ts).
+// shape the repository (EF3.6) decodes DB rows into, plus the status model
+// (LedgerStatus + isLedgerMutable). The type mirrors the monthly_ledger TABLE:
+// derived metrics are NOT stored on it (computed on read by computeLedgerMetrics
+// in ledger-metrics.ts), and neither are envelopes — those are a separate entity
+// keyed by ledger_id, read via the envelope repository and joined at the query
+// layer, exactly as the normalized schema models them.
 // Timestamps stay opaque ISO strings: nothing in EF3 does timestamp arithmetic,
 // so no Timestamp codec ships. This module models status; it never transitions it.
 
 import type { Month } from "@nafios/datetime";
-import type { Envelope } from "./envelope";
 import type { LedgerMetrics } from "./ledger-metrics";
 import type { Money } from "./money";
 
@@ -20,14 +22,26 @@ export type LedgerStatus = "ongoing" | "reconciling" | "settled";
 
 /**
  * One calendar month of cashflow — the primary unit of work in finance
- * (monthly-ledger.md §1). The in-memory domain shape; repositories (EF3.6/EF3.10)
- * decode DB rows into this via the EF3.1 codecs.
+ * (monthly-ledger.md §1). The in-memory domain shape, 1:1 with the
+ * `monthly_ledger` row: exactly the columns that table owns, nothing more.
+ * Repositories (EF3.6) decode DB rows into this via the EF3.1 codecs.
  *
  * `openingBalance` / `maxCapped` are Money (EF3.1); `month` is Month (EF3.1).
  * `createdAt` / `settledAt` are opaque ISO-8601 timestamp strings as the SDK
  * returns them — the domain does no timestamp arithmetic in EF3, so no Timestamp
- * codec ships. `derivedMetrics` is NOT a field: it is computed on read by
- * computeLedgerMetrics, never stored (monthly-ledger.md §2, §5).
+ * codec ships.
+ *
+ * TWO rows of monthly-ledger.md §2's field table are deliberately NOT fields
+ * here — the spec table is the conceptual entity, this is the persisted record:
+ *   • `derivedMetrics` — computed on read by computeLedgerMetrics, never stored
+ *     (monthly-ledger.md §2, §5).
+ *   • `envelopes[]` — a RELATIONSHIP, not a column: envelopes are their own
+ *     entity/table keyed by `ledger_id`, read separately via the envelope
+ *     repository's `listByLedger` (EF3.8) and composed at the query layer by
+ *     whoever needs both. Keeping it off the type means a bare ledger read can
+ *     never be mistaken for a loaded one, and it stays a TYPE ERROR to hand a
+ *     ledger straight to computeLedgerMetrics (which demands `envelopes` in its
+ *     own parameter shape) without doing that read.
  */
 export interface MonthlyLedger {
   readonly id: string; // uuid PK
@@ -35,7 +49,6 @@ export interface MonthlyLedger {
   readonly openingBalance: Money; // income to allocate this month
   readonly maxCapped: Money; // self-imposed spending ceiling
   readonly status: LedgerStatus;
-  readonly envelopes: readonly Envelope[]; // all line items (EF3.3)
   readonly createdAt: string; // ISO-8601 timestamptz, opaque
   readonly settledAt: string | null; // set iff status === 'settled'
 }
@@ -66,7 +79,7 @@ export interface EnvelopeStatusCounts {
  * documents), so a summary read and the pure engine yield the SAME type — a
  * consumer treats server-computed and client-computed metrics identically. This
  * carries no `createdAt` / `settledAt` (the card never shows them and the RPC
- * omits them), so it is deliberately NOT a `LedgerHeader`.
+ * omits them), so it is deliberately NOT a `MonthlyLedger`.
  *
  * Distinct from creation-window's `LedgerMonthStatus` (`{ month, status }`, the
  * resolver's input row) — a different, unrelated shape.

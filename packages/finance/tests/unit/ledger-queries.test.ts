@@ -6,11 +6,13 @@ import { FinanceDataError } from "../../src/internal/errors";
 import { createLedgerQueries } from "../../src/internal/queries/ledger-queries";
 import type { LedgerRow } from "../../src/internal/repositories/ledger.repo";
 
-// UNIT tests over the Finance-Home read surface against a FAKE client — no live
-// DB. The read runs the real internal repository (`list()`) + the pure resolver;
-// only the SDK query builder is stubbed. The live §6 behavior (real RLS, a real
-// monthly_ledger row, cross-user isolation) is proven by the repo-root matrix
-// (tests/integration/ledger-queries.test.ts).
+// UNIT tests over the ledger read surface — `getFinanceHomeState`,
+// `getReconPendingLedgers`, and `getLedger` — against a FAKE client, no live DB.
+// Each read runs the real internal repository primitive (`list()` +
+// `getLedgerSummary`, `listPendingRecon`, `findByMonth`) and, for the Home state,
+// the pure resolver; only the SDK query builder is stubbed. The live §6 behavior
+// (real RLS, a real monthly_ledger row, cross-user isolation) is proven by the
+// repo-root matrix (tests/integration/ledger-queries.test.ts).
 
 type QueryResult = { data: unknown; error: PostgrestError | null };
 
@@ -196,5 +198,50 @@ describe("getReconPendingLedgers — reconciliation worklist", () => {
     await expect(createLedgerQueries(client).getReconPendingLedgers()).rejects.toBeInstanceOf(
       FinanceDataError,
     );
+  });
+});
+
+describe("getLedger — the single-ledger read, keyed by month", () => {
+  test("the caller's ledger for that month is decoded and wrapped in { ledger }", async () => {
+    const row = ledgerRow("2026-06-01", "ongoing");
+    // findByMonth reads through from().select().eq().maybeSingle() — the stub's
+    // first (`result`) leg — and PostgREST hands back the single row, not an array.
+    const resp = await createLedgerQueries(makeClient({ data: row, error: null })).getLedger(
+      monthOf("2026-06-01"),
+    );
+
+    expect(resp.ledger).not.toBeNull();
+    expect(resp.ledger?.id).toBe(row.id);
+    expect(resp.ledger?.month).toBe(monthOf("2026-06-01"));
+    expect(resp.ledger?.status).toBe("ongoing");
+    // Money crosses the wire as text and decodes to exact cents (EF3.1).
+    expect(resp.ledger?.openingBalance).toBe(moneyFromCents(100000));
+    expect(resp.ledger?.maxCapped).toBe(moneyFromCents(150000));
+  });
+
+  test("a month the caller never opened → { ledger: null }, not a throw", async () => {
+    // maybeSingle() on no match resolves { data: null, error: null }. The
+    // roll-forward gap is a NORMAL state the month route renders — never an error.
+    const resp = await createLedgerQueries(makeClient({ data: null, error: null })).getLedger(
+      monthOf("2026-09-01"),
+    );
+
+    expect(resp.ledger).toBeNull();
+  });
+
+  test("a repository read failure rejects with FinanceDataError (propagated unchanged)", async () => {
+    const client = makeClient({
+      data: null,
+      error: {
+        name: "PostgrestError",
+        message: "denied",
+        details: "",
+        hint: "",
+        code: "42501",
+      } as PostgrestError,
+    });
+    await expect(
+      createLedgerQueries(client).getLedger(monthOf("2026-06-01")),
+    ).rejects.toBeInstanceOf(FinanceDataError);
   });
 });

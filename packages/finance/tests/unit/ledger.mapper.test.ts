@@ -6,7 +6,7 @@ import { encodeMoney } from "../../src/domain/money";
 import {
   newLedgerToInsertRow,
   reconPendingLedgerDTOToDomain,
-  rowToLedgerHeader,
+  rowToMonthlyLedger,
 } from "../../src/internal/mappers/ledger.mapper";
 import type {
   LedgerRow,
@@ -31,9 +31,9 @@ function row(overrides: Partial<LedgerRow> = {}): LedgerRow {
   };
 }
 
-describe("rowToLedgerHeader — exact round-trip (money never floated)", () => {
+describe("rowToMonthlyLedger — exact round-trip (money never floated)", () => {
   test("decodes the Jan 2027 anchor row and re-encodes exactly", () => {
-    const header = rowToLedgerHeader(row());
+    const header = rowToMonthlyLedger(row());
     expect(encodeMonth(header.month)).toBe("2027-01-01");
     expect(encodeMoney(header.openingBalance)).toBe("7152.35");
     expect(encodeMoney(header.maxCapped)).toBe("6415.00");
@@ -44,7 +44,7 @@ describe("rowToLedgerHeader — exact round-trip (money never floated)", () => {
   });
 
   test("maps a settled row (all statuses read)", () => {
-    const header = rowToLedgerHeader(
+    const header = rowToMonthlyLedger(
       row({ status: "settled", settled_at: "2027-02-01T00:00:00.000Z" }),
     );
     expect(header.status).toBe("settled");
@@ -52,13 +52,13 @@ describe("rowToLedgerHeader — exact round-trip (money never floated)", () => {
   });
 
   test("a malformed stored month surfaces EF3.1's CodecError (not a FinanceDataError)", () => {
-    expect(() => rowToLedgerHeader(row({ month: "2027-01-15" }))).toThrow(
+    expect(() => rowToMonthlyLedger(row({ month: "2027-01-15" }))).toThrow(
       "month must be the first of the month",
     );
   });
 
   test("a malformed stored money value surfaces CodecError", () => {
-    expect(() => rowToLedgerHeader(row({ opening_balance: "not-money" }))).toThrow();
+    expect(() => rowToMonthlyLedger(row({ opening_balance: "not-money" }))).toThrow();
   });
 });
 

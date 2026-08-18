@@ -50,11 +50,12 @@ _inside_ the package by a **Biome import-boundary rule** (see root
   categories idempotently (count-guard) from the pure `src/domain/` catalog.
   `errors.ts` was **not** extended (a category write has no user-supplied FK).
   The first **read/query** surface (EF3.13): `createLedgerQueries`
-  (`queries/ledger-queries.ts`), which composes the internal `createLedgerRepository`
-  (`list()`) with the pure creation-window resolver into the barrel-exported
-  `getFinanceHomeState(today)` the Finance Home consumes — a read, so it adds no I/O
-  of its own and needed no `errors.ts` change (the repository's `FinanceDataError`
-  propagates unchanged).
+  (`queries/ledger-queries.ts`), which composes internal `createLedgerRepository`
+  primitives — `list()` with the pure creation-window resolver into
+  `getFinanceHomeState(today)`, `listPendingRecon()` into `getReconPendingLedgers()`,
+  and `findByMonth(month)` into `getLedger(month)` — as the barrel-exported reads the
+  Finance app consumes. All reads, so the layer adds no I/O of its own and needed no
+  `errors.ts` change (the repository's `FinanceDataError` propagates unchanged).
 
 Layering is one-way: `src/internal/ (data) → src/domain/ (domain) → (nothing
 app-specific)`. A domain-imports-data violation **fails `bun run check`** via
@@ -93,19 +94,36 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   repository throws (EF3.6, extended in EF3.8). The app/UI catches it and branches
   on `code` (`duplicate_month` / `ongoing_exists` / `check_violation` /
   `foreign_key_violation` / …).
-- `LedgerHeader` — the persisted ledger (a `MonthlyLedger` minus `envelopes`);
-  the shape EF3.10's read surface builds on.
+- `MonthlyLedger` — the persisted ledger, 1:1 with the `monthly_ledger` row and
+  shipped via the **domain** barrel. It carries no `envelopes` (their own entity,
+  read via the envelope repository and paired at the query layer) and no
+  `derivedMetrics` (computed on read by `computeLedgerMetrics`), so a bare ledger
+  read can never be mistaken for a loaded one.
 
 - `createLedgerQueries(client)` — the app-facing **read surface** (EF3.13): the
-  single read the Finance Home consumes. `getFinanceHomeState(today)` runs the
-  internal repository's `list()` once and feeds it into the pure creation-window
-  resolver (`leadDays = 7`), returning `FinanceHomeState`
-  (`{ fresh_start_ledger, activeLedgerSummary, isWithinLeadDay, currentMonth, nextMonth, openable }`).
-  `fresh_start_ledger` is `list.length === 0` (the user has never opened a ledger);
-  `activeLedgerSummary` is the ongoing ledger's `get_ledger_summary` card (read only
-  when a ledger is `status === 'ongoing'`, else `null`); `today` is caller-supplied
-  ("YYYY-MM-DD") so the surface reads no clock; a repository failure propagates as
-  `FinanceDataError`. Types: `LedgerQueries`, `FinanceHomeState`.
+  three reads the Finance app consumes. A repository failure propagates as
+  `FinanceDataError` from all of them. Types: `LedgerQueries`, `FinanceHomeState`,
+  `ReconPendingLedgersQueryResp`, `GetLedgerQueryResp`.
+  - `getFinanceHomeState(today)` runs the internal repository's `list()` once and
+    feeds it into the pure creation-window resolver (`leadDays = 7`), returning
+    `FinanceHomeState`
+    (`{ fresh_start_ledger, activeLedgerSummary, isWithinLeadDay, currentMonth, nextMonth, openable }`).
+    `fresh_start_ledger` is `list.length === 0` (the user has never opened a ledger);
+    `activeLedgerSummary` is the ongoing ledger's `get_ledger_summary` card (read only
+    when a ledger is `status === 'ongoing'`, else `null`); `today` is caller-supplied
+    ("YYYY-MM-DD") so the surface reads no clock.
+  - `getReconPendingLedgers()` wraps `listPendingRecon()` in `{ ledgers }` — the
+    reconciliation worklist (every `reconciling` ledger + its unresolved count/Σ, one
+    server-side aggregate). No arguments; `{ ledgers: [] }` when nothing is
+    reconciling.
+  - `getLedger(month)` wraps `findByMonth(month)` in `{ ledger }` — the read the
+    `/finance/ledger/$month` route resolves. Keyed by **month, not id**:
+    `(user_id, month)` is unique and reads are RLS-scoped, so the month is the natural
+    key per user, and it is the key the route already carries (the page resolves from
+    its own URL — no month→id round-trip, survives refresh/deep-link).
+    `{ ledger: null }` when the caller owns no ledger for that month — the
+    roll-forward gap, a normal state the route renders, not an error. Bare
+    `MonthlyLedger` header only (no envelopes, no derived metrics).
 
 - `createLedgerCommands(client)` — the app-facing **write surface** (EF3.7): the
   one command path that opens a `MonthlyLedger`. `createLedger(input)` enforces
@@ -219,18 +237,18 @@ src/
     client.ts           # createBrowserClient, createServiceClient, FinanceClient
     errors.ts           # FinanceDataError, FinanceDataErrorCode, mapPostgrestError (EF3.6)
     mappers/
-      ledger.mapper.ts    # monthly_ledger row ↔ LedgerHeader / NewLedger (EF3.6)
+      ledger.mapper.ts    # monthly_ledger row ↔ MonthlyLedger / NewLedger (EF3.6)
       envelope.mapper.ts  # envelope row ↔ Envelope + carried_over ↔ carried-over seam (EF3.8)
       category.mapper.ts  # category row ↔ Category + explicit-user_id insert (EF3.9)
     repositories/
-      ledger.repo.ts      # createLedgerRepository, LedgerRepository, LedgerHeader, NewLedger (EF3.6)
+      ledger.repo.ts      # createLedgerRepository, LedgerRepository, LedgerRow, NewLedger (EF3.6)
       envelope.repo.ts    # createEnvelopeRepository, EnvelopeRepository, NewEnvelope/EnvelopePatch (EF3.8)
       category.repo.ts    # createCategoryRepository — count / insertMany / listForUser / listByUser (EF3.9)
     commands/
       create-ledger.ts       # createLedgerCommands — the single write path opening a ledger (EF3.7)
       envelope-commands.ts   # createEnvelopeCommands — manual envelope CRUD + set-status (EF3.8)
     queries/
-      ledger-queries.ts      # createLedgerQueries — the Finance-Home read surface / getFinanceHomeState (EF3.13)
+      ledger-queries.ts      # createLedgerQueries — the ledger reads: getFinanceHomeState / getReconPendingLedgers / getLedger (EF3.13)
     provisioning/
       provision-default-categories.ts # provisionDefaultCategories + listCategories (EF3.9)
 tests/
