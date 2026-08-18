@@ -34,6 +34,9 @@ import "../src/features/finance/lib/finance-client.ts";
 import "../src/features/finance/lib/local-today-iso.ts";
 // Onboarding context
 import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";
+// Finance client state (ADR-0029) — atoms + the store boundary
+import "../src/features/finance/state/ledger-sheet/ledger-sheet-provider.tsx";
+import "../src/features/finance/state/ledger-sheet/ledger-sheet.atoms.ts";
 // Hooks
 import "../src/features/auth/hooks/use-account-signup.ts";
 import "../src/features/auth/hooks/use-sign-in.ts";
@@ -41,6 +44,7 @@ import "../src/features/auth/hooks/use-sign-out.ts";
 import "../src/features/onboarding/hooks/use-complete-onboarding.ts";
 import "../src/features/onboarding/hooks/use-onboarding-profile.ts";
 import "../src/features/finance/hooks/use-finance-home-state.ts";
+import "../src/features/finance/hooks/use-ledger.ts";
 // Components
 import "../src/features/auth/components/login-form.tsx";
 import "../src/features/auth/components/sign-out-button.tsx";
@@ -54,7 +58,11 @@ import "../src/features/onboarding/components/onboarding-wizard.tsx";
 import "../src/features/finance/components/home/finance-home.tsx";
 import "../src/features/finance/components/home/ledger-detail-card.tsx";
 import "../src/features/finance/components/home/ledger-start-card.tsx";
+// `components/ledger/index.tsx` is the LedgerSheet itself, not a barrel — the
+// `**/index.ts` ignore pattern does not cover it, so it is in scope and pinned here.
+import "../src/features/finance/components/ledger/index.tsx";
 import "../src/features/finance/components/ledger/ledger-header-bar.tsx";
+import "../src/features/finance/components/ledger/ledger-loading.tsx";
 import "../src/features/finance/components/reconciliation/pending-reconciliation-section.tsx";
 import "../src/features/finance/components/shared/view-settled-ledgers-button.tsx";
 

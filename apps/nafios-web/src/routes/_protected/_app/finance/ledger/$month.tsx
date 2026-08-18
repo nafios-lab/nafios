@@ -1,6 +1,7 @@
 import { formatMonthLong, monthOf } from "@nafios/datetime";
 import { createFileRoute } from "@tanstack/react-router";
-import { LedgerHeaderBar } from "~/features/finance/components/ledger/ledger-header-bar";
+import { LedgerSheet } from "~/features/finance/components/ledger";
+import { LedgerSheetProvider } from "~/features/finance/state/ledger-sheet/ledger-sheet-provider";
 
 export const Route = createFileRoute("/_protected/_app/finance/ledger/$month")({
   component: RouteComponent,
@@ -9,9 +10,10 @@ export const Route = createFileRoute("/_protected/_app/finance/ledger/$month")({
 function RouteComponent() {
   const { month } = Route.useParams();
 
+  const ledgerMonth = monthOf(month);
   return (
-    <div className="flex flex-col gap-4">
-      <LedgerHeaderBar monthLedger={formatMonthLong(monthOf(month))} />
-    </div>
+    <LedgerSheetProvider month={formatMonthLong(ledgerMonth)}>
+      <LedgerSheet ledgerMonth={ledgerMonth} />
+    </LedgerSheetProvider>
   );
 }
