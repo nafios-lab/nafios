@@ -54,6 +54,7 @@ import "../src/features/onboarding/components/onboarding-wizard.tsx";
 import "../src/features/finance/components/home/finance-home.tsx";
 import "../src/features/finance/components/home/ledger-detail-card.tsx";
 import "../src/features/finance/components/home/ledger-start-card.tsx";
+import "../src/features/finance/components/ledger/ledger-header-bar.tsx";
 import "../src/features/finance/components/reconciliation/pending-reconciliation-section.tsx";
 import "../src/features/finance/components/shared/view-settled-ledgers-button.tsx";
 

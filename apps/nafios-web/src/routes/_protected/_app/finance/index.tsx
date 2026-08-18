@@ -33,7 +33,7 @@ export const FINANCE_LEFT_COLUMN_CLASS = "flex flex-1 flex-col gap-10 lg:flex-3"
 function FinanceHomePage() {
   return (
     // Stacks vertically on small screens and splits into two columns at `lg`.
-    <div className="flex h-full min-h-full flex-col gap-6 lg:flex-row">
+    <div className="flex h-full min-h-full flex-col gap-6 lg:flex-row p-4">
       {/* Left — primary content: the ledger dashboard (client-side read). */}
       <LedgersSectionPanel />
       {/* Right — TEMPLATES panel. Presentational placeholder only (out of scope

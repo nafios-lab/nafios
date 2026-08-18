@@ -155,7 +155,9 @@ export function Navbar() {
   const { leftAside, rightAside } = useContext(NavbarContentContext);
 
   return (
-    <nav className="flex items-center gap-2 border-b border-border/50 px-4 py-3 sm:gap-4 sm:px-6">
+    // `shrink-0`: the bar is a fixed band in the shell column — it must not be
+    // compressed by a tall page below it; the page scrolls instead.
+    <nav className="flex shrink-0 items-center gap-2 border-b border-border/50 px-4 py-3 sm:gap-4 sm:px-6">
       {/* Left slot: takes the slack and yields first. `min-w-0` lets its
           contents shrink below their intrinsic width instead of overflowing
           the bar — the flexbox default (`min-width: auto`) would not. */}

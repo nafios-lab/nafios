@@ -127,11 +127,31 @@ mock.module("@nafios/storage/browser", () => ({
 // react-router in two files would clobber across the global registry.
 export const navigate = mock((_opts?: unknown) => {});
 
+/** Interpolate a route pattern's `$param` segments, the way a live router would:
+ *  ("/finance/ledger/$month", { month: "2026-07-01" }) -> "/finance/ledger/2026-07-01".
+ *  Keeps the stub's href assertable for param routes, and keeps `params` off the
+ *  <a> (React would warn on an object-valued unknown DOM attribute). */
+function resolveHref(to?: string, params?: Record<string, string>): string | undefined {
+  if (to === undefined || params === undefined) return to;
+  return Object.entries(params).reduce(
+    (href, [key, value]) => href.replace(`$${key}`, String(value)),
+    to,
+  );
+}
+
 mock.module("@tanstack/react-router", () => ({
   ...ReactRouter,
   useNavigate: () => navigate,
-  Link: ({ children, to, ...props }: { children?: unknown; to?: string }) =>
-    createElement("a", { href: to, ...props }, children as never),
+  Link: ({
+    children,
+    to,
+    params,
+    ...props
+  }: {
+    children?: unknown;
+    to?: string;
+    params?: Record<string, string>;
+  }) => createElement("a", { href: resolveHref(to, params), ...props }, children as never),
 }));
 
 /** Reset every shared auth spy to its success default. Call in beforeEach. */

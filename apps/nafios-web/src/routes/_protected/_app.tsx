@@ -47,14 +47,25 @@ function AppLayout() {
     <SidebarProvider
       open={false}
       onOpenChange={() => {}}
+      // The shell owns the viewport: pin the wrapper to exactly one screen
+      // (`h-svh`, overriding the primitive's `min-h-svh`) and clip it, so the
+      // document itself never scrolls. That bounded height is what lets the
+      // page container below scroll *under* a fixed navbar + rail.
+      className="h-svh overflow-hidden"
       style={{ "--sidebar-width-icon": "4rem" } as CSSProperties}
     >
       <NavbarProvider>
         <SidebarNavProvider>
           <Sidebar user={{ email: session.user.email, avatarUrl: profile?.avatarUrl }} />
-          <SidebarInset>
+          {/* `min-h-0` so this column may shrink below its content in the flex
+              row — without it the auto minimum size wins and the scroll
+              container below is pushed past the viewport. */}
+          <SidebarInset className="min-h-0 overflow-hidden">
             <Navbar />
-            <div className="flex-1 overflow-auto p-6">
+            {/* The page scroll container: the only scrolling element in the
+                shell. Everything above it (navbar) and beside it (rail) stays
+                put. Pages may pin their own sub-headers with `sticky top-0`. */}
+            <div className="min-h-0 flex-1 overflow-auto">
               <Outlet />
             </div>
           </SidebarInset>
