@@ -85,7 +85,14 @@ the shell import paths rewritten). `finance/route.tsx` is the module layout: it
 re-uses the shared chrome, only *specializing* the rail (Overview / Accounts /
 Transactions via `useSidebarNav`) and the navbar (`FINANCE` title + the
 `ServiceMenu active="finance"` switcher + clock via `useNavbar`), then renders
-its pages through `<Outlet/>`. `finance/index.tsx` (`/finance`) reads the
+its pages through `<Outlet/>`. It is the module's **sole navbar writer**: the
+slot is last-write-wins and React commits layout effects child-first, so a page
+calling `useNavbar` under this layout would always lose. Depth is therefore
+derived *here* — on `/finance/ledger/$month` the title is swapped for a
+`NavbarBreadcrumb` (`Finance › Ledger : August 2026`, label from
+`features/finance/lib/ledger-crumb-label.ts`); flatter pages keep the title.
+
+`finance/index.tsx` (`/finance`) reads the
 Finance-Home decision seam **client-side** via `useFinanceHomeState`
 (`features/finance/hooks/`) against the finance browser client
 (`features/finance/lib/finance-client.ts` — a lazy singleton over

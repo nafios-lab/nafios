@@ -1,6 +1,7 @@
-import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
-import { ArrowLeftRight, LayoutDashboard, Wallet } from "lucide-react";
-import { NavbarClock, NavbarTitle, useNavbar } from "~/shared/components/navbar";
+import { createFileRoute, Outlet, useLocation, useMatch } from "@tanstack/react-router";
+import { ArrowLeftRight, LayoutDashboard, NotebookText as LedgerIcon, Wallet } from "lucide-react";
+import { ledgerCrumbLabel } from "~/features/finance/lib/ledger-crumb-label";
+import { NavbarBreadcrumb, NavbarClock, NavbarTitle, useNavbar } from "~/shared/components/navbar";
 import { ServiceMenu } from "~/shared/components/service-menu";
 import { type SidebarNavItem, useSidebarNav } from "~/shared/components/sidebar";
 
@@ -45,11 +46,40 @@ function FinanceLayout() {
     })),
   );
 
-  // Finance specializes the shared navbar: the module title sits in the left
+  // The ledger sheet is the one page in Finance that sits a level below the
+  // module root *and* is deep-linkable (`/finance/ledger/2026-08-01`), so it is
+  // the one page whose "where am I" the rail cannot answer. Non-throwing match:
+  // this returns undefined on every other Finance page.
+  const ledgerMatch = useMatch({
+    from: "/_protected/_app/finance/ledger/$month",
+    shouldThrow: false,
+  });
+
+  // Finance specializes the shared navbar: the module identity sits in the left
   // slot, while the product switcher (highlighting Finance) and the live clock
   // sit in the right slot alongside the shell-owned account chrome.
+  //
+  // This layout is the module's SOLE navbar writer (see `useNavbar`) — pages
+  // never write the bar themselves, so the trail is derived here from the match
+  // rather than declared by the page. Flat pages keep the plain module title:
+  // a one-segment breadcrumb is a title wearing a costume.
   useNavbar({
-    leftAside: <NavbarTitle>FINANCE</NavbarTitle>,
+    leftAside: ledgerMatch ? (
+      <NavbarBreadcrumb
+        items={[
+          { label: "Finance", to: "/finance" },
+          {
+            label: ledgerCrumbLabel(ledgerMatch.params.month),
+            // The month alone is a bare value; the mark says *ledger for* that
+            // month. Same icon the sheet's own header bar uses, so the bar and
+            // the page name the thing identically.
+            icon: <LedgerIcon className="size-3.5 shrink-0" />,
+          },
+        ]}
+      />
+    ) : (
+      <NavbarTitle>FINANCE</NavbarTitle>
+    ),
     rightAside: (
       <>
         <ServiceMenu active="finance" />

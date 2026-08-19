@@ -1,9 +1,19 @@
 import { formatDate } from "@nafios/datetime";
 import { TextInput } from "@nafios/ui/components/text-input";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@nafios/ui/components/ui/breadcrumb";
 import { SidebarTrigger } from "@nafios/ui/components/ui/sidebar";
+import { Link, type LinkProps } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import {
   createContext,
+  Fragment,
   type ReactNode,
   useContext,
   useEffect,
@@ -63,6 +73,12 @@ export function NavbarProvider({ children }: { children: ReactNode }) {
  * flash of the previous route's content when navigating between modules. This is
  * a client-only SPA, so there is no SSR pass to guard against.
  *
+ * ONE WRITER PER MODULE. The slot is last-write-wins with no precedence, and
+ * React commits layout effects child-first — so when a module layout and a page
+ * nested under it both call this, the *layout* always writes last and the page's
+ * content never appears. Call it from the module layout only, and let that
+ * layout read the location to decide what the bar shows for the current page.
+ *
  * @example
  * useNavbar({
  *   leftAside: <SearchBar />,
@@ -83,6 +99,88 @@ export function NavbarTitle({ children }: { children: ReactNode }) {
     <span className="truncate text-xs font-medium tabular-nums tracking-wide text-muted-foreground">
       {children}
     </span>
+  );
+}
+
+/** One segment of a `<NavbarBreadcrumb />` trail. */
+export interface NavbarCrumb {
+  /** Segment text. Uppercased by the bar's type style, so pass it in normal case. */
+  label: string;
+  /**
+   * Where this segment navigates. Omit on the final segment — the current page
+   * is never a link. Ancestors without a `to` render as plain text.
+   */
+  to?: LinkProps["to"];
+  /** Path params for `to`, when the target route takes any. */
+  params?: LinkProps["params"];
+  /**
+   * Optional mark shown before the label, naming the segment's *kind* where the
+   * label alone reads as a bare value ("August 2026" → a ledger for August 2026).
+   * Size it to the bar's text (`size-3.5`); it inherits the segment's color and,
+   * on a linked segment, sits inside the click target.
+   */
+  icon?: ReactNode;
+}
+
+/**
+ * A breadcrumb trail sized for the navbar's left slot — the depth-aware sibling
+ * of `<NavbarTitle />`, styled to match it so the bar reads as one register.
+ *
+ * Use it only where a module actually has depth to show. A module whose page is
+ * one level under its root has nothing to say beyond its own name: it should
+ * keep `<NavbarTitle />` and leave the trail to routes that earn it.
+ *
+ * The final segment is the current page (`aria-current`, never a link);
+ * everything before it links back up.
+ *
+ * @example
+ * useNavbar({
+ *   leftAside: (
+ *     <NavbarBreadcrumb
+ *       items={[
+ *         { label: "Finance", to: "/finance" },
+ *         { label: "August 2026", icon: <NotebookText className="size-3.5" /> },
+ *       ]}
+ *     />
+ *   ),
+ * });
+ */
+export function NavbarBreadcrumb({ items }: { items: readonly NavbarCrumb[] }) {
+  return (
+    // `min-w-0` at both levels so a long trail truncates inside the bar rather
+    // than pushing the right slot off-screen; `flex-nowrap` keeps it on one line
+    // (the primitive wraps by default, which would grow the bar's height).
+    <Breadcrumb className="min-w-0">
+      <BreadcrumbList className="flex-nowrap gap-1.5 text-xs font-medium uppercase tabular-nums tracking-wide sm:gap-2">
+        {items.map((item, index) => {
+          const isCurrent = index === items.length - 1;
+          return (
+            <Fragment key={item.label}>
+              <BreadcrumbItem className="min-w-0">
+                {isCurrent || !item.to ? (
+                  <BreadcrumbPage className="inline-flex min-w-0 items-center gap-1.5 font-medium">
+                    {item.icon}
+                    <span className="truncate">{item.label}</span>
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link
+                      to={item.to}
+                      params={item.params}
+                      className="inline-flex min-w-0 items-center gap-1.5"
+                    >
+                      {item.icon}
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+              {!isCurrent && <BreadcrumbSeparator />}
+            </Fragment>
+          );
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }
 

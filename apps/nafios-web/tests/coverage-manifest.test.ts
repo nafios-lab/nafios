@@ -31,6 +31,7 @@ import "../src/features/onboarding/lib/family-helpers.ts";
 import "../src/features/onboarding/lib/onboarding-data.ts";
 // Finance lib
 import "../src/features/finance/lib/finance-client.ts";
+import "../src/features/finance/lib/ledger-crumb-label.ts";
 import "../src/features/finance/lib/local-today-iso.ts";
 // Onboarding context
 import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";
@@ -66,6 +67,10 @@ import "../src/features/finance/components/ledger/ledger-loading.tsx";
 import "../src/features/finance/components/ledger/ledger-status-alert.tsx";
 import "../src/features/finance/components/reconciliation/pending-reconciliation-section.tsx";
 import "../src/features/finance/components/shared/view-settled-ledgers-button.tsx";
+// Shell chrome: the navbar skeleton + its slot contract, which every module
+// layout fills. The rest of the shell (sidebar, service menu) is still untested
+// and unpinned — pinning it belongs with its own tests, not this change.
+import "../src/shared/components/navbar.tsx";
 
 test("coverage manifest imports every in-scope module", () => {
   expect(true).toBe(true);
