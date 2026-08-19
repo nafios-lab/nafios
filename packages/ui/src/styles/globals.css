@@ -137,8 +137,10 @@
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62% 48%; /* was 0 62% 50% */
   --destructive-foreground: 0 0% 100%;
-  --border: 240 6% 82%; /* was 240 2% 85% — crisper (was ~1.4:1, near-invisible) */
-  --input: 240 6% 82%;
+  /* --border: 240 6% 82%; was 240 2% 85% — crisper (was ~1.4:1, near-invisible) */
+  --border: 240 6% 90%;
+  /* --input: 240 6% 82%; */
+  --input: 240 6% 90%;
   --ring: 120 32% 34%; /* tracks --primary */
   --radius: 0.625rem;
   --chart-1: 120 22% 50%;

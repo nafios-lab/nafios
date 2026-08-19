@@ -35,9 +35,9 @@ export function LedgerLoading() {
 
       <div className="flex flex-col gap-4 px-4 pb-4">
         {/* Summary strip — same responsive grid as the loaded metric cards. */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-5 gap-4  pb-4">
           {SUMMARY_CARDS.map((card) => (
-            <div key={card} className="flex flex-col gap-3 rounded-xl bg-card p-4">
+            <div key={card} className="flex flex-col gap-3 rounded-xl p-4 h-[100px] bg-card">
               <Skeleton className="h-3 w-24" />
               <Skeleton className="h-7 w-32" />
             </div>

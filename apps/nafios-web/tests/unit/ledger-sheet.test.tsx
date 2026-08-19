@@ -203,6 +203,27 @@ describe("LedgerSheet — composition off one session", () => {
 
     expect(screen.queryByRole("alert")).toBeNull();
   });
+
+  test("the resolved sheet carries the summary strip beside the bar", async () => {
+    // The strip holds no figures yet, so there is nothing to query by role — its
+    // five-column grid is the only handle. This asserts the child is IN the tree:
+    // dropping it from the sheet is otherwise invisible until someone looks.
+    const { container } = renderSheet();
+
+    await screen.findByRole("heading", { name: "July 2026" });
+    expect(container.querySelector(".grid-cols-5")?.children).toHaveLength(5);
+  });
+
+  test("pending → no summary strip; the skeleton owns that space instead", () => {
+    query = { isPending: true, refetch };
+    const { container } = renderSheet();
+
+    // Both trees draw a five-column strip, so "is it the skeleton's?" is the real
+    // question: the loaded cards never pulse.
+    for (const card of container.querySelectorAll(".grid-cols-5 > *")) {
+      expect(card.querySelector(".animate-pulse")).not.toBeNull();
+    }
+  });
 });
 
 describe("LedgerSheet — error handling", () => {

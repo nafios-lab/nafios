@@ -57,16 +57,24 @@ function AppLayout() {
       <NavbarProvider>
         <SidebarNavProvider>
           <Sidebar user={{ email: session.user.email, avatarUrl: profile?.avatarUrl }} />
-          {/* `min-h-0` so this column may shrink below its content in the flex
-              row — without it the auto minimum size wins and the scroll
-              container below is pushed past the viewport. */}
-          <SidebarInset className="min-h-0 overflow-hidden">
+          {/* `min-h-0`/`min-w-0` so this column may shrink below its content in
+              the flex row — without them the auto minimum size wins and the
+              scroll container below is pushed past the viewport. */}
+          <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
             <Navbar />
             {/* The page scroll container: the only scrolling element in the
-                shell. Everything above it (navbar) and beside it (rail) stays
-                put. Pages may pin their own sub-headers with `sticky top-0`. */}
+                shell, on *both* axes. Everything above it (navbar) and beside
+                it (rail) stays put — the navbar compresses responsively rather
+                than scrolling sideways with the page. Pages may pin their own
+                sub-headers with `sticky top-0`. */}
             <div className="min-h-0 flex-1 overflow-auto">
-              <Outlet />
+              {/* The page floor: content never squeezes below this, it scrolls
+                  horizontally instead. The min-width must sit on the *content*
+                  inside the scroller — putting it on the scroll container just
+                  widens the container, so nothing ever overflows it. */}
+              <div className="min-w-[1000px]">
+                <Outlet />
+              </div>
             </div>
           </SidebarInset>
         </SidebarNavProvider>
