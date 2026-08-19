@@ -12,12 +12,14 @@ export function LedgerHeaderBar() {
   if (ledger === null) {
     return null;
   }
+
+  const { status } = ledger;
   return (
     <div className="p-4 flex flex-row items-center w-full justify-between">
       <div className="flex flex-row items-center gap-2">
         <LedgerIcon size={20} />
         <Heading as="h3">{formatMonthLong(ledger.month)}</Heading>
-        <Badge variant="success">ON-GOING</Badge>
+        {status === "ongoing" && <Badge variant="success">ON-GOING</Badge>}
       </div>
       <div className="flex flex-rows items-center justify-end gap-2">
         <Button variant={"secondary"} iconLeft={<PlusCircle />}>

@@ -5,7 +5,7 @@
 Shared, framework-agnostic **date & calendar-time utilities** for the NafiOS
 suite: the `Month` value type and its operations, day-level calendar math,
 month-label formatting, the calendar codec error, and the clock + display-format
-seam (`today` / `isToday` / `formatDate`). Owned by nothing domain-specific so
+seam (`today` / `isToday` / `formatDate` / `formatTimestamp`). Owned by nothing domain-specific so
 any module (Finance, Budgeting, Calendar, SmartTodo, …) depends on it directly.
 
 **This package is the suite's sole abstraction over `date-fns`**
@@ -87,14 +87,42 @@ if localization is ever required.
   `"EEE · d MMM · hh:mma"`). The suite's sole seam over date-fns' `format`;
   `pattern` is a date-fns token string (the one piece of date-fns that reaches
   callers — see [ADR-0028](../../adr/0028-datetime-sole-date-fns-seam.md)).
+- `formatTimestamp(iso: string): string` — the suite's **one standardized
+  timestamp label**. Takes an ISO-8601 *instant* string exactly as a Postgres
+  `timestamptz` arrives over PostgREST / the Supabase SDK
+  (`"2027-02-01T09:15:00+00:00"`, `"…Z"`, with or without fractional seconds)
+  and renders `"1 Feb 2027, 5:15 PM"` in the caller's **local** time zone.
+  Throws `CodecError` (`timestamp_not_a_datetime`) on anything that is not a
+  parseable instant.
+
+  It differs from `formatDate` on purpose: `formatDate` is the generic escape
+  hatch (caller owns the `Date` and the pattern), whereas `formatTimestamp` owns
+  **both the parse and the pattern** so every `timestamptz` in the suite reads
+  identically wherever it is shown. Reach for `formatDate` only when a surface
+  genuinely needs its own pattern (e.g. the shell clock).
+
+  Two contract notes:
+
+  - **Non-null input.** Nullable columns (`settledAt`, `paidAt`) stay the
+    caller's to narrow — only the caller knows whether absence should render as
+    `"—"`, `"Not yet paid"`, or nothing at all.
+  - **Local time, and only for instants.** Consistent with `today` / `formatDate`
+    (Invariant #1), the label is the user's own wall clock, so a UTC-midnight
+    instant reads as the previous evening west of UTC. A surface that needs a
+    *fixed* calendar day is looking at a `DATE` column, not a timestamp, and
+    belongs on the `Month` / `"YYYY-MM-DD"` path — which is why a bare
+    `"YYYY-MM-DD"` is **rejected** rather than widened to local midnight (that
+    would print a `12:00 AM` the data never contained).
 
 ### Errors
 
 - `CodecError` (`class`, `readonly code: CodecErrorCode`) — thrown by the
   `Month` decode path.
-- `CodecErrorCode = "month_not_a_date" | "month_not_first_of_month"`.
+- `CodecErrorCode = "month_not_a_date" | "month_not_first_of_month" |
+  "timestamp_not_a_datetime"`.
 
-This is the **calendar** codec error only. Value families in other packages
+This is **this package's** codec error only — the `Month` decode path and
+`formatTimestamp`'s instant parse. Value families in other packages
 (e.g. finance's `Money`) own their own decode error; the two are independent and
 never interoperate in a `catch`.
 

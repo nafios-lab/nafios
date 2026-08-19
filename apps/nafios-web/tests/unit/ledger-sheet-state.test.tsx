@@ -10,7 +10,7 @@ import {
 import { LedgerSheetProvider } from "../../src/features/finance/state/ledger-sheet/ledger-sheet-provider.tsx";
 import { makeLedger } from "../ledger-fixtures.ts";
 
-// The client-state tier for the ledger sheet (ADR-0029): the atoms plus the
+// The session working copy for the ledger sheet (ADR-0030): the atoms plus the
 // Provider that scopes them. What is worth pinning is the LIFETIME contract —
 // the Provider's `key={month}` is what discards a month's session state, so
 // there is no cleanup effect to maintain. A regression there (dropping the key,

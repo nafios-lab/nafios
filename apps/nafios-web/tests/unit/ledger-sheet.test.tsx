@@ -134,6 +134,77 @@ describe("LedgerSheet — read states", () => {
   });
 });
 
+describe("LedgerSheet — composition off one session", () => {
+  // The sheet renders the bar and the status banner as SIBLINGS, both reading the
+  // same atom. These are the tests that catch a child being dropped from the tree
+  // or wired to the seed query instead of the working copy (ADR-0030 rule 5):
+  // one resolved ledger must produce one internally-consistent header.
+
+  test("an ongoing ledger: badged ON-GOING, with no status banner", async () => {
+    query = {
+      isPending: false,
+      isError: false,
+      error: null,
+      data: { ledger: makeLedger({ status: "ongoing" }) },
+      refetch,
+    };
+    renderSheet();
+
+    expect(await screen.findByText("ON-GOING")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  test("a reconciling ledger: the banner appears and the ON-GOING pill does not", async () => {
+    // The pair that must never disagree — a banner saying "reconciling" beside a
+    // pill saying "ON-GOING" is the exact contradiction a shared session prevents.
+    query = {
+      isPending: false,
+      isError: false,
+      error: null,
+      data: { ledger: makeLedger({ status: "reconciling" }) },
+      refetch,
+    };
+    renderSheet();
+
+    expect(await screen.findByText("This ledger is in reconciliation")).toBeTruthy();
+    expect(screen.queryByText("ON-GOING")).toBeNull();
+    // Still fully navigable: the heading is not collateral of a non-ongoing month.
+    expect(screen.getByRole("heading", { name: "July 2026" })).toBeTruthy();
+  });
+
+  test("a settled ledger: the settled banner, no pill", async () => {
+    query = {
+      isPending: false,
+      isError: false,
+      error: null,
+      data: {
+        ledger: makeLedger({ status: "settled", settledAt: "2026-08-01T09:15:00.000Z" }),
+      },
+      refetch,
+    };
+    renderSheet();
+
+    expect(await screen.findByText(/This ledger is settled as of/)).toBeTruthy();
+    expect(screen.queryByText("ON-GOING")).toBeNull();
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+  });
+
+  test("pending → neither child renders, so no banner flashes before the read lands", () => {
+    query = { isPending: true, refetch };
+    renderSheet();
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText("ON-GOING")).toBeNull();
+  });
+
+  test("a month with no ledger renders no banner either", () => {
+    query = { isPending: false, isError: false, error: null, data: { ledger: null }, refetch };
+    renderSheet();
+
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
 describe("LedgerSheet — error handling", () => {
   // The read failure the repository actually throws — an RLS denial classifies
   // as `unknown`, carrying the raw PostgrestError on `cause`.

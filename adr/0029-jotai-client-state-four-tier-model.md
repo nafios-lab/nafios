@@ -1,12 +1,21 @@
 # 0029. Jotai for client UI state; the four-tier state model
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0030](0030-ledger-session-working-copy.md)
 - **Date:** 2026-08-18
 - **Source:** `/finance/ledger/$month` dashboard (EF3.14) state-management review —
   whether the ledger's shared reads, derived metrics, and UI state should be held
   in React Context or Jotai atoms. Extends
   [ADR-0026](0026-modules-client-side-data-server-fns-shell-only.md) (which
   governs *server* state) to the client-state half of the same question.
+
+> **Superseded.** Rule 3 (*server data never enters an atom*) and rule 7
+> (*optimistic writes patch exactly one cache entry*) were wrong for a
+> long-lived editing session and are replaced by
+> [ADR-0030](0030-ledger-session-working-copy.md), which restates the model
+> with a fifth *session working copy* tier. Rules 1, 2, 4, 5 and 6 are carried
+> forward there unchanged. This document is retained unmodified below — its
+> `Alternatives considered` section is still the record of why Context, Zustand,
+> and `jotai-tanstack-query` were rejected.
 
 ## Context
 

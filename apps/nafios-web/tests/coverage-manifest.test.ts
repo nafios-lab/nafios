@@ -34,7 +34,7 @@ import "../src/features/finance/lib/finance-client.ts";
 import "../src/features/finance/lib/local-today-iso.ts";
 // Onboarding context
 import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";
-// Finance client state (ADR-0029) — atoms + the store boundary
+// Finance client state (ADR-0030) — atoms + the store boundary
 import "../src/features/finance/state/ledger-sheet/ledger-sheet-provider.tsx";
 import "../src/features/finance/state/ledger-sheet/ledger-sheet.atoms.ts";
 // Hooks
@@ -63,6 +63,7 @@ import "../src/features/finance/components/home/ledger-start-card.tsx";
 import "../src/features/finance/components/ledger/index.tsx";
 import "../src/features/finance/components/ledger/ledger-header-bar.tsx";
 import "../src/features/finance/components/ledger/ledger-loading.tsx";
+import "../src/features/finance/components/ledger/ledger-status-alert.tsx";
 import "../src/features/finance/components/reconciliation/pending-reconciliation-section.tsx";
 import "../src/features/finance/components/shared/view-settled-ledgers-button.tsx";
 

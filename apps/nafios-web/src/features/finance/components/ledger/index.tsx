@@ -6,6 +6,7 @@ import { useLedger } from "../../hooks/use-ledger";
 import { _startLedgerSession } from "../../state/ledger-sheet/ledger-sheet.atoms";
 import { LedgerHeaderBar } from "./ledger-header-bar";
 import { LedgerLoading } from "./ledger-loading";
+import { LedgerStatusAlert } from "./ledger-status-alert";
 
 interface LedgerSheetProps {
   ledgerMonth: Month;
@@ -48,6 +49,7 @@ export function LedgerSheet({ ledgerMonth }: LedgerSheetProps) {
   return (
     <div className="flex flex-col">
       <LedgerHeaderBar />
+      <LedgerStatusAlert />
     </div>
   );
 }

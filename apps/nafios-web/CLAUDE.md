@@ -170,7 +170,7 @@ TanStack Router / Query / Form devtools are mounted together in
 `<TanStackDevtools>` panel (bottom-right).
 
 **Jotai** is separate and deliberately so. Its inspector needs the *store*, and
-under ADR-0029 every module scopes its atoms to its own `<Provider>` — the
+under ADR-0030 every module scopes its atoms to its own `<Provider>` — the
 default store is always empty, so a root-level mount would show nothing.
 `shared/components/dev/jotai-devtools.tsx` is therefore mounted **inside** each
 Jotai Provider (see `features/finance/state/ledger-sheet/ledger-sheet-provider.tsx`),

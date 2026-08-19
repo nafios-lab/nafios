@@ -25,8 +25,8 @@
 import { compareMonths, type Month, today } from "@nafios/datetime";
 import { resolveCreationState } from "../../domain/creation-window";
 import { validateMaxCapped } from "../../domain/max-capped";
-import type { MonthlyLedger } from "../../domain/monthly-ledger";
 import { compareMoney, type Money, ZERO_MONEY } from "../../domain/money";
+import type { MonthlyLedger } from "../../domain/monthly-ledger";
 import type { FinanceClient } from "../client";
 import { createLedgerRepository } from "../repositories/ledger.repo";
 

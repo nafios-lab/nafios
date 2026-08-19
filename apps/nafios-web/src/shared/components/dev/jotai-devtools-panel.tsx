@@ -13,7 +13,7 @@ import "jotai-devtools/styles.css";
 export default function JotaiDevtoolsPanel() {
   // The *nearest* Provider's store, so the panel inspects whichever client-state
   // boundary mounted it. Passing it explicitly is not optional: without `store`
-  // DevTools reads the default store, which under ADR-0029 is always empty
+  // DevTools reads the default store, which under ADR-0030 is always empty
   // because every module scopes its atoms to its own Provider.
   const store = useStore();
   const { resolvedTheme } = useTheme();
