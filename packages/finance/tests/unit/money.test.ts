@@ -5,6 +5,7 @@ import {
   decodeMoney,
   encodeMoney,
   formatMoney,
+  formatMoneyToFit,
   isNegativeMoney,
   moneyFromCents,
   subtractMoney,
@@ -74,6 +75,99 @@ describe("formatMoney", () => {
 
   test("formats zero with 2 decimal places", () => {
     expect(formatMoney(ZERO_MONEY)).toBe("$0.00");
+  });
+});
+
+describe("formatMoneyToFit", () => {
+  test("#15 leaves an amount that already fits untouched", () => {
+    const fit = formatMoneyToFit(decodeMoney("7152.35"));
+    expect(fit).toEqual({ text: "$7,152.35", exact: "$7,152.35", shortened: false });
+  });
+
+  test("#16 the default budget is exactly '$999,999.99' — the widest untouched amount", () => {
+    const fit = formatMoneyToFit(decodeMoney("999999.99"));
+    expect(fit.text).toBe("$999,999.99");
+    expect(fit.text.length).toBe(11);
+    expect(fit.shortened).toBe(false);
+  });
+
+  test("#17 one character over the budget drops the cents, not the digits", () => {
+    // "$1,000,000.00" is 13 chars; the whole-dollar form is 10 and fits.
+    const fit = formatMoneyToFit(decodeMoney("1000000.00"));
+    expect(fit).toEqual({ text: "$1,000,000", exact: "$1,000,000.00", shortened: true });
+  });
+
+  test("#18 keeps every significant digit while the whole-dollar form still fits", () => {
+    expect(formatMoneyToFit(decodeMoney("12340343.43")).text).toBe("$12,340,343");
+  });
+
+  test("#19 falls through to magnitude notation once whole dollars overrun too", () => {
+    const fit = formatMoneyToFit(decodeMoney("123456789.00"));
+    expect(fit).toEqual({ text: "$123.46M", exact: "$123,456,789.00", shortened: true });
+  });
+
+  test("#20 carries the sign into the compact form", () => {
+    expect(formatMoneyToFit(decodeMoney("-123456789.00")).text).toBe("-$123.46M");
+  });
+
+  test("#21 handles the widest value numeric(12,2) can hold", () => {
+    const fit = formatMoneyToFit(decodeMoney("9999999999.99"));
+    expect(fit).toEqual({ text: "$10B", exact: "$9,999,999,999.99", shortened: true });
+  });
+
+  test("#22 zero fits and is never abbreviated", () => {
+    expect(formatMoneyToFit(ZERO_MONEY)).toEqual({
+      text: "$0.00",
+      exact: "$0.00",
+      shortened: false,
+    });
+  });
+
+  test("#23 honours a caller-supplied budget narrower than the default", () => {
+    // "$12,340.56" is 10 chars — fine by default, one too many at 8.
+    expect(formatMoneyToFit(decodeMoney("12340.56")).text).toBe("$12,340.56");
+    expect(formatMoneyToFit(decodeMoney("12340.56"), 8).text).toBe("$12,341");
+  });
+
+  test("#24 never rounds a non-zero amount away to '$0'", () => {
+    // "$0" (2 chars) would fit the 3-char budget, but reporting nothing while
+    // money is present is worse than overrunning the slot.
+    const fit = formatMoneyToFit(decodeMoney("0.25"), 3);
+    expect(fit.text).toBe("$0.25");
+    expect(fit.exact).toBe("$0.25");
+  });
+
+  // Boundary of the anti-"$0" guard above: 50 cents is the first amount that does
+  // NOT round away, so it takes the whole-dollar branch and reads "$1". Pinned
+  // because it is the one place the fit ladder shows a materially different figure
+  // (a 100% relative error) — tolerable only because it needs a caller-supplied
+  // budget this narrow, and because `exact` still carries the true amount.
+  test("#24b at exactly 50 cents the guard releases and the whole-dollar form wins", () => {
+    const fit = formatMoneyToFit(decodeMoney("0.50"), 3);
+    expect(fit.text).toBe("$1");
+    expect(fit.exact).toBe("$0.50");
+    expect(fit.shortened).toBe(true);
+  });
+
+  test("#25 returns the shortest form rather than truncating when nothing fits", () => {
+    const fit = formatMoneyToFit(decodeMoney("1234.50"), 1);
+    expect(fit.text).toBe("$1.23K");
+    expect(fit.text.length).toBeGreaterThan(1); // best effort, never a cut-off number
+    expect(fit.shortened).toBe(true);
+  });
+
+  test("#26 `exact` is always formatMoney's output, whichever branch ran", () => {
+    for (const s of ["7152.35", "0.00", "-12.50", "1000000.00", "9999999999.99"]) {
+      const value = decodeMoney(s);
+      expect(formatMoneyToFit(value).exact).toBe(formatMoney(value));
+    }
+  });
+
+  test("#27 `shortened` is exactly `text !== exact`", () => {
+    for (const s of ["7152.35", "0.00", "-12.50", "1000000.00", "123456789.00"]) {
+      const fit = formatMoneyToFit(decodeMoney(s));
+      expect(fit.shortened).toBe(fit.text !== fit.exact);
+    }
   });
 });
 

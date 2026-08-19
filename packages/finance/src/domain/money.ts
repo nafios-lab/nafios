@@ -116,6 +116,82 @@ export function formatMoney(value: Money): string {
   return (toCents(value) / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
+/**
+ * The display form of a Money value chosen to fit a width-constrained slot (a
+ * metric card, a dense table cell), paired with the full-precision string the UI
+ * must keep reachable.
+ */
+export interface MoneyDisplay {
+  /** What the constrained slot renders. Never truncated, never ellipsized. */
+  readonly text: string;
+  /** The full-precision string — the tooltip, the aria-label, and the value an
+   *  edit affordance opens with. Always equal to `formatMoney(value)`. */
+  readonly exact: string;
+  /** `text !== exact`. When true the UI MUST surface `exact` (title/aria/tooltip),
+   *  because what it shows on screen is an abbreviation of the real amount. */
+  readonly shortened: boolean;
+}
+
+/**
+ * Longest string `formatMoneyToFit` leaves untouched: "$999,999.99" — the widest
+ * plain amount that still fits a metric card in a 5-up row at the card's display
+ * size. Callers with a different slot pass their own budget.
+ */
+const DEFAULT_FIT_LENGTH = 11;
+
+// Built once — constructing an Intl.NumberFormat is orders of magnitude more
+// expensive than formatting with one, and these run per metric per render.
+const WHOLE_DOLLAR_FORMAT = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+const COMPACT_FORMAT = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
+  maximumFractionDigits: 2,
+});
+
+/**
+ * DISPLAY PATH. Format Money for a slot only `maxLength` characters wide, giving up
+ * the least precision that gets it to fit, in three steps:
+ *
+ *   1. the full amount            "$7,152.35"
+ *   2. cents dropped              "$12,340,343"
+ *   3. magnitude notation         "$123.46M"
+ *
+ * The first form that fits wins, so precision is only ever traded for width when
+ * width actually demands it. An amount is NEVER truncated or ellipsized — a
+ * half-shown number reads as a different number — so when even step 3 overruns
+ * `maxLength`, the shortest form is returned anyway and the slot must accommodate
+ * it. Rounding is also skipped when it would render a non-zero amount as "$0": a
+ * metric reporting nothing while money is present is worse than one that overflows.
+ *
+ * The returned `exact` carries the untouched `formatMoney` string for the tooltip /
+ * aria-label, so the precision traded away here is always one hover or one screen
+ * reader stop away. DISPLAY only — never a persistence or arithmetic path.
+ */
+export function formatMoneyToFit(value: Money, maxLength = DEFAULT_FIT_LENGTH): MoneyDisplay {
+  const exact = formatMoney(value);
+  if (exact.length <= maxLength) {
+    return { text: exact, exact, shortened: false };
+  }
+
+  const cents = toCents(value);
+  const dollars = cents / 100; // presentation-only divide; `cents` stays the truth
+  // `Math.abs(cents) < 50` is exactly the range that rounds to zero dollars.
+  const roundsToNothing = cents !== 0 && Math.abs(cents) < 50;
+  const whole = WHOLE_DOLLAR_FORMAT.format(dollars);
+  if (!roundsToNothing && whole.length <= maxLength) {
+    return { text: whole, exact, shortened: whole !== exact };
+  }
+
+  const compact = COMPACT_FORMAT.format(dollars);
+  return { text: compact, exact, shortened: compact !== exact };
+}
+
 // The ONLY sanctioned way to combine money. All exact (integer arithmetic on cents).
 
 export function addMoney(a: Money, b: Money): Money {

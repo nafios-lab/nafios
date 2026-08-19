@@ -180,6 +180,16 @@ export const ZERO_MONEY: Money;
 export function decodeMoney(dbValue: string): Money; // numeric(12,2) string -> Money
 export function encodeMoney(value: Money): string; // Money -> canonical numeric(12,2) string
 export function formatMoney(value: Money): string; // Money -> localized display string ("$7,152.35"); DISPLAY only, not persistence
+// Width-constrained DISPLAY. Gives up the least precision that fits `maxLength`
+// chars: full amount -> cents dropped -> magnitude notation ("$123.46M"). Never
+// truncates; never rounds a non-zero amount to "$0". `exact` always carries
+// formatMoney's string for the tooltip/aria-label.
+export interface MoneyDisplay {
+  readonly text: string; // what the slot renders
+  readonly exact: string; // === formatMoney(value)
+  readonly shortened: boolean; // text !== exact -> the UI MUST expose `exact`
+}
+export function formatMoneyToFit(value: Money, maxLength?: number): MoneyDisplay; // maxLength default 11 ("$999,999.99")
 export function moneyFromCents(cents: number): Money;
 export function toCents(value: Money): number;
 export function addMoney(a: Money, b: Money): Money;
