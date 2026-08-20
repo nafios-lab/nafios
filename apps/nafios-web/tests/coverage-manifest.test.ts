@@ -46,6 +46,7 @@ import "../src/features/onboarding/hooks/use-complete-onboarding.ts";
 import "../src/features/onboarding/hooks/use-onboarding-profile.ts";
 import "../src/features/finance/hooks/use-finance-home-state.ts";
 import "../src/features/finance/hooks/use-ledger.ts";
+import "../src/features/finance/hooks/use-update-opening-bal.ts";
 // Components
 import "../src/features/auth/components/login-form.tsx";
 import "../src/features/auth/components/sign-out-button.tsx";

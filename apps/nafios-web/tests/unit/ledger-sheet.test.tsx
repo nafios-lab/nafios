@@ -205,13 +205,26 @@ describe("LedgerSheet — composition off one session", () => {
   });
 
   test("the resolved sheet carries the summary strip beside the bar", async () => {
-    // The strip holds no figures yet, so there is nothing to query by role — its
-    // five-column grid is the only handle. This asserts the child is IN the tree:
-    // dropping it from the sheet is otherwise invisible until someone looks.
-    const { container } = renderSheet();
+    // The strip is atom-driven, so it renders a figure only if the SAME session
+    // hand-off that fed the header bar also seeded the metrics. One assertion
+    // therefore covers both: the child is in the tree, and it is reading the
+    // session rather than a prop the sheet never passes it.
+    renderSheet();
 
     await screen.findByRole("heading", { name: "July 2026" });
-    expect(container.querySelector(".grid-cols-5")?.children).toHaveLength(5);
+    expect(screen.getByText("OPENING BAL")).toBeTruthy();
+    // The fixture's opening balance ($7,152.35), straight off the resolved ledger.
+    expect(screen.getByText("$7,152.35")).toBeTruthy();
+  });
+
+  test("a month with no ledger renders an empty strip, not a $0.00 card", async () => {
+    // Nothing was read, so the metrics stay null and the strip stays blank —
+    // the same "not opened yet" branch the header bar takes.
+    query = { isPending: false, isError: false, error: null, data: { ledger: null }, refetch };
+    const { container } = renderSheet();
+
+    expect(container.querySelector(".grid-cols-5")?.children).toHaveLength(0);
+    expect(screen.queryByText("OPENING BAL")).toBeNull();
   });
 
   test("pending → no summary strip; the skeleton owns that space instead", () => {

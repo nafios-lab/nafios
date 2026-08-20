@@ -72,7 +72,7 @@ function AppLayout() {
                   horizontally instead. The min-width must sit on the *content*
                   inside the scroller — putting it on the scroll container just
                   widens the container, so nothing ever overflows it. */}
-              <div className="min-w-[1000px]">
+              <div className="min-w-[1200px]">
                 <Outlet />
               </div>
             </div>

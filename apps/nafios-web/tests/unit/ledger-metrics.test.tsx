@@ -1,15 +1,29 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { moneyFromCents } from "@nafios/finance";
-import { cleanup, render, screen } from "@testing-library/react";
+import { type Money, moneyFromCents, toCents } from "@nafios/finance";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { createStore, Provider } from "jotai";
+import type { ReactNode } from "react";
 import { LedgerLoading } from "../../src/features/finance/components/ledger/ledger-loading.tsx";
 import { LedgerMetrics } from "../../src/features/finance/components/ledger/metrics/index.tsx";
 import { MetricCard } from "../../src/features/finance/components/ledger/metrics/metric-card.tsx";
+import { _metrics_openingBalance } from "../../src/features/finance/state/ledger-sheet/ledger-sheet.atoms.ts";
 
-// The strip now renders real figures, but through PLACEHOLDER amounts — the metrics
-// read is not wired. So the contracts worth pinning are the ones that outlive the
-// stand-in numbers: the strip's geometry (which `LedgerLoading` mirrors card-for-card
-// — a mismatch is a layout shift the instant the read lands), and `MetricCard`'s
-// obligation to keep the exact amount reachable whenever it abbreviates one.
+// The summary strip is MID-MIGRATION: the five hardcoded `MetricCard`s were
+// replaced by one atom-driven card, `MetricOpenBalance`, and the remaining four
+// figures are not wired yet. So the contracts pinned here are the ones the
+// migration must preserve card-by-card:
+//
+//   - the card reads the SESSION copy of the figure (`_metrics_openingBalance`),
+//     never a prop threaded down from the read — a regression there is invisible
+//     until an edit silently fails to stick;
+//   - editing round-trips: figure → field → figure, with the new amount landing
+//     in the session in CENTS, through `moneyFromCents`, not as a float;
+//   - `formatMoneyToFit`'s bargain holds — whenever the card abbreviates an
+//     amount, the exact figure stays reachable to both eyes and screen readers.
+//
+// `MetricCard` is `@deprecated` and no longer composed by the strip; its suite
+// stays until the last figure moves off it, so the deprecated path keeps working
+// for as long as it is still in the tree.
 
 afterEach(cleanup);
 
@@ -20,7 +34,193 @@ function strip(container: HTMLElement) {
   return el;
 }
 
-describe("MetricCard", () => {
+/**
+ * Render the strip against a session store, the way `LedgerSheetProvider` scopes
+ * it in the app. The store is returned so a test can assert what an edit WROTE
+ * BACK, not merely what got re-rendered.
+ */
+function renderStrip(openingBalance: Money | null = moneyFromCents(715235)) {
+  const store = createStore();
+  store.set(_metrics_openingBalance, openingBalance);
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <Provider store={store}>{children}</Provider>
+  );
+  return { store, ...render(<LedgerMetrics />, { wrapper }) };
+}
+
+/** The currency field, once the card is in edit mode. */
+function field(): HTMLInputElement {
+  return screen.getByRole("textbox") as HTMLInputElement;
+}
+
+describe("LedgerMetrics — opening balance", () => {
+  test("renders nothing until a ledger is in session", () => {
+    // Null is the pre-read state, and the card branches on it. An empty strip is
+    // the correct answer — a $0.00 card would assert a figure nobody read yet.
+    const { container } = renderStrip(null);
+
+    expect(strip(container).children).toHaveLength(0);
+    expect(screen.queryByText("OPENING BAL")).toBeNull();
+  });
+
+  test("renders the caption and the session's amount, formatted to fit the card", () => {
+    renderStrip(moneyFromCents(715235));
+
+    expect(screen.getByText("OPENING BAL")).toBeTruthy();
+    expect(screen.getByText("$7,152.35")).toBeTruthy();
+  });
+
+  test("tracks the session — a later write to the atom re-renders the figure", () => {
+    // The card is a READER of the working copy, not a snapshot of it: whatever
+    // else in the sheet updates the opening balance, this figure follows.
+    const { store } = renderStrip(moneyFromCents(715235));
+
+    act(() => store.set(_metrics_openingBalance, moneyFromCents(900000)));
+
+    expect(screen.getByText("$9,000.00")).toBeTruthy();
+    expect(screen.queryByText("$7,152.35")).toBeNull();
+  });
+
+  test("adds no tooltip or alternate text when the amount fits as-is", () => {
+    // Nothing was given up, so there is no second form of the figure to expose —
+    // a title here would be a tooltip repeating what is already on screen.
+    renderStrip(moneyFromCents(23300));
+
+    expect(screen.getByText("$233.00").closest("code")?.getAttribute("title")).toBeNull();
+  });
+
+  test("keeps the exact amount reachable when it abbreviates one", () => {
+    // $123,456,789.00 cannot fit the card, so `formatMoneyToFit` trades precision
+    // for width. The spec's rule for that trade: the UI MUST still surface `exact`.
+    renderStrip(moneyFromCents(12345678900));
+
+    const abbreviated = screen.getByText("$123.46M");
+    expect(abbreviated.closest("code")?.getAttribute("title")).toBe("$123,456,789.00");
+    // Sighted users get the tooltip; screen readers read the exact string instead
+    // of the abbreviation, so the abbreviation is hidden from them.
+    expect(abbreviated.getAttribute("aria-hidden")).toBe("true");
+    expect(screen.getByText("$123,456,789.00").className).toContain("sr-only");
+  });
+
+  test("its card matches the skeleton's card height, so the swap causes no shift", () => {
+    // Card COUNT is deliberately not asserted: the skeleton still draws five and
+    // the strip is down to one while the other four figures are wired. Restore
+    // the count assertion with the last of them — the shift is real until then.
+    const { container: loaded } = renderStrip();
+    const { container: loading } = render(<LedgerLoading />);
+
+    for (const card of [...strip(loaded).children, ...strip(loading).children]) {
+      expect(card.className).toContain("h-[90px]");
+    }
+  });
+});
+
+describe("LedgerMetrics — editing the opening balance", () => {
+  test("the figure is editable; the edit affordance opens the field", () => {
+    renderStrip();
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
+
+    // Edit mode replaces both halves at once: the figure gives way to the field,
+    // and the pencil to the tick — two affordances on a 90px card would crowd it.
+    expect(screen.queryByText("$7,152.35")).toBeNull();
+    expect(field()).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "edit-OPENING BAL" })).toBeNull();
+    expect(screen.getByRole("button", { name: "save-edit" })).toBeTruthy();
+  });
+
+  test("the field opens on the amount already in session, in minor units", () => {
+    // Seeded from `value`, not blank: the edit is an amendment to a known figure,
+    // so the user retypes only what changed.
+    renderStrip(moneyFromCents(715235));
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
+
+    expect(field().value).toBe("7,152.35");
+  });
+
+  test("typing writes the new amount into the session, as whole cents", () => {
+    const { store } = renderStrip();
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
+    fireEvent.focus(field());
+    fireEvent.change(field(), { target: { value: "1234.56" } });
+
+    // `CurrencyInput` speaks minor units and the card re-brands them through
+    // `moneyFromCents` — so the session holds an integer-cent Money, never a float.
+    const saved = store.get(_metrics_openingBalance);
+    expect(saved).not.toBeNull();
+    expect(toCents(saved as Money)).toBe(123456);
+  });
+
+  test("clearing the field leaves the session amount alone", () => {
+    // An empty field emits `null`, which is "mid-edit", not "the opening balance
+    // is now nothing" — committing it would blank a real figure on a stray Backspace.
+    const { store } = renderStrip(moneyFromCents(715235));
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
+    fireEvent.focus(field());
+    fireEvent.change(field(), { target: { value: "" } });
+
+    expect(toCents(store.get(_metrics_openingBalance) as Money)).toBe(715235);
+  });
+
+  test("the tick closes the field and shows the edited figure", () => {
+    renderStrip();
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
+    fireEvent.focus(field());
+    fireEvent.change(field(), { target: { value: "1234.56" } });
+    fireEvent.click(screen.getByRole("button", { name: "save-edit" }));
+
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByText("$1,234.56")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "edit-OPENING BAL" })).toBeTruthy();
+  });
+
+  test("Enter closes the field — the keyboard path out, not just the tick", () => {
+    renderStrip();
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
+    fireEvent.focus(field());
+    fireEvent.change(field(), { target: { value: "1234.56" } });
+    fireEvent.keyDown(field(), { key: "Enter" });
+
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByText("$1,234.56")).toBeTruthy();
+  });
+
+  test("a key that is not Enter keeps the field open", () => {
+    // Guards the `key === "Enter"` test itself: a bare `onKeyDown={close}` would
+    // dismiss the field on the first digit typed.
+    renderStrip();
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
+    fireEvent.keyDown(field(), { key: "5" });
+
+    expect(screen.getByRole("textbox")).toBeTruthy();
+  });
+
+  test("blurring closes the field, keeping what was typed", () => {
+    // Clicking away is a commit, not a cancel — the change already reached the
+    // session as the user typed, so dropping it on blur would contradict itself.
+    renderStrip();
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
+    fireEvent.focus(field());
+    fireEvent.change(field(), { target: { value: "1234.56" } });
+    fireEvent.blur(field());
+
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByText("$1,234.56")).toBeTruthy();
+  });
+});
+
+describe("MetricCard (deprecated)", () => {
+  // Superseded by the atom-driven cards and no longer composed by the strip. The
+  // suite stays only while the component does — delete both together once the
+  // remaining four figures are wired.
+
   test("renders the caption and the amount, formatted to fit the card", () => {
     render(<MetricCard label="OPENING BAL" value={moneyFromCents(540033)} />);
 
@@ -29,22 +229,16 @@ describe("MetricCard", () => {
   });
 
   test("adds no tooltip or alternate text when the amount fits as-is", () => {
-    // Nothing was given up, so there is no second form of the figure to expose —
-    // a title here would be a tooltip repeating what is already on screen.
     render(<MetricCard label="C.O.L" value={moneyFromCents(23300)} />);
 
     expect(screen.getByText("$233.00").closest("code")?.getAttribute("title")).toBeNull();
   });
 
   test("keeps the exact amount reachable when it abbreviates one", () => {
-    // $123,456,789.00 cannot fit the card, so `formatMoneyToFit` trades precision
-    // for width. The spec's rule for that trade: the UI MUST still surface `exact`.
     render(<MetricCard label="MAX CAPPED" value={moneyFromCents(12345678900)} />);
 
     const abbreviated = screen.getByText("$123.46M");
     expect(abbreviated.closest("code")?.getAttribute("title")).toBe("$123,456,789.00");
-    // Sighted users get the tooltip; screen readers read the exact string instead
-    // of the abbreviation, so the abbreviation is hidden from them.
     expect(abbreviated.getAttribute("aria-hidden")).toBe("true");
     expect(screen.getByText("$123,456,789.00").className).toContain("sr-only");
   });
@@ -71,62 +265,35 @@ describe("MetricCard", () => {
       />,
     );
 
-    screen.getByRole("button", { name: "edit-MAX CAPPED" }).click();
+    fireEvent.click(screen.getByRole("button", { name: "edit-MAX CAPPED" }));
 
     expect(edits).toBe(1);
   });
-});
 
-describe("LedgerMetrics", () => {
-  test("renders five metric slots — one per figure the summary strip shows", () => {
-    const { container } = render(<LedgerMetrics />);
-
-    expect(strip(container).children).toHaveLength(5);
-  });
-
-  test("labels every slot, in display order", () => {
-    const { container } = render(<LedgerMetrics />);
-
-    const labels = [...strip(container).children].map(
-      (card) => card.querySelector("p")?.textContent,
+  test("applies the caller's value styling to the figure", () => {
+    render(
+      <MetricCard
+        label="HEALTH MARGIN"
+        value={moneyFromCents(23300)}
+        valueClassName="text-brand"
+      />,
     );
 
-    expect(labels).toEqual(["OPENING BAL", "MAX CAPPED", "C.O.L", "HEALTH MARGIN", "ASM CONTR"]);
+    expect(screen.getByText("$233.00").closest("code")?.className).toContain("text-brand");
   });
 
-  test("its geometry matches the skeleton's strip, so the swap causes no shift", () => {
-    const { container: loaded } = render(<LedgerMetrics />);
-    const { container: loading } = render(<LedgerLoading />);
+  test("swaps the figure for an entry field, and the field back for the figure", () => {
+    render(<MetricCard label="MAX CAPPED" value={moneyFromCents(640033)} editable />);
 
-    const loadedCards = [...strip(loaded).children];
-    const loadingCards = [...strip(loading).children];
+    fireEvent.click(screen.getByRole("button", { name: "edit-MAX CAPPED" }));
 
-    // Same count and same card height: the two states occupy identical space.
-    expect(loadedCards).toHaveLength(loadingCards.length);
-    for (const card of [...loadedCards, ...loadingCards]) {
-      expect(card.className).toContain("h-[90px]");
-    }
-  });
+    expect(screen.queryByText("$6,400.33")).toBeNull();
+    expect(screen.getByRole("textbox")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "edit-MAX CAPPED" })).toBeNull();
 
-  test("exposes an edit affordance only on the two figures the user owns", () => {
-    // Opening Balance and Max Capped are inputs; the other three are derived and
-    // must never offer an edit. If a derived metric ever grows one, this fails.
-    render(<LedgerMetrics />);
+    fireEvent.click(screen.getByRole("button", { name: "save-edit" }));
 
-    expect(screen.queryAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual([
-      "edit-OPENING BAL",
-      "edit-MAX CAPPED",
-    ]);
-  });
-
-  test("leaves the edit affordances inert until the metric-edit flow lands", () => {
-    // The strip deliberately passes no `onEdit`. Clicking must be a no-op rather
-    // than firing a silent handler — and this test is the one to rewrite when the
-    // real flow arrives, not quietly leave passing.
-    render(<LedgerMetrics />);
-
-    const edit = screen.getByRole("button", { name: "edit-OPENING BAL" });
-
-    expect(() => edit.click()).not.toThrow();
+    expect(screen.getByText("$6,400.33")).toBeTruthy();
+    expect(screen.queryByRole("textbox")).toBeNull();
   });
 });
