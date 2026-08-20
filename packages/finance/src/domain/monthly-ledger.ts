@@ -3,7 +3,8 @@
 // The MonthlyLedger is the primary unit of work in finance: one calendar month
 // of cashflow (monthly-ledger.md §1). This module owns the canonical in-memory
 // shape the repository (EF3.6) decodes DB rows into, plus the status model
-// (LedgerStatus + isLedgerMutable). The type mirrors the monthly_ledger TABLE:
+// (LedgerStatus + isLedgerMutable / isLedgerHeaderEditable). The type mirrors the
+// monthly_ledger TABLE:
 // derived metrics are NOT stored on it (computed on read by computeLedgerMetrics
 // in ledger-metrics.ts), and neither are envelopes — those are a separate entity
 // keyed by ledger_id, read via the envelope repository and joined at the query
@@ -108,4 +109,27 @@ export interface ReconPendingLedger extends Pick<LedgerSummaryCard, "id" | "mont
  *  concerns (EF3.7 / EF5+). */
 export function isLedgerMutable(status: LedgerStatus): boolean {
   return status !== "settled";
+}
+
+/**
+ * True while the ledger's OWN HEADER money fields — `openingBalance` and
+ * `maxCapped` — may still be edited: `ongoing` ONLY (monthly-ledger.md §2,
+ * "Opening Balance & Max Capped — config-seeded, ledger-owned": *"both fields are
+ * editable while the ledger is `ongoing`. Locked in `reconciling` and `settled`"*).
+ *
+ * STRICTER than `isLedgerMutable` — deliberately a SEPARATE predicate, not a
+ * reuse. The two rules govern different things and diverge at `reconciling`:
+ *   • `isLedgerMutable` — the ENVELOPE/amount surface. True in `reconciling`:
+ *     reconciliation exists precisely to adjust reality (envelope amounts) to
+ *     match what happened (§3).
+ *   • `isLedgerHeaderEditable` — the ledger's own opening balance / ceiling.
+ *     FALSE in `reconciling`: the ceiling must keep reflecting the discipline
+ *     contract the user set for that month, so reconciliation moves the actuals,
+ *     never the target (§2).
+ *
+ * Pure and transition-free, like every other member of this module — the command
+ * layer composes it as a gate (EF3.7), the UI mirrors it to disable the field.
+ */
+export function isLedgerHeaderEditable(status: LedgerStatus): boolean {
+  return status === "ongoing";
 }

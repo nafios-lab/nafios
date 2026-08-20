@@ -25,12 +25,23 @@
 // two ongoing rows, so the new insert cannot land while the old ledger is still
 // ongoing) then inserts, and compensates (reverts the park) if the insert
 // throws. The index is the hard, unconditional backstop for the invariant.
+//
+// Its second member is updateOpeningBalance — the first EDIT on a ledger's own
+// header. Same pattern, none of the atomicity: one row, one column, so the whole
+// job is the GATE STACK before the write (exists/owned → the 'ongoing'-only
+// header lock → non-negativity → the EF3.5 guardrail re-run against the stored
+// maxCapped). It too adds NO business rule: the header lock is EF3.2's
+// isLedgerHeaderEditable, the guardrail is EF3.5's validateMaxCapped. The
+// guardrail matters here because it constrains a RELATION between the two header
+// fields — moving the opening balance moves that relation exactly as moving the
+// ceiling would, so enforcing it on one side only would leave the other as a
+// back door.
 
 import { compareMonths, type Month, today } from "@nafios/datetime";
 import { resolveCreationState } from "../../domain/creation-window";
 import { validateMaxCapped } from "../../domain/max-capped";
 import { compareMoney, type Money, ZERO_MONEY } from "../../domain/money";
-import type { MonthlyLedger } from "../../domain/monthly-ledger";
+import { isLedgerHeaderEditable, type MonthlyLedger } from "../../domain/monthly-ledger";
 import type { FinanceClient } from "../client";
 import { createLedgerRepository } from "../repositories/ledger.repo";
 
@@ -76,6 +87,8 @@ export interface CreateLedgerInput {
  *  tied to one command rather than to every reason the module will ever add. */
 export type LedgerRejectionReason =
   | "month_not_openable" // month ∉ EF3.4 openable set: far-future, back-fill, or already has a ledger
+  | "ledger_not_found" // target ledger absent / not owned (RLS-scoped read returned null) — edit paths
+  | "ledger_not_ongoing" // header money fields are locked once the ledger leaves 'ongoing' (§2) — edit paths
   | "negative_amount" // a Money input < 0 (EF3.5 does not police sign; DB ck_balances_nonneg backstops)
   | "overspend_warning" // EF3.5 amber zone, acknowledgedOverspend === false
   | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — NO override
@@ -107,6 +120,27 @@ export type CreateLedgerResult =
         | "exceeds_hard_cap";
     };
 
+/**
+ * The result of an opening-balance edit. On success `ledger` is the header AS
+ * WRITTEN (read back by the repository), so the caller replaces its copy rather
+ * than patching it locally. A rejection carries only its `reason` — same stance
+ * as `CreateLedgerResult`: the UI renders copy from the reason alone.
+ */
+export type UpdateOpeningBalanceResult =
+  | { readonly ok: true; readonly ledger: MonthlyLedger }
+  | {
+      readonly ok: false;
+      /** Narrowed to the reasons this command can return — the module-wide
+       *  `LedgerRejectionReason` is wider (`month_not_openable` is creation-only:
+       *  an edit never chooses a month, it addresses an existing ledger by id). */
+      readonly reason:
+        | "ledger_not_found"
+        | "ledger_not_ongoing"
+        | "negative_amount"
+        | "overspend_warning"
+        | "exceeds_hard_cap";
+    };
+
 // ─────────────────────────── The command ──────────────────────────
 
 export interface LedgerCommands {
@@ -124,6 +158,39 @@ export interface LedgerCommands {
    * the throw (§4.2 / §4.3).
    */
   createLedger(input: CreateLedgerInput): Promise<CreateLedgerResult>;
+
+  /**
+   * Edit an existing ledger's `openingBalance`, addressed by id. Every constraint
+   * is re-checked server-side before the write, in this precedence (§4.1):
+   * existence/ownership → the `ongoing`-only header lock (EF3.2) → input
+   * non-negativity → the EF3.5 maxCapped guardrail re-evaluated against the NEW
+   * opening balance. Any failure returns `{ ok: false, reason }` and performs NO
+   * write; success returns the header as written.
+   *
+   * Why the guardrail fires on an OPENING-BALANCE edit: the guardrail is a
+   * RELATION between the two header fields (`maxCapped` vs `openingBalance`), not
+   * a property of either. Lowering the opening balance moves the same relation as
+   * raising the ceiling would — it can push a stored `maxCapped` into the amber
+   * zone (now above income) or past the hard cap (now above 2× income). Enforcing
+   * it only on the `maxCapped` side would leave this as the trivial back door
+   * around it, so the invariant is checked from whichever side moves.
+   *
+   * @param id the target ledger's uuid; a ledger the caller does not own reads as
+   *        absent under RLS → `ledger_not_found` (never a leak that it exists).
+   * @param value the new opening balance. Must be ≥ 0 (`negative_amount`).
+   * @param acknowledgedOverspend the user's explicit amber-zone acknowledgement,
+   *        the same flag `createLedgerInput` carries — "yes, I know this leaves my
+   *        ceiling above my income". Defaults to **false**, so an unacknowledged
+   *        amber edit rejects `overspend_warning` and the caller re-submits with
+   *        `true` after the confirmation sheet. It can NEVER rescue a blocked
+   *        (> 2× opening) value.
+   * @see LedgerRejectionReason for every reason the ledger command surface returns.
+   */
+  updateOpeningBalance(
+    id: string,
+    value: Money,
+    acknowledgedOverspend?: boolean,
+  ): Promise<UpdateOpeningBalanceResult>;
 }
 
 /**
@@ -208,6 +275,67 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
         throw error;
       }
       return { ok: true, ledger, parkedLedgerId: ongoing.id };
+    },
+
+    async updateOpeningBalance(id, value, acknowledgedOverspend = false) {
+      // ── §4.1 pre-write validation — all deterministic, all before any write ──
+
+      // (a) Target ledger. null under RLS = absent OR not owned; the two are
+      //     deliberately indistinguishable to the caller. This read is also what
+      //     supplies the stored `maxCapped` and `status` the next two gates need,
+      //     so it is a prerequisite, not just an existence probe.
+      const ledger = await repo.findById(id);
+      if (ledger === null) {
+        return { ok: false, reason: "ledger_not_found" };
+      }
+
+      // (b) Header lock (pure — EF3.2). `openingBalance` is editable ONLY while
+      //     `ongoing`; `reconciling` and `settled` lock it (monthly-ledger.md §2).
+      //     NOT `isLedgerMutable` — that one stays true in `reconciling` (envelope
+      //     amounts remain editable there) and would wrongly admit the edit.
+      if (!isLedgerHeaderEditable(ledger.status)) {
+        return { ok: false, reason: "ledger_not_ongoing" };
+      }
+
+      // (c) Non-negativity (pure), via compareMoney against ZERO_MONEY — no
+      //     raw-number math. Same stance as createLedger: reject cleanly here so
+      //     the DB ck_balances_nonneg is only ever a backstop.
+      if (compareMoney(value, ZERO_MONEY) < 0) {
+        return { ok: false, reason: "negative_amount" };
+      }
+
+      // (d) MaxCapped guardrail (pure — EF3.5), re-evaluated with the NEW opening
+      //     balance against the ledger's STORED maxCapped (the ledger owns that
+      //     value; this command never touches it). Lowering the opening balance can
+      //     push the unchanged ceiling into amber (> income → needs the
+      //     acknowledgement) or past the hard cap (> 2× income → no override), so
+      //     the same gate createLedger runs applies verbatim — one pure rule, both
+      //     write paths.
+      const validation = validateMaxCapped({
+        openingBalance: value,
+        maxCapped: ledger.maxCapped,
+        acknowledgedOverspend,
+      });
+      if (!validation.ok) {
+        return { ok: false, reason: validation.reason };
+      }
+
+      // ── The write — a single-row UPDATE, trivially atomic ──
+
+      // No-op fast-path: an unchanged value needs no UPDATE (same fast-path as
+      // editEnvelope's empty patch). It also keeps a re-submit after the amber
+      // confirmation from logging a second "adjustment" the user never made
+      // (monthly-ledger.md §2 — opening-balance adjustments are logged). Compared
+      // via compareMoney, so "7000" and "7000.00" are the same value.
+      if (compareMoney(value, ledger.openingBalance) === 0) {
+        return { ok: true, ledger };
+      }
+
+      // Touches only this ledger's own opening_balance — no status transition, no
+      // sibling row, so none of createLedger's park/compensate machinery applies.
+      // A DB failure throws FinanceDataError (EF3.6) with nothing written.
+      const updated = await repo.updateOpeningBalance(id, value);
+      return { ok: true, ledger: updated };
     },
   };
 }

@@ -126,16 +126,25 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
     `MonthlyLedger` header only (no envelopes, no derived metrics).
 
 - `createLedgerCommands(client)` — the app-facing **write surface** (EF3.7): the
-  one command path that opens a `MonthlyLedger`. `createLedger(input)` enforces
-  the pure rules (non-negativity, the EF3.5 guardrail, the EF3.4 openable-month
-  window) before any write, then parks the current `ongoing` ledger and inserts
-  the new one all-or-nothing. Returns `CreateLedgerResult` (a `{ ok }` union whose
-  rejection carries a reason the UI branches on — no guardrail payload), throws
-  `FinanceDataError` on a DB failure. `LedgerRejectionReason` is the module-wide
+  one command path that opens a `MonthlyLedger`, plus the ledger-header edits.
+  `createLedger(input)` enforces the pure rules (non-negativity, the EF3.5
+  guardrail, the EF3.4 openable-month window) before any write, then parks the
+  current `ongoing` ledger and inserts the new one all-or-nothing. Returns
+  `CreateLedgerResult` (a `{ ok }` union whose rejection carries a reason the UI
+  branches on — no guardrail payload), throws `FinanceDataError` on a DB failure.
+  `updateOpeningBalance(id, value, acknowledgedOverspend?)` edits an existing
+  ledger's opening balance: a pure **gate stack** (exists/owned → EF3.2's
+  `isLedgerHeaderEditable`, i.e. `ongoing` only → non-negativity → the EF3.5
+  guardrail re-run against the ledger's **stored** `maxCapped`) then one
+  single-column UPDATE, with a no-op fast path for an unchanged value. The
+  guardrail fires on this side too because it constrains a *relation* between the
+  two header fields — lowering the opening balance can push the unchanged ceiling
+  into amber or past the hard cap, so enforcing it only on the `maxCapped` side
+  would leave this as the back door. `LedgerRejectionReason` is the module-wide
   union for the **whole** ledger command surface (the mirror of
   `EnvelopeRejectionReason`); each `*Result` narrows to the subset its own command
   can return. Types: `LedgerCommands`, `CreateLedgerInput`, `CreateLedgerResult`,
-  `LedgerRejectionReason`.
+  `UpdateOpeningBalanceResult`, `LedgerRejectionReason`.
 
 - `createEnvelopeCommands(client)` — the app-facing **write surface** for manual
   envelopes (EF3.8): `createEnvelope` / `editEnvelope` / `setEnvelopeStatus` /
@@ -248,7 +257,7 @@ src/
       envelope.repo.ts    # createEnvelopeRepository, EnvelopeRepository, NewEnvelope/EnvelopePatch (EF3.8)
       category.repo.ts    # createCategoryRepository — count / insertMany / listForUser / listByUser (EF3.9)
     commands/
-      ledger-commands.ts     # createLedgerCommands — the ledger write surface; createLedger opens a ledger (EF3.7)
+      ledger-commands.ts     # createLedgerCommands — the ledger write surface: createLedger (EF3.7) + updateOpeningBalance
       envelope-commands.ts   # createEnvelopeCommands — manual envelope CRUD + set-status (EF3.8)
     queries/
       ledger-queries.ts      # createLedgerQueries — the ledger reads: getFinanceHomeState / getReconPendingLedgers / getLedger (EF3.13)

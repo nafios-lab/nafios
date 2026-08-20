@@ -56,7 +56,8 @@ and verification matrix: [EF3.1](../../issues/EF3.1.md).
 engine — the `Envelope` and `MonthlyLedger` in-memory shapes, their status
 vocabularies (`EnvelopeStatus` / `LedgerStatus`) and the frozen
 `ENVELOPE_STATUSES` set, the `countsTowardCol` COL-contribution rule, the pure
-`applyStatusTransition` `paidAt` resolver, `isLedgerMutable`, and the
+`applyStatusTransition` `paidAt` resolver, `isLedgerMutable` /
+`isLedgerHeaderEditable`, and the
 `computeLedgerMetrics` engine (COL, Health Margin, ASM Contribution, Outstanding,
 plus the negative-ASM signal). Pure — zero I/O, no clock; lives in `src/domain/`.
 Behavior is governed by the cross-cutting domain specs
@@ -256,7 +257,11 @@ export interface MonthlyLedger {
      `derivedMetrics` (computed on read) — both are conceptual-only rows in the
      domain spec's field table. */
 }
-export function isLedgerMutable(status: LedgerStatus): boolean; // false once settled
+export function isLedgerMutable(status: LedgerStatus): boolean; // envelopes/amounts — false once settled
+// The ledger's OWN header money fields (openingBalance / maxCapped) — STRICTER than
+// isLedgerMutable: 'ongoing' only, so it diverges at 'reconciling' (envelope amounts
+// stay editable there; the month's income and ceiling do not — monthly-ledger.md §2).
+export function isLedgerHeaderEditable(status: LedgerStatus): boolean;
 
 // Derived-metrics engine — recomputed live on every read (never stored).
 export interface Outstanding {
@@ -334,11 +339,44 @@ stays **internal** — the command is the public write API, the repository its
 private primitive. Full contract + verification matrix:
 [EF3.7](../../boards/finance/EF3/EF3.7.md).
 
+`updateOpeningBalance(id, value, acknowledgedOverspend?)` is the same pattern
+applied to the first **edit** on a ledger's own header. It needs none of
+`createLedger`'s atomicity machinery (one row, one column), so it is entirely a
+**gate stack**, evaluated in this precedence and performing **no write** on any
+failure:
+
+1. `ledger_not_found` — the RLS-scoped `findById` returned null (absent *or* not
+   owned; the two are deliberately indistinguishable to the caller). This read
+   also supplies the `status` and stored `maxCapped` the next two gates need.
+2. `ledger_not_ongoing` — EF3.2's `isLedgerHeaderEditable`. The header locks in
+   `reconciling` and `settled` (monthly-ledger.md §2). Deliberately **not**
+   `isLedgerMutable`, which stays true in `reconciling` and would admit the edit.
+3. `negative_amount` — `compareMoney(value, ZERO_MONEY) < 0`.
+4. `overspend_warning` / `exceeds_hard_cap` — EF3.5's `validateMaxCapped`
+   re-evaluated with the NEW opening balance against the ledger's **stored**
+   `maxCapped` (this command never touches the ceiling). The guardrail constrains
+   a *relation* between the two header fields, so lowering the opening balance
+   moves it exactly as raising the ceiling would — enforcing it on one side only
+   would leave the other as a back door. `acknowledgedOverspend` (default
+   **false**) lifts amber and amber only.
+
+An unchanged value short-circuits to `{ ok: true }` without an UPDATE (the same
+no-op fast path as `editEnvelope`'s empty patch — it also keeps a re-submit after
+the amber confirmation from logging an adjustment the user never made). A DB
+failure throws `FinanceDataError`.
+
 ```ts
 export function createLedgerCommands(client: FinanceClient): LedgerCommands;
 
 export interface LedgerCommands {
   createLedger(input: CreateLedgerInput): Promise<CreateLedgerResult>;
+  // Edit an existing ledger's opening balance, addressed by id. Every constraint is
+  // re-checked before the write; `acknowledgedOverspend` defaults to false.
+  updateOpeningBalance(
+    id: string,
+    value: Money,
+    acknowledgedOverspend?: boolean,
+  ): Promise<UpdateOpeningBalanceResult>;
 }
 
 // Manual creation inputs (no config prefill in EF3; leadDays is fixed at 7).
@@ -355,7 +393,9 @@ export interface CreateLedgerInput {
 // instead). Module-wide across the ledger command surface (the mirror of
 // EnvelopeRejectionReason); each *Result narrows to its own subset.
 export type LedgerRejectionReason =
-  | "month_not_openable" // month ∉ EF3.4 openable set
+  | "month_not_openable" // month ∉ EF3.4 openable set — creation only
+  | "ledger_not_found" // target ledger absent / not owned — edit paths
+  | "ledger_not_ongoing" // header money fields locked outside 'ongoing' — edit paths
   | "negative_amount" // a Money input < 0
   | "overspend_warning" // EF3.5 amber zone, not confirmed
   | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — no override
@@ -368,6 +408,20 @@ export type CreateLedgerResult =
       // reason alone — no guardrail payload.
       readonly reason:
         | "month_not_openable"
+        | "negative_amount"
+        | "overspend_warning"
+        | "exceeds_hard_cap";
+    };
+
+// On success, the header AS WRITTEN (the caller replaces its copy). Narrowed to the
+// reasons an edit can return — `month_not_openable` is creation-only.
+export type UpdateOpeningBalanceResult =
+  | { readonly ok: true; readonly ledger: MonthlyLedger }
+  | {
+      readonly ok: false;
+      readonly reason:
+        | "ledger_not_found"
+        | "ledger_not_ongoing"
         | "negative_amount"
         | "overspend_warning"
         | "exceeds_hard_cap";
