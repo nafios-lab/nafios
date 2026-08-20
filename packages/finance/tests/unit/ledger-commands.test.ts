@@ -3,7 +3,7 @@ import { decodeMonth } from "@nafios/datetime";
 import type { PostgrestError } from "@nafios/supabase-core";
 import { decodeMoney } from "../../src/domain";
 import type { FinanceClient } from "../../src/internal/client";
-import { createLedgerCommands } from "../../src/internal/commands/create-ledger";
+import { createLedgerCommands } from "../../src/internal/commands/ledger-commands";
 import { FinanceDataError } from "../../src/internal/errors";
 import type { LedgerRow } from "../../src/internal/repositories/ledger.repo";
 

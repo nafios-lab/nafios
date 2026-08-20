@@ -35,7 +35,7 @@ _inside_ the package by a **Biome import-boundary rule** (see root
   repository (EF3.6): the typed `FinanceDataError` + SQLSTATE classifier
   (`errors.ts`), the row↔domain `ledger.mapper.ts`, and `createLedgerRepository`
   (`repositories/ledger.repo.ts`); the first command (EF3.7):
-  `createLedgerCommands` (`commands/create-ledger.ts`), which composes the pure
+  `createLedgerCommands` (`commands/ledger-commands.ts`), which composes the pure
   rules with those repository primitives to open a ledger atomically; and the
   second repository + envelope command surface (EF3.8): `createEnvelopeRepository`
   (`repositories/envelope.repo.ts`) with the `envelope.mapper.ts` that owns the
@@ -209,7 +209,7 @@ operator context):
   `createLedgerQueries`, so it needs no exception for the assertion path — same as
   how the EF3.7, EF3.8-commands, and EF3.9-provisioning matrices drive the public
   `create*Commands` / `provisionDefaultCategories` / `listCategories`.
-  The per-file coverage gate for `create-ledger.ts`, `envelope.repo.ts`,
+  The per-file coverage gate for `ledger-commands.ts`, `envelope.repo.ts`,
   `envelope.mapper.ts`, `envelope-commands.ts`, `category.mapper.ts`,
   `category.repo.ts`, `provision-default-categories.ts`, and
   `queries/ledger-queries.ts` is met by their mocked unit tests under `tests/unit/`.
@@ -245,7 +245,7 @@ src/
       envelope.repo.ts    # createEnvelopeRepository, EnvelopeRepository, NewEnvelope/EnvelopePatch (EF3.8)
       category.repo.ts    # createCategoryRepository — count / insertMany / listForUser / listByUser (EF3.9)
     commands/
-      create-ledger.ts       # createLedgerCommands — the single write path opening a ledger (EF3.7)
+      ledger-commands.ts     # createLedgerCommands — the ledger write surface; createLedger opens a ledger (EF3.7)
       envelope-commands.ts   # createEnvelopeCommands — manual envelope CRUD + set-status (EF3.8)
     queries/
       ledger-queries.ts      # createLedgerQueries — the ledger reads: getFinanceHomeState / getReconPendingLedgers / getLedger (EF3.13)

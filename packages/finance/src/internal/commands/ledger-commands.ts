@@ -1,12 +1,16 @@
-// @nafios/finance — data layer (src/internal/). The create-ledger command
-// (EF3.7): the ONE code path that opens a MonthlyLedger. The FIRST finance
-// command — the first src/internal/ unit that COMPOSES pure domain rules with
-// repository writes rather than being a pure leaf or a thin data primitive. It
-// establishes the command pattern EF3.8 mirrors: validate-in-domain →
-// orchestrate repository writes → return a { ok } result union for user-input
-// rejections / throw FinanceDataError on a DB failure.
+// @nafios/finance — data layer (src/internal/). The LEDGER command surface —
+// every write path for a MonthlyLedger, the mirror of envelope-commands.ts.
+// Further ledger operations land here as they ship.
 //
-// It adds NO business rule. The maxCapped guardrail is EF3.5's, the
+// Its first member is createLedger (EF3.7): the ONE code path that opens a
+// MonthlyLedger, and the FIRST finance command — the first src/internal/ unit
+// that COMPOSES pure domain rules with repository writes rather than being a
+// pure leaf or a thin data primitive. It establishes the command pattern EF3.8
+// mirrors: validate-in-domain → orchestrate repository writes → return a
+// { ok } result union for user-input rejections / throw FinanceDataError on a
+// DB failure.
+//
+// createLedger adds NO business rule. The maxCapped guardrail is EF3.5's, the
 // openable-month math is EF3.4's, the data primitives are EF3.6's. Its whole job
 // is composition + ordering + atomicity: enforce the pure rules server-side
 // (regardless of caller — the form is a UX affordance, not the boundary), then
@@ -14,10 +18,10 @@
 // the "at most one ongoing" invariant is never violated and the observable
 // outcome is all-or-nothing.
 //
-// Atomicity mechanism (§4.2 — the central design decision): ordered writes +
-// compensation, backstopped by EF1.1's uq_one_ongoing_ledger partial unique
-// index. The Supabase JS SDK exposes no multi-statement transaction, and EF3
-// adds NO migration / NO RPC — so this command parks-first (the index forbids
+// createLedger's atomicity mechanism (§4.2 — the central design decision):
+// ordered writes + compensation, backstopped by EF1.1's uq_one_ongoing_ledger
+// partial unique index. The Supabase JS SDK exposes no multi-statement
+// transaction, and EF3 adds NO migration / NO RPC — so it parks-first (the index forbids
 // two ongoing rows, so the new insert cannot land while the old ledger is still
 // ongoing) then inserts, and compensates (reverts the park) if the insert
 // throws. The index is the hard, unconditional backstop for the invariant.

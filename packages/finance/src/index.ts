@@ -25,7 +25,7 @@ export {
   type CreateLedgerResult,
   createLedgerCommands,
   type LedgerCommands,
-} from "./internal/commands/create-ledger";
+} from "./internal/commands/ledger-commands";
 // The app-facing WRITE surface for manual envelopes (EF3.8) — create / edit /
 // set-status / delete. EF3.14's envelope UI imports these; the underlying
 // `createEnvelopeRepository` + the envelope mapper stay internal (EF3.10 imports
