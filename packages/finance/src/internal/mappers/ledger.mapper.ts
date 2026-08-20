@@ -5,7 +5,7 @@
 // envelope mapper (EF3.8) copies; the discipline (never touch a raw money/date
 // string outside EF3.1's codecs) is the reusable rule.
 
-import type { TablesInsert } from "@nafios/database";
+import type { TablesInsert, TablesUpdate } from "@nafios/database";
 import { decodeMonth, encodeMonth } from "@nafios/datetime";
 import {
   type LedgerSummaryCard,
@@ -13,7 +13,7 @@ import {
   type ReconPendingLedger,
   summarizeHealthMargin,
 } from "../../domain";
-import { decodeMoney, encodeMoney } from "../../domain/money";
+import { decodeMoney, encodeMoney, type Money } from "../../domain/money";
 import type {
   LedgerRow,
   LedgerSummaryDTO,
@@ -60,6 +60,20 @@ export function newLedgerToInsertRow(input: NewLedger): TablesInsert<"monthly_le
     opening_balance: encodeMoney(input.openingBalance) as unknown as number,
     max_capped: encodeMoney(input.maxCapped) as unknown as number,
     status: input.status ?? "ongoing",
+  };
+}
+
+/**
+ * WRITE: a new opening balance → monthly_ledger update row. The ONE write path
+ * for `opening_balance`, mirroring the insert mapper's money discipline: the
+ * value is encoded via encodeMoney and the `as unknown as number` cast satisfies
+ * the generated Update type (which types the numeric column as `number`) without
+ * ever routing money through a float. Touches NOTHING else — `month`, `status`,
+ * `max_capped` and the DB-owned columns are left exactly as stored.
+ */
+export function openingBalanceToUpdateRow(value: Money): TablesUpdate<"monthly_ledger"> {
+  return {
+    opening_balance: encodeMoney(value) as unknown as number,
   };
 }
 

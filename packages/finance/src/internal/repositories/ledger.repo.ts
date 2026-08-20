@@ -25,6 +25,7 @@ import { mapPostgrestError } from "../errors";
 import {
   ledgerSummaryDTOToCard,
   newLedgerToInsertRow,
+  openingBalanceToUpdateRow,
   reconPendingLedgerDTOToDomain,
   rowToMonthlyLedger,
 } from "../mappers/ledger.mapper";
@@ -179,9 +180,18 @@ export interface LedgerRepository {
     status: Extract<LedgerStatus, "ongoing" | "reconciling">,
   ): Promise<MonthlyLedger>;
 
-  /** Delete a ledger, RLS-scoped. A complete-CRUD primitive; NO EF3 user story
-   *  deletes a ledger — present for test teardown and repository completeness. */
+  /**
+   * Delete a ledger, RLS-scoped. A complete-CRUD primitive; NO EF3 user story
+   * deletes a ledger — present for test teardown and repository completeness. */
   delete(id: string): Promise<void>;
+
+  /**
+   * Update one ledger's opening balance, returning the header as written. RLS
+   * scopes the write; a DB failure throws FinanceDataError (EF3.6). Does NOT
+   * enforce the mutability rule (EF3.2) or the guardrail (EF3.5) — this is the
+   * data primitive those compose.
+   */
+  updateOpeningBalance(id: string, value: Money): Promise<MonthlyLedger>;
 }
 
 /**
@@ -284,6 +294,18 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
       if (error) {
         throw mapPostgrestError(error);
       }
+    },
+
+    async updateOpeningBalance(id, value) {
+      const { data, error } = await table()
+        .update(openingBalanceToUpdateRow(value))
+        .eq("id", id)
+        .select(HEADER_COLUMNS)
+        .single();
+      if (error) {
+        throw mapPostgrestError(error);
+      }
+      return rowToMonthlyLedger(data as LedgerRow);
     },
   };
 }

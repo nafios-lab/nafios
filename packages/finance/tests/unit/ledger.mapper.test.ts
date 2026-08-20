@@ -5,6 +5,7 @@ import { decodeMoney, decodeMonth } from "../../src/domain";
 import { encodeMoney } from "../../src/domain/money";
 import {
   newLedgerToInsertRow,
+  openingBalanceToUpdateRow,
   reconPendingLedgerDTOToDomain,
   rowToMonthlyLedger,
 } from "../../src/internal/mappers/ledger.mapper";
@@ -133,5 +134,23 @@ describe("reconPendingLedgerDTOToDomain — one get_pending_recon_ledgers row �
 
   test("a malformed money value surfaces CodecError", () => {
     expect(() => reconPendingLedgerDTOToDomain(dto({ pending_sum_amount: "not-money" }))).toThrow();
+  });
+});
+
+describe("openingBalanceToUpdateRow — encodes and touches nothing else", () => {
+  test("emits the encoded decimal string as the ONLY key", () => {
+    const update = openingBalanceToUpdateRow(decodeMoney("8000.00"));
+    // numeric columns are typed `number` but carry the encoded decimal STRING at
+    // runtime (the money-never-floated contract) — assert against that reality.
+    expect(update.opening_balance as unknown as string).toBe("8000.00");
+    expect(Object.keys(update)).toEqual(["opening_balance"]);
+  });
+
+  test("round-trips through the read mapper unchanged", () => {
+    const update = openingBalanceToUpdateRow(decodeMoney("7152.35"));
+    const header = rowToMonthlyLedger(
+      row({ opening_balance: update.opening_balance as unknown as string }),
+    );
+    expect(encodeMoney(header.openingBalance)).toBe("7152.35");
   });
 });
