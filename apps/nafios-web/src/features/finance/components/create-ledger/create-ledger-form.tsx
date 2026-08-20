@@ -1,5 +1,5 @@
 import { encodeMonth, formatMonthLong, type Month } from "@nafios/datetime";
-import type { CreateLedgerRejectionReason, CreateLedgerResult, Money } from "@nafios/finance";
+import type { CreateLedgerResult, Money } from "@nafios/finance";
 import { ConfirmDialog } from "@nafios/ui/components/confirm-dialog";
 import { ErrorDialog } from "@nafios/ui/components/error-dialog";
 import { Button } from "@nafios/ui/components/ui/button";
@@ -36,10 +36,15 @@ const EMPTY_FORM: CreateLedgerFormValues = {
   acknowledgeOverspend: false,
 };
 
+// Derived from the command's own result rather than from the module-wide
+// `LedgerRejectionReason` — this form only ever renders what createLedger can
+// return, so a reason added for a future ledger command doesn't force copy here.
+type CreateLedgerRejection = Extract<CreateLedgerResult, { ok: false }>["reason"];
+
 // The reasons that surface as a blocking ErrorDialog. `overspend_warning`
 // is deliberately excluded — it drives the ConfirmDialog (amber acknowledge
 // flow), not the error surface.
-type BlockedLedgerReason = Exclude<CreateLedgerRejectionReason, "overspend_warning">;
+type BlockedLedgerReason = Exclude<CreateLedgerRejection, "overspend_warning">;
 
 // Record<> makes this exhaustive: a new BlockedLedgerReason won't compile
 // until it has a title here.

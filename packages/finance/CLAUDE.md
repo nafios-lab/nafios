@@ -130,9 +130,12 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   the pure rules (non-negativity, the EF3.5 guardrail, the EF3.4 openable-month
   window) before any write, then parks the current `ongoing` ledger and inserts
   the new one all-or-nothing. Returns `CreateLedgerResult` (a `{ ok }` union whose
-  rejection carries a `CreateLedgerRejectionReason` the UI branches on — no guardrail
-  payload), throws `FinanceDataError` on a DB failure. Types: `LedgerCommands`, `CreateLedgerInput`,
-  `CreateLedgerResult`, `CreateLedgerRejectionReason`.
+  rejection carries a reason the UI branches on — no guardrail payload), throws
+  `FinanceDataError` on a DB failure. `LedgerRejectionReason` is the module-wide
+  union for the **whole** ledger command surface (the mirror of
+  `EnvelopeRejectionReason`); each `*Result` narrows to the subset its own command
+  can return. Types: `LedgerCommands`, `CreateLedgerInput`, `CreateLedgerResult`,
+  `LedgerRejectionReason`.
 
 - `createEnvelopeCommands(client)` — the app-facing **write surface** for manual
   envelopes (EF3.8): `createEnvelope` / `editEnvelope` / `setEnvelopeStatus` /

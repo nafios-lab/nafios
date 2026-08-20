@@ -61,14 +61,22 @@ export interface CreateLedgerInput {
   readonly acknowledgedOverspend: boolean;
 }
 
-// ───────────────── Rejection (deterministic input failure) ─────────────────
+// ───────────── Rejection (deterministic input/context failure) ─────────────
 
-/** Why createLedger refused BEFORE any write — a deterministic input/context
- *  failure the UI renders, not a DB error. (DB/query failures throw
- *  FinanceDataError instead — §4.3.) */
-export type CreateLedgerRejectionReason =
+/** Why a ledger write command refused BEFORE any write — a deterministic
+ *  input/context failure the UI renders, not a DB error. (DB/query failures throw
+ *  FinanceDataError instead — §4.3.)
+ *
+ *  This is the union for the WHOLE ledger command surface, not just createLedger
+ *  — the same shape as envelope-commands.ts's `EnvelopeRejectionReason`. Reasons
+ *  like `negative_amount` are shared by every write path that takes a Money
+ *  input (create, and the balance/cap edits that follow), so the union lives at
+ *  the module level and each command's `*Result` narrows to the subset it can
+ *  actually return. That keeps a caller's exhaustive `Record<reason, …>` copy map
+ *  tied to one command rather than to every reason the module will ever add. */
+export type LedgerRejectionReason =
   | "month_not_openable" // month ∉ EF3.4 openable set: far-future, back-fill, or already has a ledger
-  | "negative_amount" // openingBalance or maxCapped < 0 (EF3.5 does not police sign; DB ck_balances_nonneg backstops)
+  | "negative_amount" // a Money input < 0 (EF3.5 does not police sign; DB ck_balances_nonneg backstops)
   | "overspend_warning" // EF3.5 amber zone, acknowledgedOverspend === false
   | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — NO override
 
@@ -90,7 +98,13 @@ export type CreateLedgerResult =
     }
   | {
       readonly ok: false;
-      readonly reason: CreateLedgerRejectionReason;
+      /** Narrowed to the reasons createLedger itself can return — the module-wide
+       *  `LedgerRejectionReason` is wider. */
+      readonly reason:
+        | "month_not_openable"
+        | "negative_amount"
+        | "overspend_warning"
+        | "exceeds_hard_cap";
     };
 
 // ─────────────────────────── The command ──────────────────────────

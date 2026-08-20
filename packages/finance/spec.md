@@ -83,7 +83,7 @@ write, then the EF3.6 repository primitives to perform the previous-`ongoing` �
 (ordered writes + compensation, backstopped by EF1.1's `uq_one_ongoing_ledger`;
 no RPC, no migration). Adds **no** business rule. Barrel surface:
 `createLedgerCommands`, `LedgerCommands`, `CreateLedgerInput`,
-`CreateLedgerResult`, `CreateLedgerRejectionReason`; the repository stays
+`CreateLedgerResult`, `LedgerRejectionReason`; the repository stays
 **internal**. Full contract, verification matrix, and the test-lane decision:
 [EF3.7](../../boards/finance/EF3/EF3.7.md).
 
@@ -350,11 +350,13 @@ export interface CreateLedgerInput {
   readonly today: string; // caller-supplied "YYYY-MM-DD"; no clock read
 }
 
-// Why createLedger refused BEFORE any write — a deterministic input/context
-// failure the UI renders (DB failures throw FinanceDataError instead).
-export type CreateLedgerRejectionReason =
+// Why a ledger write command refused BEFORE any write — a deterministic
+// input/context failure the UI renders (DB failures throw FinanceDataError
+// instead). Module-wide across the ledger command surface (the mirror of
+// EnvelopeRejectionReason); each *Result narrows to its own subset.
+export type LedgerRejectionReason =
   | "month_not_openable" // month ∉ EF3.4 openable set
-  | "negative_amount" // openingBalance or maxCapped < 0
+  | "negative_amount" // a Money input < 0
   | "overspend_warning" // EF3.5 amber zone, not confirmed
   | "exceeds_hard_cap"; // EF3.5 blocked zone (> 2× opening) — no override
 
@@ -362,7 +364,13 @@ export type CreateLedgerResult =
   | { readonly ok: true; readonly ledger: MonthlyLedger; readonly parkedLedgerId: string | null }
   | {
       readonly ok: false;
-      readonly reason: CreateLedgerRejectionReason; // UI branches on the reason alone; no guardrail payload
+      // Narrowed to what createLedger itself can return; the UI branches on the
+      // reason alone — no guardrail payload.
+      readonly reason:
+        | "month_not_openable"
+        | "negative_amount"
+        | "overspend_warning"
+        | "exceeds_hard_cap";
     };
 ```
 

@@ -15,17 +15,6 @@ export {
   createServiceClient,
   type FinanceClient,
 } from "./internal/client";
-// The app-facing WRITE surface (EF3.7) — the single command path that opens a
-// MonthlyLedger. EF3.12's creation flow imports these; the underlying
-// `createLedgerRepository` stays internal (the command is the public write API,
-// the repository is its private primitive).
-export {
-  type CreateLedgerInput,
-  type CreateLedgerRejectionReason,
-  type CreateLedgerResult,
-  createLedgerCommands,
-  type LedgerCommands,
-} from "./internal/commands/ledger-commands";
 // The app-facing WRITE surface for manual envelopes (EF3.8) — create / edit /
 // set-status / delete. EF3.14's envelope UI imports these; the underlying
 // `createEnvelopeRepository` + the envelope mapper stay internal (EF3.10 imports
@@ -42,6 +31,17 @@ export {
   type SetEnvelopeStatusInput,
   type SetEnvelopeStatusResult,
 } from "./internal/commands/envelope-commands";
+// The app-facing WRITE surface (EF3.7) — the single command path that opens a
+// MonthlyLedger. EF3.12's creation flow imports these; the underlying
+// `createLedgerRepository` stays internal (the command is the public write API,
+// the repository is its private primitive).
+export {
+  type CreateLedgerInput,
+  type CreateLedgerResult,
+  createLedgerCommands,
+  type LedgerCommands,
+  type LedgerRejectionReason,
+} from "./internal/commands/ledger-commands";
 // Data-layer error surface (EF3.6). The app/UI catches FinanceDataError and
 // branches on its `code` (e.g. "this month already has a ledger"). The
 // repository factory and the mapper stay internal — imported within the package
