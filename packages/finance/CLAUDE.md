@@ -140,7 +140,15 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   guardrail fires on this side too because it constrains a *relation* between the
   two header fields — lowering the opening balance can push the unchanged ceiling
   into amber or past the hard cap, so enforcing it only on the `maxCapped` side
-  would leave this as the back door. `LedgerRejectionReason` is the module-wide
+  would leave this as the back door. `updateLedger(ledger, acknowledgedOverspend?)`
+  is the same gate stack over **both** header money fields at once, taking the
+  edited `MonthlyLedger`: non-negativity on both amounts, the guardrail on the
+  incoming **pair** (only the pair is meaningful when both move — raising the
+  ceiling *and* the opening balance that funds it is legal as a whole), then ONE
+  UPDATE of the two columns. Only `id` and the two amounts are read off the
+  argument — the status gate uses the **stored** status (no smuggling
+  `status: 'ongoing'` past a settled ledger), `month` is immutable, timestamps are
+  DB-owned. `LedgerRejectionReason` is the module-wide
   union for the **whole** ledger command surface (the mirror of
   `EnvelopeRejectionReason`); each `*Result` narrows to the subset its own command
   can return. Types: `LedgerCommands`, `CreateLedgerInput`, `CreateLedgerResult`,

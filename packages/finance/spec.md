@@ -365,6 +365,24 @@ no-op fast path as `editEnvelope`'s empty patch — it also keeps a re-submit af
 the amber confirmation from logging an adjustment the user never made). A DB
 failure throws `FinanceDataError`.
 
+`updateLedger(ledger, acknowledgedOverspend?)` is that same gate stack over the
+**whole editable header** — `openingBalance` and `maxCapped` together — taking the
+edited `MonthlyLedger` instead of one value. It exists because gate 4 constrains a
+*relation* between the two fields: when an edit moves both at once, only the
+proposed **pair** is meaningful to validate (raising the ceiling *and* the opening
+balance that funds it is legal as a whole, yet either half judged against the
+stored other can reject). So gate 3 checks **both** amounts for non-negativity and
+gate 4 runs `validateMaxCapped` on the incoming pair — everything else, including
+precedence, is identical.
+
+The argument is **input, not authority**: only `id` (which addresses the row) and
+the two amounts (the proposal) are read. The supplied `status` / `month` /
+`createdAt` / `settledAt` are **ignored** — gate 2 runs against the **stored**
+status, so a caller cannot send `status: 'ongoing'` to edit a settled ledger;
+`month` is immutable once opened; the timestamps are DB-owned. Both columns land
+in **one** UPDATE, so a half-applied header is never observable, and the no-op
+fast path requires **both** amounts unchanged.
+
 ```ts
 export function createLedgerCommands(client: FinanceClient): LedgerCommands;
 
@@ -377,6 +395,11 @@ export interface LedgerCommands {
     value: Money,
     acknowledgedOverspend?: boolean,
   ): Promise<UpdateLedgerResult>;
+  // Edit the whole editable header — openingBalance + maxCapped — in one UPDATE.
+  // Same gates, with non-negativity on both amounts and the guardrail evaluated on
+  // the incoming PAIR. Only `id` and the two amounts are read off the argument;
+  // the status gate uses the STORED status.
+  updateLedger(ledger: MonthlyLedger, acknowledgedOverspend?: boolean): Promise<UpdateLedgerResult>;
 }
 
 // Manual creation inputs (no config prefill in EF3; leadDays is fixed at 7).
@@ -414,7 +437,7 @@ export type CreateLedgerResult =
     };
 
 // The shared result of an edit to an existing ledger row, addressed by id (reused
-// by every such command — `updateOpeningBalance` today). On success, the header AS
+// by every such command — `updateOpeningBalance` / `updateLedger`). On success, the header AS
 // WRITTEN (the caller replaces its copy). Narrowed to the reasons an edit can
 // return — `month_not_openable` is creation-only.
 export type UpdateLedgerResult =

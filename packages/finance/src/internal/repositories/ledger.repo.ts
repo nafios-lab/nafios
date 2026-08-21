@@ -28,6 +28,7 @@ import {
   openingBalanceToUpdateRow,
   reconPendingLedgerDTOToDomain,
   rowToMonthlyLedger,
+  toLedgerUpdateRow,
 } from "../mappers/ledger.mapper";
 
 /**
@@ -192,6 +193,19 @@ export interface LedgerRepository {
    * data primitive those compose.
    */
   updateOpeningBalance(id: string, value: Money): Promise<MonthlyLedger>;
+
+  /**
+   * Update one ledger's EDITABLE HEADER — `opening_balance` and `max_capped`
+   * together, in one UPDATE — addressed by `ledger.id`, returning the header as
+   * written. The both-fields sibling of `updateOpeningBalance`; the mapper picks
+   * the two columns, so the supplied `month` / `status` / timestamps are ignored
+   * (identity, lifecycle and DB-owned columns never move on this path).
+   *
+   * RLS scopes the write; a DB failure throws FinanceDataError (EF3.6). Does NOT
+   * enforce the header lock (EF3.2) or the guardrail (EF3.5) — this is the data
+   * primitive those compose.
+   */
+  updateHeader(ledger: MonthlyLedger): Promise<MonthlyLedger>;
 }
 
 /**
@@ -300,6 +314,21 @@ export function createLedgerRepository(client: FinanceClient): LedgerRepository 
       const { data, error } = await table()
         .update(openingBalanceToUpdateRow(value))
         .eq("id", id)
+        .select(HEADER_COLUMNS)
+        .single();
+      if (error) {
+        throw mapPostgrestError(error);
+      }
+      return rowToMonthlyLedger(data as LedgerRow);
+    },
+
+    async updateHeader(ledger) {
+      // One UPDATE carrying both money columns — so the pair lands together and a
+      // partial header can never be observed. The row is addressed by its OWN id;
+      // the mapper decides which columns move.
+      const { data, error } = await table()
+        .update(toLedgerUpdateRow(ledger))
+        .eq("id", ledger.id)
         .select(HEADER_COLUMNS)
         .single();
       if (error) {

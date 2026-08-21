@@ -36,6 +36,17 @@
 // fields — moving the opening balance moves that relation exactly as moving the
 // ceiling would, so enforcing it on one side only would leave the other as a
 // back door.
+//
+// Its third member is updateLedger — the SAME gate stack over BOTH header money
+// fields at once, taking the edited MonthlyLedger rather than a single value. It
+// exists because the guardrail is that relation: when a caller moves both fields
+// in one edit, only the proposed PAIR is a meaningful thing to validate (raising
+// the ceiling AND the opening balance that funds it is legal as a whole, yet
+// either half judged against the stored other can reject). It reads `id` and the
+// two amounts and NOTHING else off its argument — the status gate runs against
+// the STORED row, so a caller cannot smuggle `status: 'ongoing'` past the lock on
+// a settled ledger — and writes both columns in ONE UPDATE, so a half-applied
+// header is never observable.
 
 import { compareMonths, type Month, today } from "@nafios/datetime";
 import { resolveCreationState } from "../../domain/creation-window";
@@ -194,6 +205,40 @@ export interface LedgerCommands {
     value: Money,
     acknowledgedOverspend?: boolean,
   ): Promise<UpdateLedgerResult>;
+
+  /**
+   * Edit an existing ledger's WHOLE editable header — `openingBalance` and
+   * `maxCapped` together — by handing back the ledger as the caller now holds it.
+   * The both-fields generalisation of `updateOpeningBalance`, and the command a
+   * header-edit surface uses when either money field may have moved.
+   *
+   * Same gate stack, same precedence (§4.1), no write on any failure:
+   * existence/ownership → the `ongoing`-only header lock (EF3.2) → non-negativity
+   * of BOTH amounts → the EF3.5 guardrail evaluated on the incoming PAIR. That
+   * last point is why one command takes both fields: the guardrail constrains the
+   * RELATION between them, so a client moving both at once (raising the ceiling
+   * while raising the income that funds it) must be judged on the pair it is
+   * actually asking for — validating one field at a time against the stored other
+   * would reject an edit that is legal as a whole.
+   *
+   * The `ledger` argument is INPUT, not authority. Only `id` and the two money
+   * fields are read: `id` addresses the row, the amounts are the proposal. The
+   * supplied `status` / `month` / `createdAt` / `settledAt` are IGNORED — the gate
+   * runs against the STORED status (a caller could otherwise send `'ongoing'` and
+   * edit a settled ledger), `month` is immutable once opened, and the timestamps
+   * are DB-owned. Both amounts land in ONE UPDATE, so a half-applied header is
+   * never observable.
+   *
+   * @param ledger the ledger as edited. `id` must be one the caller owns (else
+   *        `ledger_not_found` — never a leak that it exists); `openingBalance` and
+   *        `maxCapped` must both be ≥ 0 (`negative_amount`).
+   * @param acknowledgedOverspend the user's explicit amber-zone acknowledgement,
+   *        defaulting to **false** — an unacknowledged amber pair rejects
+   *        `overspend_warning` and the caller re-submits with `true` after the
+   *        confirmation sheet. It can NEVER rescue a blocked (> 2× opening) pair.
+   * @see LedgerRejectionReason for every reason the ledger command surface returns.
+   */
+  updateLedger(ledger: MonthlyLedger, acknowledgedOverspend?: boolean): Promise<UpdateLedgerResult>;
 }
 
 /**
@@ -338,6 +383,77 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       // sibling row, so none of createLedger's park/compensate machinery applies.
       // A DB failure throws FinanceDataError (EF3.6) with nothing written.
       const updated = await repo.updateOpeningBalance(id, value);
+      return { ok: true, ledger: updated };
+    },
+
+    async updateLedger(ledger, acknowledgedOverspend = false) {
+      // ── §4.1 pre-write validation — the same gate stack, same precedence, as
+      //    updateOpeningBalance; only the guardrail's inputs differ (the incoming
+      //    PAIR, not one new value against the stored other).
+
+      // (a) Target ledger, read by the id on the supplied object. null under RLS =
+      //     absent OR not owned — deliberately indistinguishable to the caller.
+      //     This read is the source of TRUTH for `status`: the gate below must not
+      //     trust the status field the caller handed us.
+      const stored = await repo.findById(ledger.id);
+      if (stored === null) {
+        return { ok: false, reason: "ledger_not_found" };
+      }
+
+      // (b) Header lock (pure — EF3.2), on the STORED status. Both money fields
+      //     are editable ONLY while `ongoing`; `reconciling` and `settled` lock
+      //     them (monthly-ledger.md §2). NOT `isLedgerMutable` — that stays true
+      //     in `reconciling`, where envelope amounts move but the header must not.
+      if (!isLedgerHeaderEditable(stored.status)) {
+        return { ok: false, reason: "ledger_not_ongoing" };
+      }
+
+      // (c) Non-negativity (pure) on BOTH amounts, via compareMoney against
+      //     ZERO_MONEY — no raw-number math. Same stance as createLedger, which
+      //     checks the identical pair: reject cleanly here so the DB
+      //     ck_balances_nonneg is only ever a backstop.
+      if (
+        compareMoney(ledger.openingBalance, ZERO_MONEY) < 0 ||
+        compareMoney(ledger.maxCapped, ZERO_MONEY) < 0
+      ) {
+        return { ok: false, reason: "negative_amount" };
+      }
+
+      // (d) MaxCapped guardrail (pure — EF3.5) on the incoming PAIR — the whole
+      //     reason this command exists alongside updateOpeningBalance. The
+      //     guardrail is a RELATION between the two fields; when both move
+      //     together only the proposed pair is meaningful. Judging each side
+      //     against the stored other would reject a legal edit (e.g. raising the
+      //     ceiling AND the opening balance that funds it) purely from evaluation
+      //     order. Identical call to createLedger's — one pure rule, every write path.
+      const validation = validateMaxCapped({
+        openingBalance: ledger.openingBalance,
+        maxCapped: ledger.maxCapped,
+        acknowledgedOverspend,
+      });
+      if (!validation.ok) {
+        return { ok: false, reason: validation.reason };
+      }
+
+      // ── The write — a single-row UPDATE of two columns, trivially atomic ──
+
+      // No-op fast-path: NEITHER amount moved, so there is nothing to write (the
+      // same fast path as updateOpeningBalance / editEnvelope's empty patch). It
+      // also keeps a re-submit after the amber confirmation from logging an
+      // adjustment the user never made (monthly-ledger.md §2). Compared via
+      // compareMoney, so "7000" and "7000.00" are the same value. A change to
+      // EITHER field writes BOTH — one UPDATE, never a half-applied header.
+      if (
+        compareMoney(ledger.openingBalance, stored.openingBalance) === 0 &&
+        compareMoney(ledger.maxCapped, stored.maxCapped) === 0
+      ) {
+        return { ok: true, ledger: stored };
+      }
+
+      // Touches only this ledger's own two money columns — no status transition,
+      // no sibling row, so none of createLedger's park/compensate machinery
+      // applies. A DB failure throws FinanceDataError (EF3.6) with nothing written.
+      const updated = await repo.updateHeader(ledger);
       return { ok: true, ledger: updated };
     },
   };

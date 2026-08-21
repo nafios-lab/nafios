@@ -47,6 +47,8 @@ function pgError(overrides: Partial<PostgrestError>): PostgrestError {
  * uses): `.insert()` → insert; `.update({ status })` → updateStatus (keyed by the
  * target status, so the park and the compensation revert can be configured
  * independently); `.update({ opening_balance })` → updateOpeningBalance;
+ * `.update({ opening_balance, max_capped })` → updateHeader (the both-fields
+ * patch — told apart by `max_capped` being present);
  * `.order()` → list; otherwise `.maybeSingle()` keyed by the filtered COLUMN —
  * `.eq("id", …)` → findById, `.eq("status", "ongoing")` → findOngoing. Records the
  * operation order in `ops`, the insert payloads in `insertArgs`, and the update
@@ -59,6 +61,7 @@ function makeClient(config: {
   insert?: QueryResult;
   updateStatus?: { reconciling?: QueryResult; ongoing?: QueryResult };
   updateOpeningBalance?: QueryResult;
+  updateHeader?: QueryResult;
 }) {
   const ops: string[] = [];
   const insertArgs: Array<Record<string, unknown>> = [];
@@ -91,9 +94,13 @@ function makeClient(config: {
             unknown
           >;
           updateArgs.push(payload);
-          // A status-only patch is the park / compensation revert; an
-          // opening_balance patch is the edit command.
+          // A status-only patch is the park / compensation revert; a money patch
+          // is an edit command — both columns → updateHeader, one → updateOpeningBalance.
           if (payload.status === undefined) {
+            if (payload.max_capped !== undefined) {
+              ops.push("updateHeader");
+              return resolve(config.updateHeader ?? { data: ledgerRow(), error: null });
+            }
             ops.push("updateOpeningBalance");
             return resolve(config.updateOpeningBalance ?? { data: ledgerRow(), error: null });
           }
@@ -466,6 +473,243 @@ describe("updateOpeningBalance — the write", () => {
     });
     await expect(
       createLedgerCommands(client).updateOpeningBalance("jan-id", NEW_OK),
+    ).rejects.toBeInstanceOf(FinanceDataError);
+    expect(ops).toEqual(["findById"]);
+  });
+});
+
+// ─────────────────── updateLedger — the both-fields gate stack ───────────────────
+//
+// The same gate stack as updateOpeningBalance, over BOTH money fields at once. So
+// what these pin, beyond the shared precedence, is what is SPECIFIC to taking a
+// whole MonthlyLedger as input:
+//   • the guardrail runs on the incoming PAIR — an edit that moves both fields is
+//     legal as a whole even where either half against the stored other would fail;
+//   • the status gate runs against the STORED row, never the caller's `status`;
+//   • only the two money columns are written — `month` / `status` / timestamps on
+//     the argument are ignored;
+//   • the no-op fast path needs BOTH amounts unchanged.
+//
+// The stored fixture stays the default row: opening 7152.35, maxCapped 6415.00,
+// status 'ongoing'.
+
+function ledgerDomain(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: "jan-id",
+    month: JAN,
+    openingBalance: OPENING,
+    maxCapped: MAXCAP,
+    status: "ongoing",
+    createdAt: "2027-01-01T08:00:00.000Z",
+    settledAt: null,
+    ...overrides,
+  } as Parameters<ReturnType<typeof createLedgerCommands>["updateLedger"]>[0];
+}
+
+describe("updateLedger — pre-write rejections (no write)", () => {
+  test("rejects 'ledger_not_found' when the id is absent OR not owned (RLS null)", async () => {
+    const { client, ops } = makeClient({ findById: { data: null, error: null } });
+    const result = await createLedgerCommands(client).updateLedger(ledgerDomain({ id: "nope" }));
+    expect(result).toEqual({ ok: false, reason: "ledger_not_found" });
+    expect(ops).toEqual(["findById"]); // read only — nothing written
+  });
+
+  test("rejects 'ledger_not_ongoing' on a reconciling ledger — the header locks even though envelopes stay editable", async () => {
+    const { client, ops } = makeClient({
+      findById: { data: ledgerRow({ status: "reconciling" }), error: null },
+    });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ openingBalance: NEW_OK }),
+    );
+    expect(result).toEqual({ ok: false, reason: "ledger_not_ongoing" });
+    expect(ops).toEqual(["findById"]);
+  });
+
+  test("the STORED status decides the lock — a caller cannot smuggle status:'ongoing' past a settled ledger", async () => {
+    const { client, ops } = makeClient({
+      findById: {
+        data: ledgerRow({ status: "settled", settled_at: "2027-02-01T00:00:00.000Z" }),
+        error: null,
+      },
+    });
+    // The argument claims 'ongoing' — the gate reads the row, not the argument.
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ status: "ongoing", openingBalance: NEW_OK }),
+    );
+    expect(result).toEqual({ ok: false, reason: "ledger_not_ongoing" });
+    expect(ops).toEqual(["findById"]);
+  });
+
+  test("rejects 'negative_amount' for a negative openingBalance, before the guardrail runs", async () => {
+    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ openingBalance: NEGATIVE }),
+    );
+    expect(result).toEqual({ ok: false, reason: "negative_amount" });
+    expect(ops).toEqual(["findById"]);
+  });
+
+  test("rejects 'negative_amount' for a negative maxCapped too — BOTH amounts are checked", async () => {
+    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ maxCapped: NEGATIVE }),
+    );
+    expect(result).toEqual({ ok: false, reason: "negative_amount" });
+    expect(ops).toEqual(["findById"]);
+  });
+
+  test("rejects 'overspend_warning' when the incoming PAIR lands in amber unacknowledged", async () => {
+    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ openingBalance: NEW_AMBER }), // 6000 opening vs 6415 ceiling
+    );
+    expect(result).toEqual({ ok: false, reason: "overspend_warning" });
+    expect(ops).toEqual(["findById"]);
+  });
+
+  test("rejects 'exceeds_hard_cap' on a blocked PAIR — acknowledgement does NOT rescue it", async () => {
+    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ openingBalance: NEW_BLOCKED }), // 6415 > 2×3000
+      true, // acknowledged — irrelevant in the blocked zone
+    );
+    expect(result).toEqual({ ok: false, reason: "exceeds_hard_cap" });
+    expect(ops).toEqual(["findById"]);
+  });
+
+  test("the status gate outranks the value checks — a locked ledger rejects 'ledger_not_ongoing', not 'negative_amount'", async () => {
+    const { client } = makeClient({
+      findById: { data: ledgerRow({ status: "settled" }), error: null },
+    });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ openingBalance: NEGATIVE }),
+    );
+    expect(result).toEqual({ ok: false, reason: "ledger_not_ongoing" });
+  });
+});
+
+describe("updateLedger — the write", () => {
+  test("writes BOTH encoded money columns and nothing else, returning the header as written", async () => {
+    const written = ledgerRow({ id: "jan-id", opening_balance: "9000.00", max_capped: "8000.00" });
+    const { client, ops, updateArgs } = makeClient({
+      findById: { data: ONGOING, error: null },
+      updateHeader: { data: written, error: null },
+    });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ openingBalance: decodeMoney("9000.00"), maxCapped: decodeMoney("8000.00") }),
+    );
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.ledger.openingBalance).toEqual(decodeMoney("9000.00"));
+    expect(result.ok && result.ledger.maxCapped).toEqual(decodeMoney("8000.00"));
+    // Exactly the two editable columns — no month, no status, no timestamps.
+    expect(updateArgs).toEqual([{ opening_balance: "9000.00", max_capped: "8000.00" }]);
+    expect(ops).toEqual(["findById", "updateHeader"]);
+  });
+
+  test("a PAIR that moves together passes where either half against the stored other would fail", async () => {
+    // Stored: opening 7152.35 / ceiling 6415.00.
+    // Ceiling → 9000 against the STORED opening would be amber (9000 > 7152.35);
+    // opening → 10000 against the STORED ceiling is fine. As a PAIR, 6415→9000 with
+    // 7152.35→10000 is plain green (9000 ≤ 10000) — no acknowledgement needed.
+    const written = ledgerRow({ opening_balance: "10000.00", max_capped: "9000.00" });
+    const { client, ops } = makeClient({
+      findById: { data: ONGOING, error: null },
+      updateHeader: { data: written, error: null },
+    });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({
+        openingBalance: decodeMoney("10000.00"),
+        maxCapped: decodeMoney("9000.00"),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    expect(ops).toEqual(["findById", "updateHeader"]);
+  });
+
+  test("amber PAIR WITH acknowledgement: the gate lifts and the write lands", async () => {
+    const written = ledgerRow({ opening_balance: "6000.00", max_capped: "6415.00" });
+    const { client, ops } = makeClient({
+      findById: { data: ONGOING, error: null },
+      updateHeader: { data: written, error: null },
+    });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ openingBalance: NEW_AMBER }),
+      true,
+    );
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.ledger.openingBalance).toEqual(decodeMoney("6000.00"));
+    expect(ops).toEqual(["findById", "updateHeader"]);
+  });
+
+  test("a maxCapped-only edit still writes both columns in ONE update — never a half-applied header", async () => {
+    const written = ledgerRow({ max_capped: "5000.00" });
+    const { client, ops, updateArgs } = makeClient({
+      findById: { data: ONGOING, error: null },
+      updateHeader: { data: written, error: null },
+    });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ maxCapped: decodeMoney("5000.00") }),
+    );
+    expect(result.ok).toBe(true);
+    expect(updateArgs).toEqual([{ opening_balance: "7152.35", max_capped: "5000.00" }]);
+    expect(ops).toEqual(["findById", "updateHeader"]);
+  });
+
+  test("no-op fast path: BOTH amounts unchanged skips the UPDATE and returns the ledger already read", async () => {
+    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
+    // A trailing-zero variant of the SAME ceiling — compared via compareMoney,
+    // so "6415" and the stored "6415.00" are one value.
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({ maxCapped: decodeMoney("6415") }),
+    );
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.ledger.id).toBe("jan-id");
+    expect(ops).toEqual(["findById"]); // no write reached PostgREST
+  });
+
+  test("month / status / timestamps on the argument are IGNORED — only the money columns move", async () => {
+    const { client, updateArgs } = makeClient({
+      findById: { data: ONGOING, error: null },
+      updateHeader: { data: ledgerRow({ opening_balance: "8000.00" }), error: null },
+    });
+    const result = await createLedgerCommands(client).updateLedger(
+      ledgerDomain({
+        openingBalance: NEW_OK,
+        month: SEP, // a different month — immutable once opened
+        status: "settled", // never a transition on this path
+        settledAt: "2027-09-30T00:00:00.000Z",
+      }),
+    );
+    expect(result.ok).toBe(true);
+    expect(updateArgs).toEqual([{ opening_balance: "8000.00", max_capped: "6415.00" }]);
+  });
+
+  test("a DB failure on the UPDATE throws FinanceDataError (not a rejection)", async () => {
+    const { client } = makeClient({
+      findById: { data: ONGOING, error: null },
+      updateHeader: {
+        data: null,
+        error: pgError({
+          code: "23514",
+          message: 'violates check constraint "ck_balances_nonneg"',
+        }),
+      },
+    });
+    const promise = createLedgerCommands(client).updateLedger(
+      ledgerDomain({ openingBalance: NEW_OK }),
+    );
+    await expect(promise).rejects.toBeInstanceOf(FinanceDataError);
+    await expect(promise.catch((e) => (e as FinanceDataError).code)).resolves.toBe(
+      "check_violation",
+    );
+  });
+
+  test("a DB failure on the READ throws FinanceDataError before any write", async () => {
+    const { client, ops } = makeClient({
+      findById: { data: null, error: pgError({ code: "08006", message: "connection lost" }) },
+    });
+    await expect(
+      createLedgerCommands(client).updateLedger(ledgerDomain({ openingBalance: NEW_OK })),
     ).rejects.toBeInstanceOf(FinanceDataError);
     expect(ops).toEqual(["findById"]);
   });

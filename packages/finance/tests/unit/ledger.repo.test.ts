@@ -350,3 +350,51 @@ describe("updateOpeningBalance", () => {
     ).rejects.toMatchObject({ code: "check_violation" });
   });
 });
+
+describe("updateHeader", () => {
+  test("writes BOTH encoded money columns, addresses the row by its own id, and returns the header", async () => {
+    const { client, calls } = makeClient({
+      data: ledgerRow({ opening_balance: "9000.00", max_capped: "8000.00" }),
+      error: null,
+    });
+    const header = await createLedgerRepository(client).updateHeader({
+      id: "id-1",
+      month: decodeMonth("2027-01-01"),
+      openingBalance: decodeMoney("9000.00"),
+      maxCapped: decodeMoney("8000.00"),
+      status: "ongoing",
+      createdAt: "2027-01-01T08:00:00.000Z",
+      settledAt: null,
+    });
+
+    expect(argsOf(calls, "from")).toEqual(["monthly_ledger"]);
+    // Both numeric(12,2) columns are written as encoded decimal STRINGS — money
+    // never floats — and NOTHING else rides along: no month, no status, no
+    // timestamps, even though the argument carries them.
+    expect(argsOf(calls, "update")).toEqual([
+      { opening_balance: "9000.00", max_capped: "8000.00" },
+    ]);
+    expect(argsOf(calls, "eq")).toEqual(["id", "id-1"]);
+    expect(calls.some(([m]) => m === "single")).toBe(true);
+    expect(encodeMoney(header.openingBalance)).toBe("9000.00");
+    expect(encodeMoney(header.maxCapped)).toBe("8000.00");
+  });
+
+  test("maps a failure to FinanceDataError", async () => {
+    const { client } = makeClient({
+      data: null,
+      error: pgError({ code: "23514", message: 'check constraint "ck_balances_nonneg"' }),
+    });
+    await expect(
+      createLedgerRepository(client).updateHeader({
+        id: "id-1",
+        month: decodeMonth("2027-01-01"),
+        openingBalance: decodeMoney("9000.00"),
+        maxCapped: decodeMoney("8000.00"),
+        status: "ongoing",
+        createdAt: "2027-01-01T08:00:00.000Z",
+        settledAt: null,
+      }),
+    ).rejects.toMatchObject({ code: "check_violation" });
+  });
+});

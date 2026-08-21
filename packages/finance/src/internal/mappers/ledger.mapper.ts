@@ -64,6 +64,28 @@ export function newLedgerToInsertRow(input: NewLedger): TablesInsert<"monthly_le
 }
 
 /**
+ * WRITE: an edited ledger header → monthly_ledger update row. The counterpart to
+ * `openingBalanceToUpdateRow` for the BOTH-FIELDS edit: the two money columns the
+ * ledger owns and the user may change while `ongoing` (monthly-ledger.md §2).
+ *
+ * Deliberately NOT a spread of the domain object. It picks exactly the two
+ * editable columns and encodes each via encodeMoney (the `as unknown as number`
+ * cast satisfies the generated Update type, which types the numeric columns as
+ * `number`, without ever routing money through a float). Everything else on a
+ * `MonthlyLedger` is either identity (`id`), lifecycle (`status`, `settledAt`),
+ * or DB-owned (`createdAt`) — and `month` is immutable once opened — so a spread
+ * would both name columns that do not exist (`openingBalance`) and hand PostgREST
+ * a Month/Money object. Those fields are IGNORED here by design: the command
+ * addresses the row by `ledger.id` and this mapper decides what moves.
+ */
+export function toLedgerUpdateRow(ledger: MonthlyLedger): TablesUpdate<"monthly_ledger"> {
+  return {
+    opening_balance: encodeMoney(ledger.openingBalance) as unknown as number,
+    max_capped: encodeMoney(ledger.maxCapped) as unknown as number,
+  };
+}
+
+/**
  * WRITE: a new opening balance → monthly_ledger update row. The ONE write path
  * for `opening_balance`, mirroring the insert mapper's money discipline: the
  * value is encoded via encodeMoney and the `as unknown as number` cast satisfies
