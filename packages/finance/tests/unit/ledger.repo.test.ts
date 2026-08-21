@@ -318,39 +318,6 @@ describe("delete", () => {
   });
 });
 
-describe("updateOpeningBalance", () => {
-  test("writes only the encoded opening_balance, reads back, and returns the header", async () => {
-    const { client, calls } = makeClient({
-      data: ledgerRow({ opening_balance: "8000.00" }),
-      error: null,
-    });
-    const header = await createLedgerRepository(client).updateOpeningBalance(
-      "id-1",
-      decodeMoney("8000.00"),
-    );
-
-    expect(argsOf(calls, "from")).toEqual(["monthly_ledger"]);
-    // numeric(12,2) is written as the encoded decimal STRING — money never floats.
-    expect(argsOf(calls, "update")).toEqual([{ opening_balance: "8000.00" }]);
-    expect(argsOf(calls, "eq")).toEqual(["id", "id-1"]);
-    expect(calls.some(([m]) => m === "single")).toBe(true);
-    expect(encodeMoney(header.openingBalance)).toBe("8000.00");
-    // The write touches nothing else — the rest of the header is as stored.
-    expect(encodeMoney(header.maxCapped)).toBe("6415.00");
-    expect(header.status).toBe("ongoing");
-  });
-
-  test("maps a failure to FinanceDataError", async () => {
-    const { client } = makeClient({
-      data: null,
-      error: pgError({ code: "23514", message: 'check constraint "ck_opening_balance"' }),
-    });
-    await expect(
-      createLedgerRepository(client).updateOpeningBalance("id", decodeMoney("8000.00")),
-    ).rejects.toMatchObject({ code: "check_violation" });
-  });
-});
-
 describe("updateHeader", () => {
   test("writes BOTH encoded money columns, addresses the row by its own id, and returns the header", async () => {
     const { client, calls } = makeClient({

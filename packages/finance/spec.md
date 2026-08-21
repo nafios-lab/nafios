@@ -339,62 +339,43 @@ stays **internal** — the command is the public write API, the repository its
 private primitive. Full contract + verification matrix:
 [EF3.7](../../boards/finance/EF3/EF3.7.md).
 
-`updateOpeningBalance(id, value, acknowledgedOverspend?)` is the same pattern
-applied to the first **edit** on a ledger's own header. It needs none of
-`createLedger`'s atomicity machinery (one row, one column), so it is entirely a
+`updateLedger(ledger, acknowledgedOverspend?)` is the same pattern applied to the
+**edit** of a ledger's own header — `openingBalance` and `maxCapped` together,
+taking the edited `MonthlyLedger` rather than a single value. It needs none of
+`createLedger`'s atomicity machinery (one row, one UPDATE), so it is entirely a
 **gate stack**, evaluated in this precedence and performing **no write** on any
 failure:
 
 1. `ledger_not_found` — the RLS-scoped `findById` returned null (absent *or* not
    owned; the two are deliberately indistinguishable to the caller). This read
-   also supplies the `status` and stored `maxCapped` the next two gates need.
+   also supplies the **stored** `status` gate 2 needs.
 2. `ledger_not_ongoing` — EF3.2's `isLedgerHeaderEditable`. The header locks in
    `reconciling` and `settled` (monthly-ledger.md §2). Deliberately **not**
    `isLedgerMutable`, which stays true in `reconciling` and would admit the edit.
-3. `negative_amount` — `compareMoney(value, ZERO_MONEY) < 0`.
-4. `overspend_warning` / `exceeds_hard_cap` — EF3.5's `validateMaxCapped`
-   re-evaluated with the NEW opening balance against the ledger's **stored**
-   `maxCapped` (this command never touches the ceiling). The guardrail constrains
-   a *relation* between the two header fields, so lowering the opening balance
-   moves it exactly as raising the ceiling would — enforcing it on one side only
-   would leave the other as a back door. `acknowledgedOverspend` (default
-   **false**) lifts amber and amber only.
-
-An unchanged value short-circuits to `{ ok: true }` without an UPDATE (the same
-no-op fast path as `editEnvelope`'s empty patch — it also keeps a re-submit after
-the amber confirmation from logging an adjustment the user never made). A DB
-failure throws `FinanceDataError`.
-
-`updateLedger(ledger, acknowledgedOverspend?)` is that same gate stack over the
-**whole editable header** — `openingBalance` and `maxCapped` together — taking the
-edited `MonthlyLedger` instead of one value. It exists because gate 4 constrains a
-*relation* between the two fields: when an edit moves both at once, only the
-proposed **pair** is meaningful to validate (raising the ceiling *and* the opening
-balance that funds it is legal as a whole, yet either half judged against the
-stored other can reject). So gate 3 checks **both** amounts for non-negativity and
-gate 4 runs `validateMaxCapped` on the incoming pair — everything else, including
-precedence, is identical.
+3. `negative_amount` — `compareMoney(…, ZERO_MONEY) < 0` on **both** amounts.
+4. `overspend_warning` / `exceeds_hard_cap` — EF3.5's `validateMaxCapped` on the
+   incoming **pair**. The guardrail constrains a *relation* between the two header
+   fields, so only the pair a caller is actually asking for is meaningful to
+   validate: raising the ceiling *and* the opening balance that funds it is legal
+   as a whole, yet either half judged against the stored other can reject.
+   `acknowledgedOverspend` (default **false**) lifts amber and amber only.
 
 The argument is **input, not authority**: only `id` (which addresses the row) and
 the two amounts (the proposal) are read. The supplied `status` / `month` /
 `createdAt` / `settledAt` are **ignored** — gate 2 runs against the **stored**
 status, so a caller cannot send `status: 'ongoing'` to edit a settled ledger;
 `month` is immutable once opened; the timestamps are DB-owned. Both columns land
-in **one** UPDATE, so a half-applied header is never observable, and the no-op
-fast path requires **both** amounts unchanged.
+in **one** UPDATE, so a half-applied header is never observable. A no-op edit —
+**both** amounts unchanged — short-circuits to `{ ok: true }` without an UPDATE
+(the same fast path as `editEnvelope`'s empty patch; it also keeps a re-submit
+after the amber confirmation from logging an adjustment the user never made). A DB
+failure throws `FinanceDataError`.
 
 ```ts
 export function createLedgerCommands(client: FinanceClient): LedgerCommands;
 
 export interface LedgerCommands {
   createLedger(input: CreateLedgerInput): Promise<CreateLedgerResult>;
-  // Edit an existing ledger's opening balance, addressed by id. Every constraint is
-  // re-checked before the write; `acknowledgedOverspend` defaults to false.
-  updateOpeningBalance(
-    id: string,
-    value: Money,
-    acknowledgedOverspend?: boolean,
-  ): Promise<UpdateLedgerResult>;
   // Edit the whole editable header — openingBalance + maxCapped — in one UPDATE.
   // Same gates, with non-negativity on both amounts and the guardrail evaluated on
   // the incoming PAIR. Only `id` and the two amounts are read off the argument;
@@ -437,7 +418,7 @@ export type CreateLedgerResult =
     };
 
 // The shared result of an edit to an existing ledger row, addressed by id (reused
-// by every such command — `updateOpeningBalance` / `updateLedger`). On success, the header AS
+// by every such command — `updateLedger` today). On success, the header AS
 // WRITTEN (the caller replaces its copy). Narrowed to the reasons an edit can
 // return — `month_not_openable` is creation-only.
 export type UpdateLedgerResult =

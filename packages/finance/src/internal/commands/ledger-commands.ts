@@ -26,27 +26,21 @@
 // ongoing) then inserts, and compensates (reverts the park) if the insert
 // throws. The index is the hard, unconditional backstop for the invariant.
 //
-// Its second member is updateOpeningBalance — the first EDIT on a ledger's own
-// header. Same pattern, none of the atomicity: one row, one column, so the whole
-// job is the GATE STACK before the write (exists/owned → the 'ongoing'-only
-// header lock → non-negativity → the EF3.5 guardrail re-run against the stored
-// maxCapped). It too adds NO business rule: the header lock is EF3.2's
-// isLedgerHeaderEditable, the guardrail is EF3.5's validateMaxCapped. The
-// guardrail matters here because it constrains a RELATION between the two header
-// fields — moving the opening balance moves that relation exactly as moving the
-// ceiling would, so enforcing it on one side only would leave the other as a
-// back door.
-//
-// Its third member is updateLedger — the SAME gate stack over BOTH header money
-// fields at once, taking the edited MonthlyLedger rather than a single value. It
-// exists because the guardrail is that relation: when a caller moves both fields
-// in one edit, only the proposed PAIR is a meaningful thing to validate (raising
-// the ceiling AND the opening balance that funds it is legal as a whole, yet
-// either half judged against the stored other can reject). It reads `id` and the
-// two amounts and NOTHING else off its argument — the status gate runs against
-// the STORED row, so a caller cannot smuggle `status: 'ongoing'` past the lock on
-// a settled ledger — and writes both columns in ONE UPDATE, so a half-applied
-// header is never observable.
+// Its second member is updateLedger — the only EDIT on a ledger's own header,
+// covering BOTH header money fields at once and taking the edited MonthlyLedger
+// rather than a single value. Same pattern, none of the atomicity: one row, so
+// the whole job is the GATE STACK before the write (exists/owned → the
+// 'ongoing'-only header lock → non-negativity → the EF3.5 guardrail on the
+// incoming pair). It too adds NO business rule: the header lock is EF3.2's
+// isLedgerHeaderEditable, the guardrail is EF3.5's validateMaxCapped. It takes
+// both fields because the guardrail constrains a RELATION between them: when a
+// caller moves both in one edit, only the proposed PAIR is a meaningful thing to
+// validate (raising the ceiling AND the opening balance that funds it is legal as
+// a whole, yet either half judged against the stored other can reject). It reads
+// `id` and the two amounts and NOTHING else off its argument — the status gate
+// runs against the STORED row, so a caller cannot smuggle `status: 'ongoing'`
+// past the lock on a settled ledger — and writes both columns in ONE UPDATE, so a
+// half-applied header is never observable.
 
 import { compareMonths, type Month, today } from "@nafios/datetime";
 import { resolveCreationState } from "../../domain/creation-window";
@@ -133,8 +127,8 @@ export type CreateLedgerResult =
 
 /**
  * The shared result of an edit to an EXISTING ledger row, addressed by id — the
- * common shape every such command returns (`updateOpeningBalance` today; further
- * header edits reuse it rather than declaring a near-identical twin). On success
+ * common shape every such command returns (`updateLedger` today; further header
+ * edits reuse it rather than declaring a near-identical twin). On success
  * `ledger` is the header AS WRITTEN (read back by the repository), so the caller
  * replaces its copy rather than patching it locally. A rejection carries only its
  * `reason` — same stance as `CreateLedgerResult`: the UI renders copy from the
@@ -174,43 +168,10 @@ export interface LedgerCommands {
   createLedger(input: CreateLedgerInput): Promise<CreateLedgerResult>;
 
   /**
-   * Edit an existing ledger's `openingBalance`, addressed by id. Every constraint
-   * is re-checked server-side before the write, in this precedence (§4.1):
-   * existence/ownership → the `ongoing`-only header lock (EF3.2) → input
-   * non-negativity → the EF3.5 maxCapped guardrail re-evaluated against the NEW
-   * opening balance. Any failure returns `{ ok: false, reason }` and performs NO
-   * write; success returns the header as written.
-   *
-   * Why the guardrail fires on an OPENING-BALANCE edit: the guardrail is a
-   * RELATION between the two header fields (`maxCapped` vs `openingBalance`), not
-   * a property of either. Lowering the opening balance moves the same relation as
-   * raising the ceiling would — it can push a stored `maxCapped` into the amber
-   * zone (now above income) or past the hard cap (now above 2× income). Enforcing
-   * it only on the `maxCapped` side would leave this as the trivial back door
-   * around it, so the invariant is checked from whichever side moves.
-   *
-   * @param id the target ledger's uuid; a ledger the caller does not own reads as
-   *        absent under RLS → `ledger_not_found` (never a leak that it exists).
-   * @param value the new opening balance. Must be ≥ 0 (`negative_amount`).
-   * @param acknowledgedOverspend the user's explicit amber-zone acknowledgement,
-   *        the same flag `createLedgerInput` carries — "yes, I know this leaves my
-   *        ceiling above my income". Defaults to **false**, so an unacknowledged
-   *        amber edit rejects `overspend_warning` and the caller re-submits with
-   *        `true` after the confirmation sheet. It can NEVER rescue a blocked
-   *        (> 2× opening) value.
-   * @see LedgerRejectionReason for every reason the ledger command surface returns.
-   */
-  updateOpeningBalance(
-    id: string,
-    value: Money,
-    acknowledgedOverspend?: boolean,
-  ): Promise<UpdateLedgerResult>;
-
-  /**
    * Edit an existing ledger's WHOLE editable header — `openingBalance` and
    * `maxCapped` together — by handing back the ledger as the caller now holds it.
-   * The both-fields generalisation of `updateOpeningBalance`, and the command a
-   * header-edit surface uses when either money field may have moved.
+   * The command a header-edit surface uses when either money field may have
+   * moved.
    *
    * Same gate stack, same precedence (§4.1), no write on any failure:
    * existence/ownership → the `ongoing`-only header lock (EF3.2) → non-negativity
@@ -325,71 +286,9 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       return { ok: true, ledger, parkedLedgerId: ongoing.id };
     },
 
-    async updateOpeningBalance(id, value, acknowledgedOverspend = false) {
-      // ── §4.1 pre-write validation — all deterministic, all before any write ──
-
-      // (a) Target ledger. null under RLS = absent OR not owned; the two are
-      //     deliberately indistinguishable to the caller. This read is also what
-      //     supplies the stored `maxCapped` and `status` the next two gates need,
-      //     so it is a prerequisite, not just an existence probe.
-      const ledger = await repo.findById(id);
-      if (ledger === null) {
-        return { ok: false, reason: "ledger_not_found" };
-      }
-
-      // (b) Header lock (pure — EF3.2). `openingBalance` is editable ONLY while
-      //     `ongoing`; `reconciling` and `settled` lock it (monthly-ledger.md §2).
-      //     NOT `isLedgerMutable` — that one stays true in `reconciling` (envelope
-      //     amounts remain editable there) and would wrongly admit the edit.
-      if (!isLedgerHeaderEditable(ledger.status)) {
-        return { ok: false, reason: "ledger_not_ongoing" };
-      }
-
-      // (c) Non-negativity (pure), via compareMoney against ZERO_MONEY — no
-      //     raw-number math. Same stance as createLedger: reject cleanly here so
-      //     the DB ck_balances_nonneg is only ever a backstop.
-      if (compareMoney(value, ZERO_MONEY) < 0) {
-        return { ok: false, reason: "negative_amount" };
-      }
-
-      // (d) MaxCapped guardrail (pure — EF3.5), re-evaluated with the NEW opening
-      //     balance against the ledger's STORED maxCapped (the ledger owns that
-      //     value; this command never touches it). Lowering the opening balance can
-      //     push the unchanged ceiling into amber (> income → needs the
-      //     acknowledgement) or past the hard cap (> 2× income → no override), so
-      //     the same gate createLedger runs applies verbatim — one pure rule, both
-      //     write paths.
-      const validation = validateMaxCapped({
-        openingBalance: value,
-        maxCapped: ledger.maxCapped,
-        acknowledgedOverspend,
-      });
-      if (!validation.ok) {
-        return { ok: false, reason: validation.reason };
-      }
-
-      // ── The write — a single-row UPDATE, trivially atomic ──
-
-      // No-op fast-path: an unchanged value needs no UPDATE (same fast-path as
-      // editEnvelope's empty patch). It also keeps a re-submit after the amber
-      // confirmation from logging a second "adjustment" the user never made
-      // (monthly-ledger.md §2 — opening-balance adjustments are logged). Compared
-      // via compareMoney, so "7000" and "7000.00" are the same value.
-      if (compareMoney(value, ledger.openingBalance) === 0) {
-        return { ok: true, ledger };
-      }
-
-      // Touches only this ledger's own opening_balance — no status transition, no
-      // sibling row, so none of createLedger's park/compensate machinery applies.
-      // A DB failure throws FinanceDataError (EF3.6) with nothing written.
-      const updated = await repo.updateOpeningBalance(id, value);
-      return { ok: true, ledger: updated };
-    },
-
     async updateLedger(ledger, acknowledgedOverspend = false) {
       // ── §4.1 pre-write validation — the same gate stack, same precedence, as
-      //    updateOpeningBalance; only the guardrail's inputs differ (the incoming
-      //    PAIR, not one new value against the stored other).
+      //    createLedger; the guardrail runs on the incoming PAIR.
 
       // (a) Target ledger, read by the id on the supplied object. null under RLS =
       //     absent OR not owned — deliberately indistinguishable to the caller.
@@ -420,9 +319,9 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       }
 
       // (d) MaxCapped guardrail (pure — EF3.5) on the incoming PAIR — the whole
-      //     reason this command exists alongside updateOpeningBalance. The
-      //     guardrail is a RELATION between the two fields; when both move
-      //     together only the proposed pair is meaningful. Judging each side
+      //     reason this command takes both fields rather than one. The guardrail
+      //     is a RELATION between the two fields; when both move together only
+      //     the proposed pair is meaningful. Judging each side
       //     against the stored other would reject a legal edit (e.g. raising the
       //     ceiling AND the opening balance that funds it) purely from evaluation
       //     order. Identical call to createLedger's — one pure rule, every write path.
@@ -438,7 +337,7 @@ export function createLedgerCommands(client: FinanceClient): LedgerCommands {
       // ── The write — a single-row UPDATE of two columns, trivially atomic ──
 
       // No-op fast-path: NEITHER amount moved, so there is nothing to write (the
-      // same fast path as updateOpeningBalance / editEnvelope's empty patch). It
+      // same fast path as editEnvelope's empty patch). It
       // also keeps a re-submit after the amber confirmation from logging an
       // adjustment the user never made (monthly-ledger.md §2). Compared via
       // compareMoney, so "7000" and "7000.00" are the same value. A change to

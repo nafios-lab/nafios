@@ -132,21 +132,17 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   current `ongoing` ledger and inserts the new one all-or-nothing. Returns
   `CreateLedgerResult` (a `{ ok }` union whose rejection carries a reason the UI
   branches on — no guardrail payload), throws `FinanceDataError` on a DB failure.
-  `updateOpeningBalance(id, value, acknowledgedOverspend?)` edits an existing
-  ledger's opening balance: a pure **gate stack** (exists/owned → EF3.2's
-  `isLedgerHeaderEditable`, i.e. `ongoing` only → non-negativity → the EF3.5
-  guardrail re-run against the ledger's **stored** `maxCapped`) then one
-  single-column UPDATE, with a no-op fast path for an unchanged value. The
-  guardrail fires on this side too because it constrains a *relation* between the
-  two header fields — lowering the opening balance can push the unchanged ceiling
-  into amber or past the hard cap, so enforcing it only on the `maxCapped` side
-  would leave this as the back door. `updateLedger(ledger, acknowledgedOverspend?)`
-  is the same gate stack over **both** header money fields at once, taking the
-  edited `MonthlyLedger`: non-negativity on both amounts, the guardrail on the
-  incoming **pair** (only the pair is meaningful when both move — raising the
-  ceiling *and* the opening balance that funds it is legal as a whole), then ONE
-  UPDATE of the two columns. Only `id` and the two amounts are read off the
-  argument — the status gate uses the **stored** status (no smuggling
+  `updateLedger(ledger, acknowledgedOverspend?)` edits an existing ledger's
+  **whole editable header** — `openingBalance` and `maxCapped` — taking the edited
+  `MonthlyLedger`: a pure **gate stack** (exists/owned → EF3.2's
+  `isLedgerHeaderEditable`, i.e. `ongoing` only → non-negativity on both amounts →
+  the EF3.5 guardrail on the incoming **pair**) then ONE UPDATE of the two
+  columns, with a no-op fast path when **both** amounts are unchanged. It takes
+  both fields because the guardrail constrains a *relation* between them, so only
+  the pair a caller actually asks for is meaningful (raising the ceiling *and* the
+  opening balance that funds it is legal as a whole, yet either half judged
+  against the stored other can reject). Only `id` and the two amounts are read off
+  the argument — the status gate uses the **stored** status (no smuggling
   `status: 'ongoing'` past a settled ledger), `month` is immutable, timestamps are
   DB-owned. `LedgerRejectionReason` is the module-wide
   union for the **whole** ledger command surface (the mirror of
@@ -265,7 +261,7 @@ src/
       envelope.repo.ts    # createEnvelopeRepository, EnvelopeRepository, NewEnvelope/EnvelopePatch (EF3.8)
       category.repo.ts    # createCategoryRepository — count / insertMany / listForUser / listByUser (EF3.9)
     commands/
-      ledger-commands.ts     # createLedgerCommands — the ledger write surface: createLedger (EF3.7) + updateOpeningBalance
+      ledger-commands.ts     # createLedgerCommands — the ledger write surface: createLedger (EF3.7) + updateLedger
       envelope-commands.ts   # createEnvelopeCommands — manual envelope CRUD + set-status (EF3.8)
     queries/
       ledger-queries.ts      # createLedgerQueries — the ledger reads: getFinanceHomeState / getReconPendingLedgers / getLedger (EF3.13)

@@ -13,7 +13,7 @@ import {
   type ReconPendingLedger,
   summarizeHealthMargin,
 } from "../../domain";
-import { decodeMoney, encodeMoney, type Money } from "../../domain/money";
+import { decodeMoney, encodeMoney } from "../../domain/money";
 import type {
   LedgerRow,
   LedgerSummaryDTO,
@@ -64,9 +64,9 @@ export function newLedgerToInsertRow(input: NewLedger): TablesInsert<"monthly_le
 }
 
 /**
- * WRITE: an edited ledger header → monthly_ledger update row. The counterpart to
- * `openingBalanceToUpdateRow` for the BOTH-FIELDS edit: the two money columns the
- * ledger owns and the user may change while `ongoing` (monthly-ledger.md §2).
+ * WRITE: an edited ledger header → monthly_ledger update row. The ONE write path
+ * for the two money columns the ledger owns and the user may change while
+ * `ongoing` (monthly-ledger.md §2).
  *
  * Deliberately NOT a spread of the domain object. It picks exactly the two
  * editable columns and encodes each via encodeMoney (the `as unknown as number`
@@ -82,20 +82,6 @@ export function toLedgerUpdateRow(ledger: MonthlyLedger): TablesUpdate<"monthly_
   return {
     opening_balance: encodeMoney(ledger.openingBalance) as unknown as number,
     max_capped: encodeMoney(ledger.maxCapped) as unknown as number,
-  };
-}
-
-/**
- * WRITE: a new opening balance → monthly_ledger update row. The ONE write path
- * for `opening_balance`, mirroring the insert mapper's money discipline: the
- * value is encoded via encodeMoney and the `as unknown as number` cast satisfies
- * the generated Update type (which types the numeric column as `number`) without
- * ever routing money through a float. Touches NOTHING else — `month`, `status`,
- * `max_capped` and the DB-owned columns are left exactly as stored.
- */
-export function openingBalanceToUpdateRow(value: Money): TablesUpdate<"monthly_ledger"> {
-  return {
-    opening_balance: encodeMoney(value) as unknown as number,
   };
 }
 

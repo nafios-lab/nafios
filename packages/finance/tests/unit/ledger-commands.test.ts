@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, setSystemTime, test } from "bun:test";
 import { decodeMonth } from "@nafios/datetime";
 import type { PostgrestError } from "@nafios/supabase-core";
-import { decodeMoney, ZERO_MONEY } from "../../src/domain";
+import { decodeMoney } from "../../src/domain";
 import type { FinanceClient } from "../../src/internal/client";
 import { createLedgerCommands } from "../../src/internal/commands/ledger-commands";
 import { FinanceDataError } from "../../src/internal/errors";
@@ -46,10 +46,8 @@ function pgError(overrides: Partial<PostgrestError>): PostgrestError {
  * the SHAPE of the chain the command builds (the same disambiguation the repo
  * uses): `.insert()` → insert; `.update({ status })` → updateStatus (keyed by the
  * target status, so the park and the compensation revert can be configured
- * independently); `.update({ opening_balance })` → updateOpeningBalance;
- * `.update({ opening_balance, max_capped })` → updateHeader (the both-fields
- * patch — told apart by `max_capped` being present);
- * `.order()` → list; otherwise `.maybeSingle()` keyed by the filtered COLUMN —
+ * independently); `.update({ opening_balance, max_capped })` → updateHeader (a
+ * money patch rather than a status one); `.order()` → list; otherwise `.maybeSingle()` keyed by the filtered COLUMN —
  * `.eq("id", …)` → findById, `.eq("status", "ongoing")` → findOngoing. Records the
  * operation order in `ops`, the insert payloads in `insertArgs`, and the update
  * payloads in `updateArgs`.
@@ -60,7 +58,6 @@ function makeClient(config: {
   findById?: QueryResult;
   insert?: QueryResult;
   updateStatus?: { reconciling?: QueryResult; ongoing?: QueryResult };
-  updateOpeningBalance?: QueryResult;
   updateHeader?: QueryResult;
 }) {
   const ops: string[] = [];
@@ -95,14 +92,10 @@ function makeClient(config: {
           >;
           updateArgs.push(payload);
           // A status-only patch is the park / compensation revert; a money patch
-          // is an edit command — both columns → updateHeader, one → updateOpeningBalance.
+          // is the header edit.
           if (payload.status === undefined) {
-            if (payload.max_capped !== undefined) {
-              ops.push("updateHeader");
-              return resolve(config.updateHeader ?? { data: ledgerRow(), error: null });
-            }
-            ops.push("updateOpeningBalance");
-            return resolve(config.updateOpeningBalance ?? { data: ledgerRow(), error: null });
+            ops.push("updateHeader");
+            return resolve(config.updateHeader ?? { data: ledgerRow(), error: null });
           }
           const status = payload.status as LedgerRow["status"];
           ops.push(`update:${status}`);
@@ -317,15 +310,10 @@ describe("compensation on a failed insert", () => {
   });
 });
 
-// ───────────────── updateOpeningBalance — the gate stack ─────────────────
+// ───────────────── The header-edit fixtures ─────────────────
 //
-// One row, one column: no park, no compensation, nothing to make atomic. So what
-// these pin is the GATE STACK and its PRECEDENCE — every rejection must leave
-// `ops` without a write, and the guardrail must be re-evaluated against the
-// ledger's STORED maxCapped (the edit never touches the ceiling).
-//
-// The fixture ledger is the default row: opening 7152.35, maxCapped 6415.00,
-// status 'ongoing'. Against that stored ceiling the NEW opening balance lands:
+// The stored ledger is the default row: opening 7152.35, maxCapped 6415.00,
+// status 'ongoing'. Against that stored ceiling a NEW opening balance lands:
 //   8000.00 → 'ok'      (6415 ≤ 8000)
 //   6000.00 → 'amber'   (6415 > 6000, but ≤ 2×6000 = 12000)
 //   3000.00 → 'blocked' (6415 > 2×3000 = 6000) — no override
@@ -336,153 +324,11 @@ const NEW_OK = decodeMoney("8000.00");
 const NEW_AMBER = decodeMoney("6000.00");
 const NEW_BLOCKED = decodeMoney("3000.00");
 
-describe("updateOpeningBalance — pre-write rejections (no write)", () => {
-  test("rejects 'ledger_not_found' when the id is absent OR not owned (RLS null)", async () => {
-    const { client, ops } = makeClient({ findById: { data: null, error: null } });
-    const result = await createLedgerCommands(client).updateOpeningBalance("nope", NEW_OK);
-    expect(result).toEqual({ ok: false, reason: "ledger_not_found" });
-    expect(ops).toEqual(["findById"]); // read only — nothing written
-  });
-
-  test("rejects 'ledger_not_ongoing' on a reconciling ledger — the header locks even though envelopes stay editable", async () => {
-    const { client, ops } = makeClient({
-      findById: { data: ledgerRow({ status: "reconciling" }), error: null },
-    });
-    const result = await createLedgerCommands(client).updateOpeningBalance("jan-id", NEW_OK);
-    expect(result).toEqual({ ok: false, reason: "ledger_not_ongoing" });
-    expect(ops).toEqual(["findById"]);
-  });
-
-  test("rejects 'ledger_not_ongoing' on a settled ledger", async () => {
-    const { client, ops } = makeClient({
-      findById: {
-        data: ledgerRow({ status: "settled", settled_at: "2027-02-01T00:00:00.000Z" }),
-        error: null,
-      },
-    });
-    const result = await createLedgerCommands(client).updateOpeningBalance("jan-id", NEW_OK);
-    expect(result).toEqual({ ok: false, reason: "ledger_not_ongoing" });
-    expect(ops).toEqual(["findById"]);
-  });
-
-  test("rejects 'negative_amount' before the guardrail ever runs", async () => {
-    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
-    const result = await createLedgerCommands(client).updateOpeningBalance("jan-id", NEGATIVE);
-    expect(result).toEqual({ ok: false, reason: "negative_amount" });
-    expect(ops).toEqual(["findById"]);
-  });
-
-  test("rejects 'overspend_warning' when the new opening drops BELOW the stored maxCapped and the amber zone is unacknowledged", async () => {
-    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
-    const result = await createLedgerCommands(client).updateOpeningBalance("jan-id", NEW_AMBER);
-    expect(result).toEqual({ ok: false, reason: "overspend_warning" });
-    expect(ops).toEqual(["findById"]);
-  });
-
-  test("rejects 'exceeds_hard_cap' when the new opening puts the stored maxCapped above 2× — acknowledgement does NOT rescue it", async () => {
-    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
-    const result = await createLedgerCommands(client).updateOpeningBalance(
-      "jan-id",
-      NEW_BLOCKED,
-      true, // acknowledged — irrelevant in the blocked zone
-    );
-    expect(result).toEqual({ ok: false, reason: "exceeds_hard_cap" });
-    expect(ops).toEqual(["findById"]);
-  });
-
-  test("the status gate outranks the value checks — a locked ledger rejects 'ledger_not_ongoing', not 'negative_amount'", async () => {
-    const { client } = makeClient({
-      findById: { data: ledgerRow({ status: "settled" }), error: null },
-    });
-    const result = await createLedgerCommands(client).updateOpeningBalance("jan-id", NEGATIVE);
-    expect(result).toEqual({ ok: false, reason: "ledger_not_ongoing" });
-  });
-
-  test("zero is a valid Money but still fails the guardrail while a non-zero ceiling stands (hardCap 2×0 = 0)", async () => {
-    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
-    const result = await createLedgerCommands(client).updateOpeningBalance(
-      "jan-id",
-      ZERO_MONEY,
-      true,
-    );
-    expect(result).toEqual({ ok: false, reason: "exceeds_hard_cap" });
-    expect(ops).toEqual(["findById"]);
-  });
-});
-
-describe("updateOpeningBalance — the write", () => {
-  test("green zone: writes the ENCODED value to opening_balance only, and returns the header as written", async () => {
-    const written = ledgerRow({ id: "jan-id", opening_balance: "8000.00" });
-    const { client, ops, updateArgs } = makeClient({
-      findById: { data: ONGOING, error: null },
-      updateOpeningBalance: { data: written, error: null },
-    });
-    const result = await createLedgerCommands(client).updateOpeningBalance("jan-id", NEW_OK);
-    expect(result.ok).toBe(true);
-    expect(result.ok && result.ledger.openingBalance).toEqual(decodeMoney("8000.00"));
-    // Only the one column moves — no status transition rides along.
-    expect(updateArgs).toEqual([{ opening_balance: "8000.00" }]);
-    expect(ops).toEqual(["findById", "updateOpeningBalance"]);
-  });
-
-  test("amber zone WITH acknowledgement: the gate lifts and the write lands", async () => {
-    const written = ledgerRow({ id: "jan-id", opening_balance: "6000.00" });
-    const { client, ops } = makeClient({
-      findById: { data: ONGOING, error: null },
-      updateOpeningBalance: { data: written, error: null },
-    });
-    const result = await createLedgerCommands(client).updateOpeningBalance(
-      "jan-id",
-      NEW_AMBER,
-      true,
-    );
-    expect(result.ok).toBe(true);
-    expect(result.ok && result.ledger.openingBalance).toEqual(decodeMoney("6000.00"));
-    expect(ops).toEqual(["findById", "updateOpeningBalance"]);
-  });
-
-  test("no-op fast path: an unchanged value skips the UPDATE and returns the ledger already read", async () => {
-    const { client, ops } = makeClient({ findById: { data: ONGOING, error: null } });
-    const result = await createLedgerCommands(client).updateOpeningBalance("jan-id", OPENING);
-    expect(result.ok).toBe(true);
-    expect(result.ok && result.ledger.id).toBe("jan-id");
-    expect(ops).toEqual(["findById"]); // no write reached PostgREST
-  });
-
-  test("a DB failure on the UPDATE throws FinanceDataError (not a rejection)", async () => {
-    const { client } = makeClient({
-      findById: { data: ONGOING, error: null },
-      updateOpeningBalance: {
-        data: null,
-        error: pgError({
-          code: "23514",
-          message: 'violates check constraint "ck_balances_nonneg"',
-        }),
-      },
-    });
-    const promise = createLedgerCommands(client).updateOpeningBalance("jan-id", NEW_OK);
-    await expect(promise).rejects.toBeInstanceOf(FinanceDataError);
-    await expect(promise.catch((e) => (e as FinanceDataError).code)).resolves.toBe(
-      "check_violation",
-    );
-  });
-
-  test("a DB failure on the READ throws FinanceDataError before any write", async () => {
-    const { client, ops } = makeClient({
-      findById: { data: null, error: pgError({ code: "08006", message: "connection lost" }) },
-    });
-    await expect(
-      createLedgerCommands(client).updateOpeningBalance("jan-id", NEW_OK),
-    ).rejects.toBeInstanceOf(FinanceDataError);
-    expect(ops).toEqual(["findById"]);
-  });
-});
-
 // ─────────────────── updateLedger — the both-fields gate stack ───────────────────
 //
-// The same gate stack as updateOpeningBalance, over BOTH money fields at once. So
-// what these pin, beyond the shared precedence, is what is SPECIFIC to taking a
-// whole MonthlyLedger as input:
+// One row, no park, no compensation — nothing to make atomic. So what these pin
+// is the GATE STACK, its PRECEDENCE (every rejection must leave `ops` without a
+// write), and what is SPECIFIC to taking a whole MonthlyLedger as input:
 //   • the guardrail runs on the incoming PAIR — an edit that moves both fields is
 //     legal as a whole even where either half against the stored other would fail;
 //   • the status gate runs against the STORED row, never the caller's `status`;

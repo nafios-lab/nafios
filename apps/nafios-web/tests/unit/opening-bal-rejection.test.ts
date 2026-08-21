@@ -6,7 +6,7 @@ import {
   STALE_ROW_REASONS,
 } from "../../src/features/finance/lib/openin-bal-rejection.ts";
 
-// The COPY TABLE for `updateOpeningBalance`'s rejections, and the routing decision
+// The COPY TABLE for `updateLedger`'s rejections, and the routing decision
 // that goes with each one: toast, or dialog. Both halves are worth pinning because
 // both are silent when wrong — a missing reason renders an empty toast, and a
 // reason mis-sorted into `STALE_ROW_REASONS` either refetches for nothing or,
