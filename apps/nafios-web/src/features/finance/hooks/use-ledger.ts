@@ -1,7 +1,15 @@
 import type { Month } from "@nafios/datetime";
 import { createLedgerQueries, type GetLedgerQueryResp } from "@nafios/finance";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { getFinanceClient } from "../lib/finance-client";
+
+export function ledgerQueryOptions(month: Month) {
+  return queryOptions<GetLedgerQueryResp>({
+    queryKey: ["finance", "ledger", month],
+    queryFn: () => createLedgerQueries(getFinanceClient()).getLedger(month),
+    staleTime: Infinity,
+  });
+}
 
 /**
  * The single-ledger read behind the `/finance/ledger/$month` route, client-side
@@ -26,9 +34,5 @@ import { getFinanceClient } from "../lib/finance-client";
  * @returns `useQuery()` from tanstack query over `GetLedgerQueryResp`.
  */
 export function useLedger(month: Month) {
-  return useQuery<GetLedgerQueryResp>({
-    queryKey: ["finance", "ledger", month],
-    queryFn: () => createLedgerQueries(getFinanceClient()).getLedger(month),
-    staleTime: Infinity,
-  });
+  return useQuery<GetLedgerQueryResp>(ledgerQueryOptions(month));
 }

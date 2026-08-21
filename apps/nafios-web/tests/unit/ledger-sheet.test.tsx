@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { monthOf } from "@nafios/datetime";
-import { FinanceDataError, type GetLedgerQueryResp } from "@nafios/finance";
+import { FinanceDataError, type GetLedgerQueryResp, moneyFromCents } from "@nafios/finance";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { LedgerSheetProvider } from "../../src/features/finance/state/ledger-sheet/ledger-sheet-provider.tsx";
 import { makeLedger } from "../ledger-fixtures.ts";
@@ -16,7 +17,7 @@ import { makeLedger } from "../ledger-fixtures.ts";
 // renders against the real `toast`.
 const HOOK_PATH = "../../src/features/finance/hooks/use-ledger";
 const SONNER_PATH = "@nafios/ui/components/ui/sonner";
-const realUseLedger = (await import(HOOK_PATH)).useLedger;
+const realLedgerHooks = { ...(await import(HOOK_PATH)) };
 const realSonner = { ...(await import(SONNER_PATH)) };
 
 type ToastOptions = {
@@ -39,7 +40,10 @@ type FakeQuery = {
 let query: FakeQuery;
 let refetch: ReturnType<typeof mock>;
 
-mock.module(HOOK_PATH, () => ({ useLedger: () => query }));
+// Only `useLedger` is stubbed: `ledgerQueryOptions` lives in the same module and
+// the metric strip's write hook imports it, so replacing the whole module would
+// hand that hook an `undefined`.
+mock.module(HOOK_PATH, () => ({ ...realLedgerHooks, useLedger: () => query }));
 mock.module(SONNER_PATH, () => ({
   ...realSonner,
   toast: { ...realSonner.toast, error: toastError },
@@ -49,18 +53,24 @@ mock.module(SONNER_PATH, () => ({
 const { LedgerSheet } = await import("../../src/features/finance/components/ledger/index.tsx");
 
 afterAll(() => {
-  mock.module(HOOK_PATH, () => ({ useLedger: realUseLedger }));
+  mock.module(HOOK_PATH, () => realLedgerHooks);
   mock.module(SONNER_PATH, () => realSonner);
 });
 
 const JULY = monthOf("2026-07-01");
 
-/** Render the sheet inside its client-state boundary, the way the route does. */
+/** Render the sheet inside its client-state boundary, the way the route does.
+ *  `useLedger` is stubbed out, but the summary strip's opening-balance card now
+ *  owns a mutation of its own, so the tree still needs a real QueryClient — the
+ *  route gets it from the router's Wrap. */
 function renderSheet(month = JULY) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <LedgerSheetProvider month={month}>
-      <LedgerSheet ledgerMonth={month} />
-    </LedgerSheetProvider>,
+    <QueryClientProvider client={queryClient}>
+      <LedgerSheetProvider month={month}>
+        <LedgerSheet ledgerMonth={month} />
+      </LedgerSheetProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -225,6 +235,66 @@ describe("LedgerSheet — composition off one session", () => {
 
     expect(container.querySelector(".grid-cols-5")?.children).toHaveLength(0);
     expect(screen.queryByText("OPENING BAL")).toBeNull();
+  });
+
+  test("seeds the session ONCE — a later read cannot clobber an in-flight edit", async () => {
+    // The seed is guarded by a ref, not by a dependency comparison. That guard is
+    // what makes the session authoritative: a background refetch (or a re-seed
+    // after any write) must not reach in and reset the working copy the user is
+    // editing. Proven by handing the mounted sheet a DIFFERENT ledger and finding
+    // the strip unmoved — every child reads the session, so nothing else could.
+    query = {
+      isPending: false,
+      isError: false,
+      error: null,
+      data: { ledger: makeLedger() },
+      refetch,
+    };
+    const { rerender } = renderSheet();
+    expect(await screen.findByText("$7,152.35")).toBeTruthy();
+
+    query = {
+      isPending: false,
+      isError: false,
+      error: null,
+      data: { ledger: makeLedger({ openingBalance: moneyFromCents(900000) }) },
+      refetch,
+    };
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <LedgerSheetProvider month={JULY}>
+          <LedgerSheet ledgerMonth={JULY} />
+        </LedgerSheetProvider>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText("$7,152.35")).toBeTruthy());
+    expect(screen.queryByText("$9,000.00")).toBeNull();
+  });
+
+  test("the seed still lands on the FIRST read to resolve, after a pending render", async () => {
+    // The ref must not be tripped by the pending pass — the guard is "already
+    // seeded", not "already rendered".
+    query = { isPending: true, refetch };
+    const { rerender } = renderSheet();
+    expect(screen.queryByText("OPENING BAL")).toBeNull();
+
+    query = {
+      isPending: false,
+      isError: false,
+      error: null,
+      data: { ledger: makeLedger() },
+      refetch,
+    };
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <LedgerSheetProvider month={JULY}>
+          <LedgerSheet ledgerMonth={JULY} />
+        </LedgerSheetProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("$7,152.35")).toBeTruthy();
   });
 
   test("pending → no summary strip; the skeleton owns that space instead", () => {

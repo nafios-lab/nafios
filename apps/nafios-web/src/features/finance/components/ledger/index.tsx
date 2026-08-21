@@ -1,7 +1,7 @@
 import { formatMonthLong, type Month } from "@nafios/datetime";
 import { toast } from "@nafios/ui/components/ui/sonner";
 import { useSetAtom } from "jotai";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLedger } from "../../hooks/use-ledger";
 import { _startLedgerSession } from "../../state/ledger-sheet/ledger-sheet.atoms";
 import { LedgerHeaderBar } from "./ledger-header-bar";
@@ -13,14 +13,15 @@ interface LedgerSheetProps {
   ledgerMonth: Month;
 }
 export function LedgerSheet({ ledgerMonth }: LedgerSheetProps) {
+  const seeded = useRef(false);
   const { isPending, data, isError, error, refetch } = useLedger(ledgerMonth);
 
   const startLedgerSession = useSetAtom(_startLedgerSession);
 
   useEffect(() => {
-    if (!isPending && data?.ledger) {
-      startLedgerSession(data.ledger);
-    }
+    if (seeded.current || isPending || !data?.ledger) return;
+    seeded.current = true;
+    startLedgerSession(data.ledger);
   }, [isPending, data?.ledger, startLedgerSession]);
 
   const TO_SHOW_ERROR = Boolean(isError && error !== null);

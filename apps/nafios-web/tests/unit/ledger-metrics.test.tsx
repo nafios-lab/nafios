@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { type Money, moneyFromCents, toCents } from "@nafios/finance";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createStore, Provider } from "jotai";
 import type { ReactNode } from "react";
@@ -38,12 +39,25 @@ function strip(container: HTMLElement) {
  * Render the strip against a session store, the way `LedgerSheetProvider` scopes
  * it in the app. The store is returned so a test can assert what an edit WROTE
  * BACK, not merely what got re-rendered.
+ *
+ * The QueryClient is here because the opening-balance card owns its own WRITE now
+ * (`useOptimisticOpeningBal`): a mutation hook needs a client even on the paths
+ * that never mutate. No `_ledgerInSession` is seeded, which is deliberate — with
+ * no ledger to write against, `commit` and `cancelUpdate` both short-circuit and
+ * nothing here reaches the network seam. That keeps this suite about the card's
+ * DISPLAY and edit-mode mechanics; everything the card does once a ledger IS in
+ * session — committing, reverting on blur, the acknowledgement dialog — lives in
+ * metric-opening-balance.test.tsx, and the hook itself in
+ * use-optimistic-opening-bal.test.tsx.
  */
 function renderStrip(openingBalance: Money | null = moneyFromCents(715235)) {
   const store = createStore();
   store.set(_metrics_openingBalance, openingBalance);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <Provider store={store}>{children}</Provider>
+    <QueryClientProvider client={queryClient}>
+      <Provider store={store}>{children}</Provider>
+    </QueryClientProvider>
   );
   return { store, ...render(<LedgerMetrics />, { wrapper }) };
 }
@@ -166,6 +180,9 @@ describe("LedgerMetrics — editing the opening balance", () => {
   });
 
   test("the tick closes the field and shows the edited figure", () => {
+    // Unseeded, so nothing reverts: what this pins is the affordance swapping back,
+    // not a commit. `fireEvent.click` also does not blur the field first, which a
+    // real pointer would — see metric-opening-balance.test.tsx for the seeded blur.
     renderStrip();
 
     fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
@@ -179,6 +196,8 @@ describe("LedgerMetrics — editing the opening balance", () => {
   });
 
   test("Enter closes the field — the keyboard path out, not just the tick", () => {
+    // Enter is also the COMMIT, which needs a ledger in session; with none, this is
+    // the close alone. The commit is pinned in metric-opening-balance.test.tsx.
     renderStrip();
 
     fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));
@@ -201,9 +220,11 @@ describe("LedgerMetrics — editing the opening balance", () => {
     expect(screen.getByRole("textbox")).toBeTruthy();
   });
 
-  test("blurring closes the field, keeping what was typed", () => {
-    // Clicking away is a commit, not a cancel — the change already reached the
-    // session as the user typed, so dropping it on blur would contradict itself.
+  test("blurring closes the field; with no ledger there is nothing to revert to", () => {
+    // Blur is a CANCEL now: it calls `cancelUpdate`, which restores the persisted
+    // figure. With no ledger in session there is no persisted figure, so the typed
+    // amount is what stays — the deliberate no-op branch of that revert. The revert
+    // proper is pinned in metric-opening-balance.test.tsx.
     renderStrip();
 
     fireEvent.click(screen.getByRole("button", { name: "edit-OPENING BAL" }));

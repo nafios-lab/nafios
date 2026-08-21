@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
+    "test:failure-only": "bun test --only-failures --dots",
     "test:coverage": "bun test --coverage"
   },
   "dependencies": {

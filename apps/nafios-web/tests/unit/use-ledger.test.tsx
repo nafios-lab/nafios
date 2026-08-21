@@ -48,7 +48,9 @@ const fakeClient = fakeBrowserClient();
 mock.module(CLIENT_PATH, () => ({ getFinanceClient: () => fakeClient }));
 
 // Imported AFTER the mock is registered so the hook's queryFn reaches the stub.
-const { useLedger } = await import("../../src/features/finance/hooks/use-ledger");
+const { useLedger, ledgerQueryOptions } = await import(
+  "../../src/features/finance/hooks/use-ledger"
+);
 
 afterAll(() => {
   mock.module(CLIENT_PATH, () => realFinanceClientModule);
@@ -146,5 +148,44 @@ describe("useLedger", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error).toBeInstanceOf(FinanceDataError);
+  });
+});
+
+describe("ledgerQueryOptions", () => {
+  // Extracted from the hook so a NON-COMPONENT caller can reach the same read:
+  // `useOptimisticOpeningBal` spreads these into `fetchQuery` to re-seed the
+  // session after a stale-row rejection. The two callers must agree on the key —
+  // a divergence would give the imperative refetch its own private cache entry
+  // and the sheet would keep showing the row that just failed.
+
+  test("keys by month, so the hook and an imperative fetch share one cache entry", () => {
+    const month = monthOf("2026-07-01");
+
+    expect([...ledgerQueryOptions(month).queryKey]).toEqual(["finance", "ledger", month]);
+  });
+
+  test("keys per month — two months never collide", () => {
+    expect([...ledgerQueryOptions(monthOf("2026-07-01")).queryKey]).not.toEqual([
+      ...ledgerQueryOptions(monthOf("2026-08-01")).queryKey,
+    ]);
+  });
+
+  test("never goes stale on its own — the writes are what refresh it", () => {
+    // `staleTime: Infinity` is the read's policy: a successful edit writes the new
+    // header straight into this key, so background refetching would only ever
+    // re-fetch what we already know. It is also exactly why the stale-row path has
+    // to override it with `staleTime: 0`.
+    expect(ledgerQueryOptions(monthOf("2026-07-01")).staleTime).toBe(Infinity);
+  });
+
+  test("its queryFn performs the same month-filtered read the hook does", async () => {
+    nextResult = { data: ledgerRow("2026-09-01"), error: null };
+    const options = ledgerQueryOptions(monthOf("2026-09-01"));
+
+    // biome-ignore lint/style/noNonNullAssertion: queryOptions always carries one
+    const resp = await (options.queryFn as () => Promise<{ ledger: unknown }>)!();
+
+    expect(filters).toContainEqual(["month", "2026-09-01"]);
+    expect((resp.ledger as { id: string }).id).toBe("id-2026-09-01");
   });
 });
