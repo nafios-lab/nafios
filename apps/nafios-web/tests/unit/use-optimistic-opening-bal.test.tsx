@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
-import type { Money, UpdateLedgerResult } from "@nafios/finance";
+import type { Money, MonthlyLedger, UpdateLedgerResult } from "@nafios/finance";
 import * as finance from "@nafios/finance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
@@ -43,11 +43,24 @@ let answer: (
   value: Money,
   ack?: boolean,
 ) => Promise<UpdateLedgerResult> | UpdateLedgerResult;
-let calls: Array<{ id: string; value: Money; ack: boolean | undefined }>;
+/** The command now takes the whole edited ledger, so the recorded call keeps
+ *  `maxCapped` too — the hook must forward the session row untouched apart from
+ *  the balance it is editing. */
+let calls: Array<{
+  id: string;
+  value: Money;
+  maxCapped: Money;
+  ack: boolean | undefined;
+}>;
 
-const updateOpeningBalance = (id: string, value: Money, ack?: boolean) => {
-  calls.push({ id, value, ack });
-  return Promise.resolve(answer(id, value, ack));
+const updateLedger = (ledger: MonthlyLedger, ack?: boolean) => {
+  calls.push({
+    id: ledger.id,
+    value: ledger.openingBalance,
+    maxCapped: ledger.maxCapped,
+    ack,
+  });
+  return Promise.resolve(answer(ledger.id, ledger.openingBalance, ack));
 };
 
 mock.module(CLIENT_PATH, () => ({ getFinanceClient: () => ({}) }));
@@ -57,7 +70,7 @@ mock.module(SONNER_PATH, () => ({
 }));
 mock.module("@nafios/finance", () => ({
   ...finance,
-  createLedgerCommands: () => ({ updateOpeningBalance }),
+  createLedgerCommands: () => ({ updateLedger }),
 }));
 
 // Imported AFTER the mocks are registered so the hook binds to the stubs.
@@ -144,6 +157,9 @@ describe("useOptimisticOpeningBal — the optimistic paint", () => {
     expect(calls[0]?.id).toBe("led_july_2026");
     expect(cents(calls[0]?.value ?? null)).toBe(123456);
     expect(calls[0]?.ack).toBe(false);
+    // The rest of the session row rides along untouched — `updateLedger` judges
+    // the PAIR, so a forwarded-but-stale ceiling would change the verdict.
+    expect(cents(calls[0]?.maxCapped ?? null)).toBe(toCents(makeLedger().maxCapped));
   });
 
   test("no ledger in session → the mutation faults instead of writing blind", async () => {

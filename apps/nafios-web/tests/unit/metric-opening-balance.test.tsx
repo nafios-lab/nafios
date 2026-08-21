@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import type { Money, UpdateLedgerResult } from "@nafios/finance";
+import type { Money, MonthlyLedger, UpdateLedgerResult } from "@nafios/finance";
 import * as finance from "@nafios/finance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -45,9 +45,9 @@ mock.module(SONNER_PATH, () => ({
 mock.module("@nafios/finance", () => ({
   ...finance,
   createLedgerCommands: () => ({
-    updateOpeningBalance: (_id: string, value: Money, ack?: boolean) => {
-      calls.push({ value, ack });
-      return Promise.resolve(answer(value, ack));
+    updateLedger: (ledger: MonthlyLedger, ack?: boolean) => {
+      calls.push({ value: ledger.openingBalance, ack });
+      return Promise.resolve(answer(ledger.openingBalance, ack));
     },
   }),
 }));

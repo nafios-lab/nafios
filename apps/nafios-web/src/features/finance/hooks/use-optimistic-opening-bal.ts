@@ -111,7 +111,10 @@ export function useOptimisticOpeningBal() {
     scope: { id: `ledger-opening-bal:${ledger?.id}` },
     mutationFn: ({ value, ack }) => {
       if (!ledger) throw new Error("no ledger in session");
-      return createLedgerCommands(getFinanceClient()).updateOpeningBalance(ledger?.id, value, ack);
+      return createLedgerCommands(getFinanceClient()).updateLedger(
+        { ...ledger, openingBalance: value },
+        ack,
+      );
     },
     onMutate: ({ value }) => {
       const persisted = store.get(_ledgerInSession);
