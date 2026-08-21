@@ -121,16 +121,19 @@ export type CreateLedgerResult =
     };
 
 /**
- * The result of an opening-balance edit. On success `ledger` is the header AS
- * WRITTEN (read back by the repository), so the caller replaces its copy rather
- * than patching it locally. A rejection carries only its `reason` — same stance
- * as `CreateLedgerResult`: the UI renders copy from the reason alone.
+ * The shared result of an edit to an EXISTING ledger row, addressed by id — the
+ * common shape every such command returns (`updateOpeningBalance` today; further
+ * header edits reuse it rather than declaring a near-identical twin). On success
+ * `ledger` is the header AS WRITTEN (read back by the repository), so the caller
+ * replaces its copy rather than patching it locally. A rejection carries only its
+ * `reason` — same stance as `CreateLedgerResult`: the UI renders copy from the
+ * reason alone.
  */
-export type UpdateOpeningBalanceResult =
+export type UpdateLedgerResult =
   | { readonly ok: true; readonly ledger: MonthlyLedger }
   | {
       readonly ok: false;
-      /** Narrowed to the reasons this command can return — the module-wide
+      /** Narrowed to the reasons an edit path can return — the module-wide
        *  `LedgerRejectionReason` is wider (`month_not_openable` is creation-only:
        *  an edit never chooses a month, it addresses an existing ledger by id). */
       readonly reason:
@@ -190,7 +193,7 @@ export interface LedgerCommands {
     id: string,
     value: Money,
     acknowledgedOverspend?: boolean,
-  ): Promise<UpdateOpeningBalanceResult>;
+  ): Promise<UpdateLedgerResult>;
 }
 
 /**

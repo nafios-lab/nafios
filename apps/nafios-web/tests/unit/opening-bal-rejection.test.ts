@@ -17,7 +17,7 @@ import {
 // the reverse — copy left behind for a reason that no longer exists — so the key
 // set is asserted against the literal list below.
 
-/** Every blocked reason the command can return, per `UpdateOpeningBalanceResult`.
+/** Every blocked reason the command can return, per `UpdateLedgerResult`.
  *  `overspend_warning` is absent on purpose: it is the one with a decision
  *  attached, so it drives the ConfirmDialog instead of a toast. */
 const BLOCKED: readonly BlockedOpeningBalReason[] = [

@@ -144,7 +144,7 @@ All public exports live in `src/index.ts` (the barrel). Consumers import
   union for the **whole** ledger command surface (the mirror of
   `EnvelopeRejectionReason`); each `*Result` narrows to the subset its own command
   can return. Types: `LedgerCommands`, `CreateLedgerInput`, `CreateLedgerResult`,
-  `UpdateOpeningBalanceResult`, `LedgerRejectionReason`.
+  `UpdateLedgerResult`, `LedgerRejectionReason`.
 
 - `createEnvelopeCommands(client)` — the app-facing **write surface** for manual
   envelopes (EF3.8): `createEnvelope` / `editEnvelope` / `setEnvelopeStatus` /

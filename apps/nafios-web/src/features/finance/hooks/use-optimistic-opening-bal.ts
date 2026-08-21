@@ -2,7 +2,7 @@ import {
   createLedgerCommands,
   type GetLedgerQueryResp,
   type Money,
-  type UpdateOpeningBalanceResult,
+  type UpdateLedgerResult,
 } from "@nafios/finance";
 import { toast } from "@nafios/ui/components/ui/sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -103,7 +103,7 @@ export function useOptimisticOpeningBal() {
   );
 
   const mutation = useMutation<
-    UpdateOpeningBalanceResult,
+    UpdateLedgerResult,
     Error,
     { value: Money; ack: boolean },
     UpdateOpeningBalContext

@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import type { Money, UpdateOpeningBalanceResult } from "@nafios/finance";
+import type { Money, UpdateLedgerResult } from "@nafios/finance";
 import * as finance from "@nafios/finance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -34,7 +34,7 @@ const realSonner = { ...(await import(SONNER_PATH)) };
 type ToastOptions = { id?: string; description?: string; closeButton?: boolean; duration?: number };
 const toastError = mock((_message: string, _options?: ToastOptions) => "toast-1");
 
-let answer: (value: Money, ack?: boolean) => UpdateOpeningBalanceResult;
+let answer: (value: Money, ack?: boolean) => UpdateLedgerResult;
 let calls: Array<{ value: Money; ack: boolean | undefined }>;
 
 mock.module(CLIENT_PATH, () => ({ getFinanceClient: () => ({}) }));

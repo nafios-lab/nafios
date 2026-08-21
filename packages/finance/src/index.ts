@@ -41,7 +41,7 @@ export {
   createLedgerCommands,
   type LedgerCommands,
   type LedgerRejectionReason,
-  type UpdateOpeningBalanceResult,
+  type UpdateLedgerResult,
 } from "./internal/commands/ledger-commands";
 // Data-layer error surface (EF3.6). The app/UI catches FinanceDataError and
 // branches on its `code` (e.g. "this month already has a ledger"). The

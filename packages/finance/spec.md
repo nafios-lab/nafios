@@ -376,7 +376,7 @@ export interface LedgerCommands {
     id: string,
     value: Money,
     acknowledgedOverspend?: boolean,
-  ): Promise<UpdateOpeningBalanceResult>;
+  ): Promise<UpdateLedgerResult>;
 }
 
 // Manual creation inputs (no config prefill in EF3; leadDays is fixed at 7).
@@ -413,9 +413,11 @@ export type CreateLedgerResult =
         | "exceeds_hard_cap";
     };
 
-// On success, the header AS WRITTEN (the caller replaces its copy). Narrowed to the
-// reasons an edit can return — `month_not_openable` is creation-only.
-export type UpdateOpeningBalanceResult =
+// The shared result of an edit to an existing ledger row, addressed by id (reused
+// by every such command — `updateOpeningBalance` today). On success, the header AS
+// WRITTEN (the caller replaces its copy). Narrowed to the reasons an edit can
+// return — `month_not_openable` is creation-only.
+export type UpdateLedgerResult =
   | { readonly ok: true; readonly ledger: MonthlyLedger }
   | {
       readonly ok: false;

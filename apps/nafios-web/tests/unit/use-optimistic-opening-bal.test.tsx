@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
-import type { Money, UpdateOpeningBalanceResult } from "@nafios/finance";
+import type { Money, UpdateLedgerResult } from "@nafios/finance";
 import * as finance from "@nafios/finance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
@@ -42,7 +42,7 @@ let answer: (
   id: string,
   value: Money,
   ack?: boolean,
-) => Promise<UpdateOpeningBalanceResult> | UpdateOpeningBalanceResult;
+) => Promise<UpdateLedgerResult> | UpdateLedgerResult;
 let calls: Array<{ id: string; value: Money; ack: boolean | undefined }>;
 
 const updateOpeningBalance = (id: string, value: Money, ack?: boolean) => {
@@ -120,8 +120,8 @@ describe("useOptimisticOpeningBal — the optimistic paint", () => {
   test("paints the new amount before the command answers", async () => {
     // `onMutate` runs synchronously inside `mutate`, so the figure moves in the
     // same tick the user committed — that IS the optimistic update.
-    let deferred: (r: UpdateOpeningBalanceResult) => void = () => {};
-    answer = () => new Promise<UpdateOpeningBalanceResult>((resolve) => (deferred = resolve));
+    let deferred: (r: UpdateLedgerResult) => void = () => {};
+    answer = () => new Promise<UpdateLedgerResult>((resolve) => (deferred = resolve));
     const { result, store } = renderUpdater();
 
     act(() => result.current.mutate({ value: TYPED, ack: false }));

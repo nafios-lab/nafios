@@ -1,4 +1,4 @@
-import type { UpdateOpeningBalanceResult } from "@nafios/finance";
+import type { UpdateLedgerResult } from "@nafios/finance";
 
 /**
  * Every reason THIS command can return. Derived from the command's own result,
@@ -6,7 +6,7 @@ import type { UpdateOpeningBalanceResult } from "@nafios/finance";
  * added for a future
  * Ledger command must not force copy here. Same stance as create-ledger-form
  */
-export type OpeningBalRejection = Extract<UpdateOpeningBalanceResult, { ok: false }>["reason"];
+export type OpeningBalRejection = Extract<UpdateLedgerResult, { ok: false }>["reason"];
 
 /**
  * The reasons that resolve as a TOAST.
