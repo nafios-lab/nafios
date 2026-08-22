@@ -32,11 +32,11 @@ import "../src/features/onboarding/lib/onboarding-data.ts";
 // Finance lib
 import "../src/features/finance/lib/finance-client.ts";
 import "../src/features/finance/lib/ledger-crumb-label.ts";
+// The ledger-header rejection copy table. Typed as an exhaustive `Record`, so it
+// is only transitively imported by the hook — pinned here so its own suite can
+// never be deleted without the gate noticing.
+import "../src/features/finance/lib/ledger-header-update-rejection.ts";
 import "../src/features/finance/lib/local-today-iso.ts";
-// The opening-balance rejection copy table. Typed as an exhaustive `Record`, so
-// it is only transitively imported by the hook — pinned here so its own suite
-// can never be deleted without the gate noticing.
-import "../src/features/finance/lib/openin-bal-rejection.ts";
 // Onboarding context
 import "../src/features/onboarding/context/onboarding-wizard-provider.tsx";
 // Finance client state (ADR-0030) — atoms + the store boundary
@@ -50,7 +50,7 @@ import "../src/features/onboarding/hooks/use-complete-onboarding.ts";
 import "../src/features/onboarding/hooks/use-onboarding-profile.ts";
 import "../src/features/finance/hooks/use-finance-home-state.ts";
 import "../src/features/finance/hooks/use-ledger.ts";
-import "../src/features/finance/hooks/use-optimistic-opening-bal.ts";
+import "../src/features/finance/hooks/use-update-ledger-header.tsx";
 // Components
 import "../src/features/auth/components/login-form.tsx";
 import "../src/features/auth/components/sign-out-button.tsx";
@@ -74,6 +74,7 @@ import "../src/features/finance/components/ledger/ledger-status-alert.tsx";
 // the strip itself, not a barrel — the `**/index.ts` ignore pattern does not
 // cover a .tsx, so it is in scope and pinned alongside the card it composes.
 import "../src/features/finance/components/ledger/metrics/index.tsx";
+import "../src/features/finance/components/ledger/metrics/max-capped.tsx";
 import "../src/features/finance/components/ledger/metrics/metric-card.tsx";
 import "../src/features/finance/components/ledger/metrics/opening-balance.tsx";
 import "../src/features/finance/components/reconciliation/pending-reconciliation-section.tsx";

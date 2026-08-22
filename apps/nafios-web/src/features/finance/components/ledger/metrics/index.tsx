@@ -1,3 +1,4 @@
+import { MetricMaxCapped } from "./max-capped";
 import { MetricOpenBalance } from "./opening-balance";
 
 // interface SummaryMetric {
@@ -41,6 +42,7 @@ export function LedgerMetrics() {
   return (
     <div className="grid grid-cols-5 gap-4 px-4 pb-4">
       <MetricOpenBalance />
+      <MetricMaxCapped />
     </div>
   );
 }

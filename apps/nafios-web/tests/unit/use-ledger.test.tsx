@@ -153,7 +153,7 @@ describe("useLedger", () => {
 
 describe("ledgerQueryOptions", () => {
   // Extracted from the hook so a NON-COMPONENT caller can reach the same read:
-  // `useOptimisticOpeningBal` spreads these into `fetchQuery` to re-seed the
+  // `useUpdateLedgerHeader` spreads these into `fetchQuery` to re-seed the
   // session after a stale-row rejection. The two callers must agree on the key —
   // a divergence would give the imperative refetch its own private cache entry
   // and the sheet would keep showing the row that just failed.

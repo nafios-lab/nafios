@@ -11,12 +11,9 @@ import { useState } from "react";
 import { useUpdateLedgerHeader } from "~/features/finance/hooks/use-update-ledger-header";
 import { ACK_OVERSPEND_COPY } from "~/features/finance/lib/ledger-header-update-rejection";
 
-/**
- *
- * @returns
- */
-export function MetricOpenBalance() {
+export function MetricMaxCapped() {
   const [editMode, setEditMode] = useState(false);
+
   const {
     baseLedger,
     fieldValue,
@@ -26,18 +23,13 @@ export function MetricOpenBalance() {
     confirmAck,
     declineAck,
     cancelUpdate,
-  } = useUpdateLedgerHeader({ field: "openingBalance" });
+  } = useUpdateLedgerHeader({ field: "maxCapped" });
 
-  /**
-   * Commit the changes on the opening balance input fields,
-   *
-   * @returns
-   */
   const commit = () => {
     setEditMode(false);
 
     if (!baseLedger || fieldValue === null) return;
-    if (compareMoney(fieldValue, baseLedger.openingBalance) === 0) return;
+    if (compareMoney(fieldValue, baseLedger.maxCapped) === 0) return;
     mutate({ value: fieldValue, ack: false });
   };
 
@@ -46,30 +38,18 @@ export function MetricOpenBalance() {
     cancelUpdate();
   };
 
-  /**
-   * Null is the PRE-READ state, not a zero: no ledger has been handed to the session
-   * yet. Rendering the card here would put a $0.00 on screen that nobody read, so the
-   * strip stays blank until the session is seeded — the same branch the header bar
-   * takes for a month with no ledger.
-   */
   if (fieldValue === null) return null;
 
   const displayVal = formatMoneyToFit(fieldValue);
 
   return (
     <>
-      {/* `onReject` and NOT `onOpenChange`: the latter fires behind EVERY close,
-       *  including the one Radix runs right after a confirm click, which would
-       *  roll back the very value the user just acknowledged. `onReject` covers
-       *  cancel, Esc, overlay and the X - every decline, and nothing else. The
-       *  dialog closes on its own once the decision clears `pendingAck`. */}
       <ConfirmDialog
         open={pendingAck !== null}
         onReject={declineAck}
+        onConfirm={confirmAck}
         title={ACK_OVERSPEND_COPY.title}
         description={ACK_OVERSPEND_COPY.description}
-        confirmLabel="Acknowledge & save"
-        onConfirm={confirmAck}
       />
       <Card className="relative flex h-[90px] flex-col gap-3 p-4">
         {!editMode && (
@@ -77,23 +57,17 @@ export function MetricOpenBalance() {
             variant={"ghost"}
             className="absolute right-2 top-1"
             icon={<EditIcon />}
-            aria-label="edit-OPENING BAL"
-            onClick={() => {
-              setEditMode(true);
-            }}
+            aria-label="edit-maxcapped"
+            onClick={() => setEditMode(true)}
           />
         )}
-        <Text variant={"caption"}>OPENING BAL</Text>
+        <Text variant="caption">MAX CAPPED</Text>
         <div className="flex mr-[-10px]">
           {editMode ? (
             <div className="flex w-full min-w-0 flex-row items-center gap-2">
-              {/* `min-w-0` + `flex-1`: the field absorbs every pixel the row has spare and
-               *  is the only thing that gives them back as the viewport narrows. The
-               *  wrapper exists because CurrencyInput forwards `className` to the inner
-               *  `<input>`, not to TextInput's outer element — the flex child here. */}
               <div className="min-w-0 flex-1">
                 <CurrencyInput
-                  hideSymbol={true}
+                  hideSymbol
                   currency="SGD"
                   locale="en-SG"
                   autoFocus
@@ -105,12 +79,10 @@ export function MetricOpenBalance() {
                 />
               </div>
               <IconButton
-                variant={"outline"}
-                // `shrink-0` keeps the 36px square square: `size-9` sets a width, but a
-                // flex item still shrinks below it, and a squashed tick reads as broken.
+                variant="outline"
                 className="shrink-0"
                 icon={<Check className="text-success-foreground" />}
-                aria-label="save-edit"
+                aria-label="save-change-max-capped"
                 onClick={() => setEditMode(false)}
               />
             </div>

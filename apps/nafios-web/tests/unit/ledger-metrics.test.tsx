@@ -7,12 +7,15 @@ import type { ReactNode } from "react";
 import { LedgerLoading } from "../../src/features/finance/components/ledger/ledger-loading.tsx";
 import { LedgerMetrics } from "../../src/features/finance/components/ledger/metrics/index.tsx";
 import { MetricCard } from "../../src/features/finance/components/ledger/metrics/metric-card.tsx";
-import { _metrics_openingBalance } from "../../src/features/finance/state/ledger-sheet/ledger-sheet.atoms.ts";
+import {
+  _metrics_maxCapped,
+  _metrics_openingBalance,
+} from "../../src/features/finance/state/ledger-sheet/ledger-sheet.atoms.ts";
 
-// The summary strip is MID-MIGRATION: the five hardcoded `MetricCard`s were
-// replaced by one atom-driven card, `MetricOpenBalance`, and the remaining four
-// figures are not wired yet. So the contracts pinned here are the ones the
-// migration must preserve card-by-card:
+// The summary strip is MID-MIGRATION: the five hardcoded `MetricCard`s are being
+// replaced by atom-driven cards one at a time. Two are wired — `MetricOpenBalance`
+// and `MetricMaxCapped` — and the remaining three figures are not. So the contracts
+// pinned here are the ones the migration must preserve card-by-card:
 //
 //   - the card reads the SESSION copy of the figure (`_metrics_openingBalance`),
 //     never a prop threaded down from the read — a regression there is invisible
@@ -21,6 +24,10 @@ import { _metrics_openingBalance } from "../../src/features/finance/state/ledger
 //     in the session in CENTS, through `moneyFromCents`, not as a float;
 //   - `formatMoneyToFit`'s bargain holds — whenever the card abbreviates an
 //     amount, the exact figure stays reachable to both eyes and screen readers.
+//
+// Each wired card ALSO has a seeded suite of its own — metric-opening-balance and
+// metric-max-capped — where the write it owns is exercised. This suite deliberately
+// stays unseeded (see `renderStrip`), so it is about composition and display only.
 //
 // `MetricCard` is `@deprecated` and no longer composed by the strip; its suite
 // stays until the last figure moves off it, so the deprecated path keeps working
@@ -41,18 +48,23 @@ function strip(container: HTMLElement) {
  * BACK, not merely what got re-rendered.
  *
  * The QueryClient is here because the opening-balance card owns its own WRITE now
- * (`useOptimisticOpeningBal`): a mutation hook needs a client even on the paths
+ * (`useUpdateLedgerHeader`): a mutation hook needs a client even on the paths
  * that never mutate. No `_ledgerInSession` is seeded, which is deliberate — with
  * no ledger to write against, `commit` and `cancelUpdate` both short-circuit and
  * nothing here reaches the network seam. That keeps this suite about the card's
  * DISPLAY and edit-mode mechanics; everything the card does once a ledger IS in
  * session — committing, reverting on blur, the acknowledgement dialog — lives in
- * metric-opening-balance.test.tsx, and the hook itself in
- * use-optimistic-opening-bal.test.tsx.
+ * metric-opening-balance.test.tsx and metric-max-capped.test.tsx.
  */
-function renderStrip(openingBalance: Money | null = moneyFromCents(715235)) {
+function renderStrip(
+  openingBalance: Money | null = moneyFromCents(715235),
+  maxCapped: Money | null = null,
+) {
   const store = createStore();
   store.set(_metrics_openingBalance, openingBalance);
+  // Defaults to null — i.e. the max-capped card renders nothing — so the queries in
+  // the opening-balance blocks below stay unambiguous. The composition block seeds it.
+  store.set(_metrics_maxCapped, maxCapped);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
@@ -234,6 +246,87 @@ describe("LedgerMetrics — editing the opening balance", () => {
 
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.getByText("$1,234.56")).toBeTruthy();
+  });
+});
+
+describe("LedgerMetrics — composing the wired cards", () => {
+  // The strip's own job, as opposed to either card's: mount them, in order, each
+  // gated on ITS OWN atom. Both cards read the session and both own a write, so a
+  // card wired to the wrong atom would show a plausible-but-wrong figure — the kind
+  // of bug that survives every single-card suite.
+
+  test("renders both wired figures, each under its own caption", () => {
+    renderStrip(moneyFromCents(715235), moneyFromCents(500000));
+
+    expect(screen.getByText("OPENING BAL")).toBeTruthy();
+    expect(screen.getByText("$7,152.35")).toBeTruthy();
+    expect(screen.getByText("MAX CAPPED")).toBeTruthy();
+    expect(screen.getByText("$5,000.00")).toBeTruthy();
+  });
+
+  test("the cards sit in the strip in reading order, balance before cap", () => {
+    const { container } = renderStrip(moneyFromCents(715235), moneyFromCents(500000));
+
+    const captions = [...strip(container).querySelectorAll("*")]
+      .filter((el) => el.textContent === "OPENING BAL" || el.textContent === "MAX CAPPED")
+      .map((el) => el.textContent);
+
+    expect(captions).toEqual(["OPENING BAL", "MAX CAPPED"]);
+  });
+
+  test("each card is gated on its own atom, so a half-seeded session shows one", () => {
+    // Not a state the app reaches — `_startLedgerSession` sets both — but it is the
+    // only way to prove the two cards are not reading the same figure.
+    const { container } = renderStrip(null, moneyFromCents(500000));
+
+    expect(strip(container).children).toHaveLength(1);
+    expect(screen.queryByText("OPENING BAL")).toBeNull();
+    expect(screen.getByText("MAX CAPPED")).toBeTruthy();
+    expect(screen.getByText("$5,000.00")).toBeTruthy();
+  });
+
+  test("both cards clear together when the session is empty", () => {
+    const { container } = renderStrip(null, null);
+
+    expect(strip(container).children).toHaveLength(0);
+  });
+
+  test("every wired card matches the skeleton's card height, so the swap causes no shift", () => {
+    // Card COUNT is deliberately not asserted: the skeleton still draws five and the
+    // strip is down to two while the other three figures are wired. Restore the count
+    // assertion with the last of them — the shift is real until then.
+    const { container: loaded } = renderStrip(moneyFromCents(715235), moneyFromCents(500000));
+    const { container: loading } = render(<LedgerLoading />);
+
+    expect(strip(loaded).children).toHaveLength(2);
+    for (const card of [...strip(loaded).children, ...strip(loading).children]) {
+      expect(card.className).toContain("h-[90px]");
+    }
+  });
+
+  test("each card carries its own edit affordance, and opens only its own field", () => {
+    // Both cards keep `editMode` in their own local state. Sharing it — or reusing an
+    // aria-label — would open two fields at once on one click.
+    renderStrip(moneyFromCents(715235), moneyFromCents(500000));
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-maxcapped" }));
+
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+    expect(field().value).toBe("5,000.00");
+    // The untouched card is still showing its figure, not a field.
+    expect(screen.getByText("$7,152.35")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "edit-OPENING BAL" })).toBeTruthy();
+  });
+
+  test("typing in one card's field writes only that card's atom", () => {
+    const { store } = renderStrip(moneyFromCents(715235), moneyFromCents(500000));
+
+    fireEvent.click(screen.getByRole("button", { name: "edit-maxcapped" }));
+    fireEvent.focus(field());
+    fireEvent.change(field(), { target: { value: "1234.56" } });
+
+    expect(toCents(store.get(_metrics_maxCapped) as Money)).toBe(123456);
+    expect(toCents(store.get(_metrics_openingBalance) as Money)).toBe(715235);
   });
 });
 

@@ -1,29 +1,18 @@
 import type { UpdateLedgerResult } from "@nafios/finance";
 
-/**
- * Every reason THIS command can return. Derived from the command's own result,
- * not from the module-wide `LedgerRejectionReason` - a reason
- * added for a future
- * Ledger command must not force copy here. Same stance as create-ledger-form
- */
-export type OpeningBalRejection = Extract<UpdateLedgerResult, { ok: false }>["reason"];
+export type LedgerUpdateRejection = Extract<UpdateLedgerResult, { ok: false }>["reason"];
 
-/**
- * The reasons that resolve as a TOAST.
- * `overspend_warning` is excluded becausse
- * it is teh only one with a decision attached - it derives the ConfirmDialog
- */
-export type BlockedOpeningBalReason = Exclude<OpeningBalRejection, "overspend_warning">;
+export type BlockedLedgerUpdateRejection = Exclude<LedgerUpdateRejection, "overspend_warning">;
 
-export interface ToastCopy {
+export interface RejectionCopy {
   readonly title: string;
   readonly description: string;
 }
 
-/**
- * `Record<>` makes this exhaustive: a new blocked reason will not compile until
- *  it has copy here. */
-export const BLOCKED_OPENING_BAL_TOASTS: Record<BlockedOpeningBalReason, ToastCopy> = {
+export const UPDATE_LEDGER_REJECTION_TOASTS_MAP: Record<
+  BlockedLedgerUpdateRejection,
+  RejectionCopy
+> = {
   exceeds_hard_cap: {
     title: "That's too low for your current spending cap",
     description:
@@ -44,12 +33,12 @@ export const BLOCKED_OPENING_BAL_TOASTS: Record<BlockedOpeningBalReason, ToastCo
   },
 };
 
-export const STALE_ROW_REASONS: ReadonlySet<BlockedOpeningBalReason> = new Set([
-  "ledger_not_ongoing",
+export const STALE_ROW_REASONS: ReadonlySet<BlockedLedgerUpdateRejection> = new Set([
   "ledger_not_found",
+  "ledger_not_ongoing",
 ]);
 
-export const ACK_OVERSPEND_COPY: ToastCopy = {
+export const ACK_OVERSPEND_COPY: RejectionCopy = {
   title: "That leaves your spending cap above your balance",
   description:
     "Your cap is higher than this opening balance, so the month is set up to run at a deficit — you'd be drawing from savings. Acknowledge to save this balance anyway.",
